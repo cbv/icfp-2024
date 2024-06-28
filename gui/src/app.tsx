@@ -17,6 +17,7 @@ export function Navbar(props: { state: AppState, dispatch: Dispatch }): JSX.Elem
     <div className="header">ICFP 2024</div>
     <div className="spacer"></div>
     <a className={state.mode.t == 'codec' ? 'active' : undefined} onMouseDown={() => { dispatch({ t: 'setMode', mode: { t: 'codec', inputText: '', outputText: '' } }) }}>Codec</a>
+    <a className={state.mode.t == 'communicate' ? 'active' : undefined} onMouseDown={() => { dispatch({ t: 'setMode', mode: { t: 'communicate', inputText: '', outputText: '' } }) }}>Communicate</a>
     <a className={state.mode.t == 'evaluate' ? 'active' : undefined} onMouseDown={() => { dispatch({ t: 'setMode', mode: { t: 'evaluate', inputText: '', outputText: '' } }) }}>Evaluate</a>
     <div className="spacer"></div>
   </div>
@@ -57,6 +58,21 @@ function renderAppBody(state: AppState, dispatch: Dispatch): JSX.Element {
       <div className="action-bar">
         <button onClick={(e) => { dispatch({ t: 'setOutputText', text: encodeString(state.mode.inputText) }) }}>Encode</button>
         <button onClick={(e) => { dispatch({ t: 'setOutputText', text: decodeString(state.mode.inputText) }) }}>Decode</button>
+      </div>
+    </div>;
+    case 'communicate': return <div className="interface-container">
+      <div className="textarea-container">
+        <div className="textarea-panel">
+          <div className="title">Input</div>
+          <textarea spellCheck={false} value={state.mode.inputText} onInput={onInput}></textarea>
+        </div>
+        <div className="textarea-panel">
+          <div className="title">Output</div>
+          <textarea spellCheck={false} value={state.mode.outputText}></textarea>
+        </div>
+      </div>
+      <div className="action-bar">
+        <button onClick={(e) => { dispatch({ t: 'sendText', text: state.mode.inputText }) }}>Send</button>
       </div>
     </div>;
   }

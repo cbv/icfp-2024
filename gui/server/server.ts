@@ -5,7 +5,7 @@ import * as path from 'path';
 
 const token = fs.readFileSync(path.join(__dirname, '../../API_KEY'), 'utf8').replace(/\n/g, '');
 const app = express();
-
+app.use(express.json());
 app.post('/export', (req, res) => {
   let data = '';
   req.setEncoding('utf8');
@@ -21,11 +21,13 @@ app.post('/export', (req, res) => {
 });
 app.use('/', express.static(path.join(__dirname, '../public')));
 
-app.get('/api/space', async (req, res) => {
+app.post('/api/space', async (req, res) => {
+  const body = req.body.rawString;
+  console.log('body:', body);
   const preq = new Request("https://boundvariable.space/communicate", {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` },
-    body: "S'%4}).$%8"
+    body
   });
   const presp = await fetch(preq);
   const ptext = await presp.text();

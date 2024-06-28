@@ -11,6 +11,11 @@ export type AppMode =
     inputText: string,
     outputText: string,
   }
+  | {
+    t: 'communicate',
+    inputText: string,
+    outputText: string,
+  }
   ;
 
 export type AppState = {

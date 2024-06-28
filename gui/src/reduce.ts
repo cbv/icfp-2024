@@ -19,5 +19,11 @@ export function reduce(state: AppState, action: Action): AppState {
         s.mode = action.mode;
       });
     }
+    case 'sendText': {
+      return produce(state, s => {
+        s.effects.push({ t: 'sendText', text: action.text });
+      });
+    }
+
   }
 }
