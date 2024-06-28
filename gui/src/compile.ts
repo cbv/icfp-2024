@@ -1,5 +1,5 @@
 import { repeat } from './lib/util';
-import { Expr, app, concat, cond, equ, expToIcfp, expToToks, lam, litbool, litnum, litstr, mul, rec, sub } from './expr';
+import { Expr, add, app, concat, cond, equ, expToIcfp, expToToks, lam, litbool, litnum, litstr, mul, rawlam, rec, sub, vuse } from './expr';
 
 /*
 
@@ -23,6 +23,14 @@ function appSpine(a: Expr, b: Expr[]): Expr {
   return [a, ...b].reduce(app);
 }
 
+type Binding = { v: string, body: Expr };
+function letbind(bindings: Binding[], body: Expr): Expr {
+  bindings.reverse().forEach(binding => {
+    body = app(rawlam(binding.v, body), binding.body);
+  });
+  return body;
+}
+
 export function compileExample() {
   // let rv = '';
   // for (let i = 1; i < 48; i++) {
@@ -33,12 +41,34 @@ export function compileExample() {
   // rv += repeat('L', 97);
 
   // repeat "D" 3 = "DDD"
-  const repeat = rec(R => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, appSpine(R, [s, sub(n, litnum(1))]))))));
+  const R2 = rec(R => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, appSpine(R, [s, sub(n, litnum(1))]))))));
+  let repeat = vuse('R2');
+  const spiral = letbind(
+    [{ v: 'R2', body: R2 }],
+    rec(S => lam(n =>
+      // have we finished?
+      cond(equ(n, litnum(98)),
+        // If so, do the last couple moves
+        concat(
+          appSpine(repeat, [litstr("D"), litnum(98)]),
+          appSpine(repeat, [litstr("L"), litnum(97)])),
+        // Otherwise do some moves and recurse
+        concat(
+          concat(
+            concat(
+              appSpine(repeat, [litstr("D"), n]),
+              appSpine(repeat, [litstr("L"), n])),
+            concat(
+              appSpine(repeat, [litstr("U"), add(n, litnum(2))]),
+              appSpine(repeat, [litstr("R"), add(n, litnum(2))])),
+          ),
+          app(S, add(n, litnum(4)))
+        ),
+      ))));
 
   const fact = rec(f => lam(x => cond(equ(litnum(0), x),
     litnum(1),
     mul(x, app(f, sub(x, litnum(1)))))));
 
-  return expToIcfp(appSpine(repeat, [litstr("D"), litnum(10)]));
-
+  return expToIcfp(concat(litstr("solve lambdaman8 "), appSpine(spiral, [litnum(2)])));
 }
