@@ -39,6 +39,7 @@ inline std::string IntToString(const int_type &i) {
 static constexpr int RADIX = 94;
 
 std::string EncodeString(std::string_view s);
+uint8_t DecodeChar(uint8_t c);
 
 // Defined as a variant below.
 struct Bool;

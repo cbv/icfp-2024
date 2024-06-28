@@ -6,7 +6,6 @@
 #include <vector>
 #include <variant>
 #include <string>
-#include <unordered_map>
 #include <string_view>
 
 #include "ansi.h"
@@ -38,36 +37,7 @@ struct Compressor {
   // The current representation.
   std::vector<Part> parts;
 
-  // One pass of compression.
-  bool CompressPass() {
-    // TODO: rsync tricks! This is n^2.
-    std::unordered_map<std::string_view, int> seen;
-
-    for (const Part &part : parts) {
-      if (const std::string *s = std::get_if<std::string>(&part)) {
-        for (size_t start = 0; start < s->size(); start++) {
-          for (size_t len = MIN_LEN; start + len < s->size(); len++) {
-            std::string_view sv = std::string_view(*s).substr(start, len);
-            seen[sv]++;
-          }
-        }
-      }
-    }
-
-    // Now factor out the best string. We go by the longest string
-    // (with at least one repetition) in order to cut down the n^2 factors.
-    std::string_view best = "";
-    for (const auto &[sv, count] : seen) {
-      if (count > 1) {
-        if (sv.size() > best.size()) {
-          best = sv;
-        }
-      }
-    }
-
-    if (best.empty())
-      return false;
-
+  void FactorOut(std::string_view best) {
     int name = (int)named.size();
     named.push_back(std::string(best));
     std::vector<Part> new_parts;
@@ -96,14 +66,64 @@ struct Compressor {
     }
 
     parts = std::move(new_parts);
-    return true;
+  }
+
+  static int CountHits(std::string_view needle, std::string_view haystack) {
+    int hits = 0;
+    for (;;) {
+      auto pos = haystack.find(needle);
+      if (pos == std::string_view::npos) return hits;
+      hits++;
+      haystack.remove_prefix(pos);
+      haystack.remove_prefix(needle.size());
+    }
+  }
+
+  // One pass of compression.
+  bool CompressPass(int length) {
+    // fprintf(stderr, "Run pass with length " AORANGE("%d") "\n", length);
+    for (int part_idx = 0; part_idx < (int)parts.size(); part_idx++) {
+      const Part &part = parts[part_idx];
+      if (const std::string *s = std::get_if<std::string>(&part)) {
+        for (size_t start = 0; start + length < s->size(); start++) {
+          std::string_view sv = std::string_view(*s).substr(start, length);
+
+          std::string_view rest = std::string_view(*s).substr(start + length,
+                                                              std::string_view::npos);
+          // Does it occur anywhere later?
+          const int hits = [this, part_idx, sv, rest]() {
+              int hits = 0;
+              hits += CountHits(sv, rest);
+              for (int p = part_idx + 1; p < (int)parts.size(); p++) {
+                if (const std::string *s = std::get_if<std::string>(&parts[p])) {
+                  hits += CountHits(sv, *s);
+                }
+              }
+              return hits;
+            }();
+
+          // fprintf(stderr, "[%s] has %d hits\n", std::string(sv).c_str(), hits);
+
+          if (hits > 0) {
+            // Eagerly take it.
+            FactorOut(sv);
+            return true;
+          }
+        }
+      }
+    }
+
+    // No hits.
+    return false;
   }
 
   std::string VarString(int i) {
+    i++;
+
     std::string rev;
     while (i > 0) {
       uint8_t digit = i % icfp::RADIX;
-      rev.push_back(icfp::DECODE_STRING[digit]);
+      rev.push_back(icfp::DecodeChar(digit));
       i /= icfp::RADIX;
     }
 
@@ -126,6 +146,12 @@ struct Compressor {
   }
 
   std::string Render() {
+    for (int i = 0; i < (int)named.size(); i++) {
+      fprintf(stderr,
+              ABLUE("%s") " " AGREY("=") " %s\n",
+              VarString(i).c_str(), named[i].c_str());
+    }
+
     // Body concatenates all the parts.
     if (parts.empty())
       return "S";
@@ -134,7 +160,7 @@ struct Compressor {
 
     std::string body = RenderPart(parts[0]);
     for (int i = 1; i < (int)parts.size(); i++) {
-      body = StringPrintf("B. %s %s", RenderPart(parts[i]).c_str());
+      body = StringPrintf("B. %s %s", body.c_str(), RenderPart(parts[i]).c_str());
     }
 
     // Now binding the variables.
@@ -150,28 +176,38 @@ struct Compressor {
     return body;
   }
 
-  std::string Compress(const std::string &in) {
+  std::string Compress(std::string_view in) {
     const int start_size = (int)in.size();
     Periodically status_per(1.0);
     Timer timer;
 
-    parts = {in};
+    parts = {std::string(in)};
 
     int passes = 0;
-    for (;;) {
-      bool more = CompressPass();
-      if (!more) {
-        std::string out = Render();
-        const int out_size = (int)out.size();
-        fprintf(stderr, "Done in %d passes (%s). "
-                AYELLOW("%d") " -> " AGREEN("%d") "\n",
-                passes, ANSI::Time(timer.Seconds()).c_str(),
-                start_size, out_size);
-        return out;
+    int max_len = in.size() / 2;
+
+    fprintf(stderr, "START\n");
+
+    while (max_len > MIN_LEN) {
+      if (!CompressPass(max_len)) {
+        max_len--;
       }
 
+      if (status_per.ShouldRun()) {
+        fprintf(stderr, "%d passes; max_len %d; %d parts; %d names\n",
+                passes, max_len,
+                (int)parts.size(), (int)named.size());
+      }
       passes++;
     }
+
+    std::string out = Render();
+    const int out_size = (int)out.size();
+    fprintf(stderr, "Done in %d passes (%s). "
+            AYELLOW("%d") " -> " AGREEN("%d") "\n",
+            passes, ANSI::Time(timer.Seconds()).c_str(),
+            start_size, out_size);
+    return out;
   }
 
 };
@@ -193,7 +229,7 @@ int main(int argc, char **argv) {
     input_view.remove_suffix(1);
 
   Compressor compressor;
-  std::string out = compressor.Compress(input);
+  std::string out = compressor.Compress(input_view);
   printf("%s\n", out.c_str());
 
   return 0;

@@ -585,6 +585,10 @@ std::string EncodeString(std::string_view s) {
   return enc;
 }
 
+uint8_t DecodeChar(uint8_t digit) {
+  assert(digit < RADIX);
+  return DECODE_STRING[digit];
+}
 
 // Secret ops?
 // ~: might be alias for B$, or maybe it is memoizing?
