@@ -1,11 +1,23 @@
 import { Effect } from "./effect";
 
+export type AppMode =
+  | {
+    t: 'evaluate',
+    inputText: string,
+    outputText: string,
+  }
+  | {
+    t: 'codec',
+    inputText: string,
+    outputText: string,
+  }
+  ;
+
 export type AppState = {
   effects: Effect[],
-  inputText: string,
-  outputText: string,
+  mode: AppMode,
 }
 
 export function mkState(): AppState {
-  return { effects: [], inputText: '', outputText: '' };
+  return { effects: [], mode: { t: 'codec', inputText: '', outputText: '' } };
 }
