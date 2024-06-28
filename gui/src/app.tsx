@@ -12,7 +12,7 @@ import { decodeString, encodeString } from './codec';
 export type AppProps = {
 };
 
-const modes: AppMode[] = ['codec', 'communicate', 'evaluate'];
+const modes: AppMode[] = ['codec', 'communicate', 'evaluate', 'lambdaman'];
 
 export function Navbar(props: { state: AppState, dispatch: Dispatch }): JSX.Element {
   const { state, dispatch } = props;
@@ -86,6 +86,25 @@ function renderCommunicate(state: AppState, modeState: AppModeState & { t: 'comm
   </div>;
 }
 
+function renderLambda(state: AppState, modeState: AppModeState & { t: 'lambdaman' }, dispatch: Dispatch): JSX.Element {
+  const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
+  return <div className="interface-container">
+    <div className="textarea-container">
+      <div className="textarea-panel">
+        <div className="title">Input</div>
+        <textarea spellCheck={false} value={state.modeState.inputText} onInput={onInput}></textarea>
+      </div>
+      <div className="textarea-panel">
+        <div className="title">Output</div>
+        <textarea spellCheck={false} value={state.modeState.outputText}></textarea>
+      </div>
+    </div>
+    <div className="action-bar">
+      <button onClick={(e) => { dispatch({ t: 'compile' }) }}>Compile</button>
+    </div>
+  </div>;
+}
+
 function renderAppBody(state: AppState, dispatch: Dispatch): JSX.Element {
   const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
   switch (state.mode) {
@@ -98,6 +117,9 @@ function renderAppBody(state: AppState, dispatch: Dispatch): JSX.Element {
     case 'communicate':
       if (state.modeState.t != state.mode) throw new Error(`mode state inconsistency`);
       return renderCommunicate(state, state.modeState, dispatch);
+    case 'lambdaman':
+      if (state.modeState.t != state.mode) throw new Error(`mode state inconsistency`);
+      return renderLambda(state, state.modeState, dispatch);
   }
 }
 
