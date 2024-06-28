@@ -1,0 +1,14 @@
+<img src="threed1-explanation.png">
+<br>
+
+Here's how factorial works. "A" marks the input, which gets
+decremented by one with every iteration. Call this value x. It
+propagates along three data paths, left, down, and right.
+
+<ul>
+<li> The green circle is a register, call it r. We multiply x against it every iteration.
+<li> The purpose of the <b>left</b> path is to overwrite the value in the red circle with the current value of x
+<li> The purpose of the <b>down</b> path is to decrement x.
+<li> The purpose of the <b>right</b> path is to compare x with zero,
+and if it is zero, then we unblock the green value r, and let it flow to S, the solution output.
+</ul>

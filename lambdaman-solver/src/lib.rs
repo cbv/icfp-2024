@@ -69,7 +69,7 @@ impl State {
             let row = &cells[ridx];
             if ridx > 0 {
                 if row.len() != row_len {
-                    panic!("bad row length");
+                    panic!("bad row length {} != {}", row.len(), row_len);
                 }
             } else {
                 row_len = row.len();

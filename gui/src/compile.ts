@@ -52,36 +52,32 @@ export function lambdaman8() {
   // repeat "D" 3 = "DDD"
   const R2 = rec(R => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, appSpine(R, [s, sub(n, litnum(1))]))))));
   let repeat = vuse('R2');
+  const Mbody = litnum(205);
+  const M = vuse('M')
   const spiral = letbind(
-    [{ v: 'R2', body: R2 }],
+    [{ v: 'R2', body: R2 }, { v: 'M', body: Mbody }],
     rec(S => lam(n =>
       // have we finished?
       cond(equ(n, litnum(98)),
         // If so, do the last couple moves
-        concat(
-          appSpine(repeat, [litstr("D"), litnum(98)]),
-          appSpine(repeat, [litstr("L"), litnum(97)])),
+        appSpine(repeat, [litstr("DL"), M]),
         // Otherwise do some moves and recurse
         concat(
           concat(
             concat(
-              appSpine(repeat, [litstr("D"), n]),
-              appSpine(repeat, [litstr("L"), n])),
+              appSpine(repeat, [litstr("D"), M]),
+              appSpine(repeat, [litstr("L"), M])),
             concat(
-              appSpine(repeat, [litstr("U"), add(n, litnum(2))]),
-              appSpine(repeat, [litstr("R"), add(n, litnum(2))])),
+              appSpine(repeat, [litstr("U"), M]),
+              appSpine(repeat, [litstr("R"), M])),
           ),
           app(S, add(n, litnum(4)))
         ),
       ))));
 
-  const fact = rec(f => lam(x => cond(equ(litnum(0), x),
-    litnum(1),
-    mul(x, app(f, sub(x, litnum(1)))))));
-
   return expToIcfp(concat(litstr("solve lambdaman8 "), appSpine(spiral, [litnum(2)])));
 }
 
 export function compileExample() {
-  return lambdaman6();
+  return lambdaman8();
 }
