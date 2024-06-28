@@ -75,10 +75,6 @@ export function lambdaman8() {
         ),
       ))));
 
-  const fact = rec(f => lam(x => cond(equ(litnum(0), x),
-    litnum(1),
-    mul(x, app(f, sub(x, litnum(1)))))));
-
   return expToIcfp(concat(litstr("solve lambdaman8 "), appSpine(spiral, [litnum(2)])));
 }
 
