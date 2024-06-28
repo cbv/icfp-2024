@@ -155,7 +155,7 @@ int main(int, char **) {
 			} else {
 				print(tok);
 			}
-			indents.emplace_back(2);
+			indents.emplace_back(1);
 		} else {
 			print("[" + tok.substr(0,1) + "] unrecognized \"" + tok + "\"");
 		}
