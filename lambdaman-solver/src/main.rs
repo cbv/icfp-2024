@@ -79,6 +79,8 @@ fn main() -> Result<()> {
 
     let mut state = parse_lambda_puzzle(message);
 
+    print!("solve lambdaman{}", args[1]);
+
     while let Some(mv) = find_next_move(state.clone()) {
         print!("{}", mv);
         state.do_move(mv);
