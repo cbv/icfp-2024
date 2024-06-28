@@ -1,5 +1,5 @@
 import { repeat } from './lib/util';
-import { expToIcfp, expToToks, litnum, litstr } from './expr';
+import { app, cond, equ, expToIcfp, expToToks, lam, litnum, litstr, mul, rec, sub } from './expr';
 export function compileExample() {
   // let rv = '';
   // for (let i = 1; i < 48; i++) {
@@ -9,5 +9,9 @@ export function compileExample() {
   // rv += repeat('D', 98);
   // rv += repeat('L', 97);
 
-  return expToIcfp(litstr("get index"));
+  const fact = rec(f => lam(x => cond(equ(litnum(0), x),
+    litnum(1),
+    mul(x, app(f, sub(x, litnum(1)))))));
+  return expToIcfp(app(fact, litnum(3)));
+
 }
