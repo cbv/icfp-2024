@@ -60,9 +60,7 @@ export function lambdaman8() {
       // have we finished?
       cond(equ(n, litnum(98)),
         // If so, do the last couple moves
-        concat(
-          appSpine(repeat, [litstr("D"), M]),
-          appSpine(repeat, [litstr("L"), M])),
+        appSpine(repeat, [litstr("DL"), M]),
         // Otherwise do some moves and recurse
         concat(
           concat(
