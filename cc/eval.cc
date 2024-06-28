@@ -1,7 +1,6 @@
 
 #include "icfp.h"
 
-#include <iostream>
 #include <string>
 #include <string_view>
 #include <cassert>
@@ -12,7 +11,8 @@ using namespace icfp;
 
 int main(int argc, char **argv) {
   std::string input;
-  for (char c; std::cin.get(c); ) {
+  char c;
+  while (EOF != (c = fgetc(stdin))) {
     input.push_back(c);
   }
 
