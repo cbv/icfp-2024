@@ -130,64 +130,112 @@ struct Var {
   int_type v;
 };
 
-// [e1/v]e2
-// TODO: Avoid capture!
-static std::shared_ptr<Exp> Subst(std::shared_ptr<Exp> e1,
-                                  int_type v,
-                                  std::shared_ptr<Exp> e2) {
-  if (const Bool *b = std::get_if<Bool>(e2.get())) {
-    return e2;
+static std::string ValueString(const Value &v) {
 
-  } else if (const Int *i = std::get_if<Int>(e2.get())) {
-    return e2;
+  if (const Bool *b = std::get_if<Bool>(&v)) {
+    return b->b ? "true" : "false";
 
-  } else if (const String *s = std::get_if<String>(e2.get())) {
-    return e2;
+  } else if (const Int *i = std::get_if<Int>(&v)) {
+    char buf[100];
+    sprintf(buf, "%" PRId64, i->i);
+    return buf;
 
-  } else if (const Unop *u = std::get_if<Unop>(e2.get())) {
+  } else if (const String *s = std::get_if<String>(&v)) {
+    return "\"" + s->s + "\"";
 
-    return std::make_shared<Exp>(
-        Unop{.op = u->op, .arg = Subst(e1, v, u->arg)});
-
-  } else if (const Binop *b = std::get_if<Binop>(e2.get())) {
-
-    return std::make_shared<Exp>(Binop{
-        .op = b->op,
-        .arg1 = Subst(e1, v, b->arg1),
-        .arg2 = Subst(e1, v, b->arg2),
-    });
-
-  } else if (const If *i = std::get_if<If>(e2.get())) {
-
-    return std::make_shared<Exp>(If{
-        .cond = Subst(e1, v, i->cond),
-        .t = Subst(e1, v, i->t),
-        .f = Subst(e1, v, i->f),
-    });
-
-  } else if (const Lambda *l = std::get_if<Lambda>(e2.get())) {
-
-    // XXX this is wrong; need to rename first
-    return std::make_shared<Exp>(Lambda{
-        .v = l->v,
-        .body = Subst(e1, v, l->body),
-    });
-
-  } else if (const Var *var = std::get_if<Var>(e2.get())) {
-
-    if (var->v == v) {
-      return e1;
-    } else {
-      return e2;
-    }
+  } else if (const Lambda *l = std::get_if<Lambda>(&v)) {
+    return "(lambda)";
+  } else if (const Error *err = std::get_if<Error>(&v)) {
+    return "(ERROR:" + err->msg + ")";
   }
 
-  assert(!"bug: invalid exp variant");
-  return nullptr;
+  return "(!!invalid value!!)";
 }
 
 struct Evaluation {
   int64_t betas = 0;
+  // We use negative variable names for fresh ones, since they
+  // cannot be written in the source language.
+  int64_t next_var = -1;
+
+  // [e1/v]e2
+  // TODO: Avoid capture!
+  std::shared_ptr<Exp> Subst(std::shared_ptr<Exp> e1,
+                             int_type v,
+                             std::shared_ptr<Exp> e2,
+                             bool simple = false) {
+    if (const Bool *b = std::get_if<Bool>(e2.get())) {
+      return e2;
+
+    } else if (const Int *i = std::get_if<Int>(e2.get())) {
+      return e2;
+
+    } else if (const String *s = std::get_if<String>(e2.get())) {
+      return e2;
+
+    } else if (const Unop *u = std::get_if<Unop>(e2.get())) {
+
+      return std::make_shared<Exp>(
+          Unop{.op = u->op, .arg = Subst(e1, v, u->arg)});
+
+    } else if (const Binop *b = std::get_if<Binop>(e2.get())) {
+
+      return std::make_shared<Exp>(Binop{
+          .op = b->op,
+          .arg1 = Subst(e1, v, b->arg1),
+          .arg2 = Subst(e1, v, b->arg2),
+      });
+
+    } else if (const If *i = std::get_if<If>(e2.get())) {
+
+      return std::make_shared<Exp>(If{
+          .cond = Subst(e1, v, i->cond),
+          .t = Subst(e1, v, i->t),
+          .f = Subst(e1, v, i->f),
+      });
+
+    } else if (const Lambda *lam = std::get_if<Lambda>(e2.get())) {
+
+      // Don't even descend if the binding is shadowed.
+      if (lam->v == v) return e2;
+
+      if (simple) {
+        return std::make_shared<Exp>(Lambda{
+            .v = lam->v,
+            .body = Subst(e1, v, lam->body),
+          });
+      } else {
+        // Rename target lambda so that we can't have capture.
+        // PERF only do this if we would incur capture?
+        int_type new_var = next_var;
+        next_var--;
+        std::shared_ptr<Exp> new_var_exp =
+          std::make_shared<Exp>(Var{.v = new_var});
+
+        // Simple substitution, since the new variable cannot incur capture.
+        std::shared_ptr<Exp> body =
+          Subst(new_var_exp, lam->v, lam->body, true);
+
+        // Now do the substitution, which can no longer capture.
+        return std::make_shared<Exp>(Lambda{
+            .v = new_var,
+            .body = Subst(e1, v, body),
+          });
+      }
+
+    } else if (const Var *var = std::get_if<Var>(e2.get())) {
+
+      if (var->v == v) {
+        return e1;
+      } else {
+        return e2;
+      }
+    }
+
+    assert(!"bug: invalid exp variant");
+    return nullptr;
+  }
+
 
   template<class F>
   Value EvalToInt(const Exp *exp,
@@ -398,6 +446,8 @@ struct Evaluation {
             return Value(Bool{.b = s1->s == s2->s});
           }
         }
+
+        printf("NO:%s\n%s\n", ValueString(arg1).c_str(), ValueString(arg2).c_str());
 
         return Value(Error{.msg = "binop = needs two args of the same base type"});
       }
@@ -611,28 +661,6 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   default:
     assert(!"invalid indicator");
   }
-}
-
-static std::string ValueString(const Value &v) {
-
-  if (const Bool *b = std::get_if<Bool>(&v)) {
-    return b->b ? "true" : "false";
-
-  } else if (const Int *i = std::get_if<Int>(&v)) {
-    char buf[100];
-    sprintf(buf, "%" PRId64, i->i);
-    return buf;
-
-  } else if (const String *s = std::get_if<String>(&v)) {
-    return "\"" + s->s + "\"";
-
-  } else if (const Lambda *l = std::get_if<Lambda>(&v)) {
-    return "(lambda)";
-  } else if (const Error *err = std::get_if<Error>(&v)) {
-    return "(ERROR:" + err->msg + ")";
-  }
-
-  return "(!!invalid value!!)";
 }
 
 int main(int argc, char **argv) {
