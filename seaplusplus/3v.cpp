@@ -276,37 +276,49 @@ int main(int argc, char **argv) {
 
 		std::optional< Cell > output;
 
-		if (tt_dest != -1U) {
-			std::cout << "Time traveling to ticks[" << tt_dest << "]." << std::endl;
-			next = std::move(ticks[tt_dest]);
-			writes = std::move(tt_writes);
-			ticks.erase(ticks.begin() + tt_dest);
-		}
-
-		for (auto const &[at, cell] : writes) {
-			auto ret = next.emplace(at, cell);
-			if (!ret.second) {
-				if (ret.first->second.op == 'S') {
-					//writing an output value!
-					if (!output) {
-						output = cell;
-					} else if (*output != cell) {
-						throw std::runtime_error("Writing conflicting outputs.");
+		auto resolve_writes = [&next, &writes, &output]() {
+			for (auto const &[at, cell] : writes) {
+				auto ret = next.emplace(at, cell);
+				if (!ret.second) {
+					if (ret.first->second.op == 'S') {
+						//writing an output value!
+						if (!output) {
+							output = cell;
+						} else if (*output != cell) {
+							throw std::runtime_error("Writing conflicting outputs.");
+						}
 					}
+					ret.first->second = cell;
 				}
-				ret.first->second = cell;
+				next[at] = cell;
 			}
-			next[at] = cell;
-		}
+		};
 
-		ticks.emplace_back(std::move(next));
-		std::cout << "------ ticks[" << ticks.size() - 1 << "] ------" << std::endl;
-		dump(ticks.back());
+		//resolve writes to current board (and thus output) *before* time travel:
+		resolve_writes();
 
 		if (output) {
 			std::cout << "Output Written: " << to_string(*output) << std::endl;
 			break;
 		}
+
+		//if there was no output, do time travel:
+		if (tt_dest != -1U) {
+			std::cout << "Time traveling to ticks[" << tt_dest << "]." << std::endl;
+			next = std::move(ticks[tt_dest]);
+			writes = std::move(tt_writes);
+			ticks.erase(ticks.begin() + tt_dest, ticks.end());
+			resolve_writes();
+		}
+
+		if (output) {
+			std::cout << "Output Written (during time travel): " << to_string(*output) << std::endl;
+			break;
+		}
+
+		ticks.emplace_back(std::move(next));
+		std::cout << "------ ticks[" << ticks.size() - 1 << "] ------" << std::endl;
+		dump(ticks.back());
 
 		if (!reduced) {
 			std::cout << "No operator can reduce." << std::endl;
