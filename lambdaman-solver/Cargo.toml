@@ -1,5 +1,5 @@
 [package]
-name = "lambdaman-solver"
+name = "lambdaman"
 version = "0.1.0"
 edition = "2021"
 
