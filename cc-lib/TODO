@@ -1,0 +1,23 @@
+
+- be consistent about color-util vs colorutil
+- rename stb_image_write vs stb-image-write etc.
+- non-SDL RGBA array library. fonts can draw to it (this is started in
+  image.cc).
+- thread-util with progress feedback (e.g. ansi console, sdl)
+- thread pools
+- clean up style (use uppercase function and class names, like in sdlutil?)
+- Good standalone flate/zlib compressor:
+    https://github.com/google/zopfli/tree/master/src/zopfli
+- Fast standalone compressor/decompressor: https://github.com/google/snappy
+    (zstd is probably better now)
+- Make a single-file (or otherwise embeddable) zstd
+- CHACHA2020 as a replacement for arcfour
+- Make randutil templated over prng, and provide good defaults
+- Make black-box optimizer open-loop
+- Autotune parameters, like autoparallel but with user-specified metrics
+  (e.g. you define a target "error" and some variables, it gives you
+   variables to try for a round, then you tell it what the "error" was)
+- Update bigz in bignum (there is now 2.0.0, with bugfixes)
+- macro that uses __builtin_unreachable() for an unchecked assert() that
+  can be used for optimization assertions. (There may now be a standardized
+  version of this.)

@@ -1,0 +1,158 @@
+cc-lib                             Tom 7       12 Jun 2024
+
+Like my "sml-lib", this is my attempt to get all of my frequently used
+C++ libraries into a single place so that different copies don't
+accumulate different changes.
+
+I try to use portable style where possible to make compiling against
+this easy. I hate complicated makefiles, actually basically all build
+systems, library dependencies, autoconf, and that stuff. But ultimately
+it's kind of complicated, you know?
+
+As of 2020 I'm pretty much on C++17 everywhere now, so these libraries
+may assume C++17 features and semantics. It's worth it. GCC 8 seems ok
+for C++17, but I am now on at least 9.2 on every platform. On Windows,
+I use and endorse x86_64-w64-mingw32-g++, which is version 11.3+!. On
+linux, just get the newest GCC.
+
+Some of what's here is various parts of google "base" libraries (now
+"abseil"), since those are quite useful and I know them well. They
+have been released multiple times under open-source licenses;
+particularly the Apache 2.0 license, which is in APACHE20. Googletest
+is the "new BSD" license, in gtest/LICENSE. The Google Template
+Library in gtl/ is APACHE20.
+
+Sean Barrett's excellently simple stb_* libraries are in the public
+domain; see the notices at the tops of those files. I've made some
+modifications to them. I've imported some other single-file libs and
+modified them, like dr_wav and tinyexr. Each has its license (generally
+very permissive) embedded in the .h or .cc file or both.
+
+Some of the numerical routines in randutil are based on Numpy. If you
+believe that this is a "copy" or "substantial portion", then please
+abide by Numpy's permissive license. See NUMPY.LICENSE.
+
+The base64 code originally came from a public domain utility;
+I've only made light changes there, and let's call that public domain
+as well.
+
+The xml parser is based on the MIT-licensed yxml tokenizer. So my
+contributions here are MIT-licensed as well. See xml.cc.
+
+The csv parser is based on the MIT-licensed "Vince's CSV Parser."
+My wrapper is MIT-licensed as well. See csv.cc.
+
+The zip library is a wrapper around miniz, which has a "public domain"
+"unlicense" (although it actually looks MIT-like since it wants you to
+persist the copyright statement and warranty disclaimer); see
+miniz.cc. My wrapper is MIT-licensed as well.
+
+The re2 subdirectory comes from Google and community contributors. See
+re2/LICENSE for its permissive BSD-style license.
+
+The guitar subdirectory is based on some MIT-licensed data so my
+contributions are as well. See guitar/LICENSE.txt.
+
+The bignum subdirectory is based on BSD-licensed code; it and my
+C++ wrapper are available under that license. See bignum/LICENSE.
+
+The opt subdirectory is based on MIT-licensed code; it and my
+wrapper are available under that license. See opt/LICENSE.
+
+geom/marching.* is based on public domain rjm_mc; it and my wrapper
+are available under that license. See geom/marching.cc.
+
+geom/hilbert-curve.h is based on code from Wikipedia, which is
+cc-by-sa. See geom/hilbert-curve.h.
+
+factorize is based on GNU coreutils's factor.c, which is GPL.
+See COPYING.
+
+pdf is based on Andre Renaud's public domain PDFGen, with heavy
+modifications.
+
+qr-code is a simple wrapper on top of nauki's qrcodegen. See the source
+file for the license (MIT).
+
+integer-voronoi is a simple C++ wrapper around Nicholas Vining's
+public domain single-file library. You can consider my modifications
+to be public domain as well.
+
+My own fresh code is licensed under the GPL, which can be found in
+COPYING.
+
+Descriptions of some of the libraries, some of which are more-or-less
+verbatim imports:
+base/        Google "base" library, and parts of abseil. APACHE20 license.
+sdl/         Utilities for my habits in SDL. Includes bitmap font rendering.
+jdksmidi/    Baroque but thorough MIDI library, GPL.
+city/        The excellent CityHash hash algorithm.
+gtest/       Google testing library. New BSD license.
+re2/         Local copy of a good, free Regular Expression library.
+             See re2_test for example. Now you have two problems.
+rapidjson/   Good fast JSON parser. See json_test for example. MIT license.
+gtl/         Bits of the Google Template Library that have been released
+             as open source (usually Apache 2.0).
+
+wavesave        - Saves an array of audio samples as a WAV file. Limited input
+                  formats, though it is not hard to add more. See also dr_wav.
+util            - General C++ utilities, accumulated throughout the ages. Some
+                  are pretty embarrassing and should be cleaned up/out.
+heap            - Implementation of binary heaps.
+textsvg         - Pretty trivial support for generating SVG files manually.
+arcfour         - Implementation of the ARCFOUR (alleged RC4) algorithm, which
+                  is a fast and simple cryptographic-ish random stream generator.
+timer           - Utterly trivial timer, in need of further development.
+randutil        - Random number utilities, using arcfour for random byte
+                  generation.
+vector-util     - Some basic utilities on vectors that only depend on portable
+                  stl.
+rle             - (Custom) run-length encoding and decoding.
+threadutil      - Utilities for threaded programming. These are mostly
+                  convenience methods; if you want to do anything fancy
+                  you'll probably want to be managing thread lifetimes
+                  yourself.
+interval-tree   - Stores intervals on a 1D number line, with an efficient query
+                  for intervals that contain a given point.
+color-util      - Does that one thing you always need to do: Convert HSV to RGB.
+lines           - Draw pixely lines using Bresenham's algorithm or anti-aliased
+                  lines using Wu's algorithm.
+base64          - Very simple base64 encoding and decoding.
+bounds          - Simple bounding box implementation, typically used for
+                  generating plots of data
+image           - Headless representation of RGBA images. Load and save various
+                  formats via stb library, but also simple graphics primitives.
+                  I often use this for generating images programmatically.
+webserver       - Simple embeddable webserver that works on win32 and linux.
+simpledxf       - Simple and incomplete parser for DXF (CAD) files. This
+                  file format is insanely complex, but this does some
+                  superficial parsing that may work for extracting basic
+                  geometry.
+xml             - Simple in-memory XML parser using STL data structures, based
+                  on yxml.
+mp3             - Simple interface for decoding MP3s into raw samples, based
+                  on the public-domain minimp3.
+crypt/          - Simple implementations of cryptographic algorithms like AES,
+                  SHA256 and (deprecated) MD5. Perhaps arcfour should be in here
+                  too.
+pi/             - Some code for working on the raspberry pi, particularly
+                  for doing GPIO.
+bignum/         - Simple arbitrary-precision integers and rationals (BSD-like
+                  license). Not as fast as GMP, but easier to compile!
+guitar/         - Guitar chord fingering database.
+opt/            - Black-box function optimization.
+geom/           - Utitlities for geometry and computer graphics: Marching cubes
+                  algorithm, Earth latitude-longitude routines, Hilbert curves.
+stb_image_*     - Lower-level image reading and writing. I usually use the
+                  higher-level image.h.
+tinyexr         - Lower-level reading and writing of the slighly exotic EXR
+                  file format.
+csv             - Parsing of CSV files. Lots more is possible with the library
+                  it wraps ("Vince's CSV Parser").
+factorization   - Factors integers. See also bignum.
+pdf             - PDF generation.
+qr-code         - QR code generator.
+boxes-and-glue  - Line breaking algorithm similar to what TeX uses.
+integer-voronoi - Compute a rasterized 2D voronoi diagram on an integer grid.
+miniz           - Standalone flate/deflate/zip/gzip codec.
+zip             - My simple C++ wrapper for compressed streams, using miniz.
