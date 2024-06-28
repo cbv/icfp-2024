@@ -1,12 +1,8 @@
 
 #include "icfp.h"
 
-#include <iostream>
-#include <cinttypes>
-
 #include <optional>
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <utility>
 #include <variant>
@@ -15,7 +11,18 @@
 #include <cassert>
 #include <string_view>
 
+#include "bignum/big.h"
+#include "bignum/big-overloads.h"
+
 namespace icfp {
+
+// (size includes terminating \0, unused)
+static constexpr const char DECODE_STRING[RADIX + 1] =
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
+
+static constexpr const char ENCODE_STRING[128] =
+  "..........~.....................}_`abcdefghijklmUVWXYZ[\\]"
+  "^nopqrst;<=>?@ABCDEFGHIJKLMNOPQRSTuvwxyz!\"#$%&'()*+,-./0123456789:.{.|";
 
 std::string ValueString(const Value &v) {
 
@@ -23,9 +30,7 @@ std::string ValueString(const Value &v) {
     return b->b ? "true" : "false";
 
   } else if (const Int *i = std::get_if<Int>(&v)) {
-    char buf[100];
-    sprintf(buf, "%" PRId64, i->i);
-    return buf;
+    return IntToString(i->i);
 
   } else if (const String *s = std::get_if<String>(&v)) {
     return "\"" + s->s + "\"";
@@ -41,10 +46,10 @@ std::string ValueString(const Value &v) {
 
 // Also used by lambda and variables.
 static std::optional<int_type> ConvertInt(std::string_view body) {
-  int64_t val = 0;
+  int_type val{0};
   for (char c : body) {
-    assert(val < std::numeric_limits<int64_t>::max() / 94);
-    val *= 94;
+    // assert(val < std::numeric_limits<int64_t>::max() / 94);
+    val = val * 94;
 
     static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
     if (c >= '!' && c <= '~') {
@@ -64,7 +69,7 @@ static int_type ParseInt(std::string_view body) {
     return i.value();
   } else {
     assert(!"Unparseable integer literal (or lambda/var arg)");
-    return 0;
+    return int_type{0};
   }
 }
 
@@ -115,7 +120,7 @@ std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, int_type v,
     } else {
       // Rename target lambda so that we can't have capture.
       // PERF only do this if we would incur capture?
-      int_type new_var = next_var;
+      int_type new_var = int_type{next_var};
       next_var--;
       std::shared_ptr<Exp> new_var_exp =
           std::make_shared<Exp>(Var{.v = new_var});
@@ -414,14 +419,16 @@ Value Evaluation::Eval(const Exp *exp) {
       return EvalToInt(
           b->arg1.get(), [&](Int arg1) {
             return EvalToString(b->arg2.get(), [&](String arg2) {
-                if (arg1.i < 0) {
+                const int64_t len = GetInt64(arg1.i);
+
+                if (len < 0) {
                   return Value(Error{.msg = "negative length in T"});
                 } else {
                   // Corner case: length is bigger than string length
-                  if (arg1.i > (int64_t)arg2.s.size()) {
+                  if (len > (int64_t)arg2.s.size()) {
                     return Value(Error{.msg = "length exceeds string size in T"});
                   } else {
-                    return Value(String{.s = arg2.s.substr(0, arg1.i)});
+                    return Value(String{.s = arg2.s.substr(0, len)});
                   }
                 }
               });
@@ -434,14 +441,15 @@ Value Evaluation::Eval(const Exp *exp) {
       return EvalToInt(
           b->arg1.get(), [&](Int arg1) {
             return EvalToString(b->arg2.get(), [&](String arg2) {
-                if (arg1.i < 0) {
+                const int64_t len = GetInt64(arg1.i);
+                if (len < 0) {
                   return Value(Error{.msg = "negative length in D"});
                 } else {
                   // Corner case: length is bigger than string length
-                  if (arg1.i > (int64_t)arg2.s.size()) {
+                  if (len > (int64_t)arg2.s.size()) {
                     return Value(Error{.msg = "length exceeds string size in D"});
                   } else {
-                    return Value(String{.s = arg2.s.substr(arg1.i, std::string::npos)});
+                    return Value(String{.s = arg2.s.substr(len, std::string::npos)});
                   }
                 }
               });

@@ -25,14 +25,14 @@ else
   CXXFLAGS += -Wno-missing-field-initializers
 endif
 
-CC_LIB_OBJECTS=$(CC_LIB)/util.o $(CC_LIB)/base/logging.o $(CC_LIB)/base/stringprintf.o $(CC_LIB)/ansi.o
+CC_LIB_OBJECTS=$(CC_LIB)/util.o $(CC_LIB)/base/logging.o $(CC_LIB)/base/stringprintf.o $(CC_LIB)/ansi.o $(CC_LIB)/bignum/big.o $(CC_LIB)/bignum/bign.o $(CC_LIB)/bignum/bigz.o
 
 %.o : %.cc *.h makefile
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 	@echo -n "."
 
 
-eval.exe : eval.o icfp.o
+eval.exe : eval.o icfp.o $(CC_LIB_OBJECTS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
 
 compress.exe : compress.o icfp.o $(CC_LIB_OBJECTS)

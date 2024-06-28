@@ -1,6 +1,5 @@
 
-// #include "bignum/big.h"
-
+#include <cassert>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -8,20 +7,36 @@
 #include <memory>
 #include <string_view>
 
+// Seems some problems want bignum, but if you have trouble compiling
+// that, you could just use int64.
+#if NO_BIGNUM
+#else
+# include "bignum/big.h"
+#endif
+
 namespace icfp {
 
-// TODO: Use bignum, but I want something super portable to start
+#if NO_BIGNUM
 using int_type = int64_t;
+inline int64_t GetInt64(const int_type &i) { return i; }
+inline std::string IntToString(const int_type &i) {
+  char buf[100];
+  sprintf(buf, "%" PRId64, i->i);
+  return buf;
+}
+#else
+using int_type = BigInt;
+inline int64_t GetInt64(const int_type &i) {
+  auto io = i.ToInt();
+  assert(io.has_value() && "integer to big to convert to 64-bit");
+  return io.value();
+}
+inline std::string IntToString(const int_type &i) {
+  return i.ToString();
+}
+#endif
 
 static constexpr int RADIX = 94;
-
-// (size includes terminating \0, unused)
-static constexpr const char DECODE_STRING[RADIX + 1] =
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
-
-static constexpr const char ENCODE_STRING[128] =
-  "..........~.....................}_`abcdefghijklmUVWXYZ[\\]"
-  "^nopqrst;<=>?@ABCDEFGHIJKLMNOPQRSTuvwxyz!\"#$%&'()*+,-./0123456789:.{.|";
 
 std::string EncodeString(std::string_view s);
 
