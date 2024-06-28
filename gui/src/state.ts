@@ -4,6 +4,7 @@ export type AppMode =
   | 'evaluate'
   | 'codec'
   | 'communicate'
+  | 'lambdaman'
   ;
 
 export function mkModeState(mode: AppMode): AppModeState {
@@ -11,6 +12,7 @@ export function mkModeState(mode: AppMode): AppModeState {
     case 'evaluate': return { t: 'evaluate', inputText: '', outputText: '' };
     case 'codec': return { t: 'codec', inputText: '', outputText: '' };
     case 'communicate': return { t: 'communicate', inputText: '', outputText: '' };
+    case 'lambdaman': return { t: 'lambdaman', inputText: '', outputText: '' };
   }
 }
 
@@ -27,6 +29,11 @@ export type AppModeState =
   }
   | {
     t: 'communicate',
+    inputText: string,
+    outputText: string,
+  }
+  | {
+    t: 'lambdaman',
     inputText: string,
     outputText: string,
   }

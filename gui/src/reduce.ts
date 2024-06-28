@@ -25,6 +25,11 @@ export function reduce(state: AppState, action: Action): AppState {
         s.effects.push({ t: 'sendText', text: action.text });
       });
     }
+    case 'compile': {
+      return produce(state, s => {
+        s.modeState.outputText = 'foo';
+      });
+    }
 
   }
 }
