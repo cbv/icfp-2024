@@ -38,7 +38,7 @@ app.post('/api/space', async (req, res) => {
 app.post('/api/eval', async (req, res) => {
   const body = req.body.rawString;
 
-  const child = spawn(path.join(__dirname, '../../cc/icfp.exe'), []);
+  const child = spawn(path.join(__dirname, '../../cc/eval.exe'), []);
   child.stdin.write(body);
   child.stdin.end();
 
