@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::collections::BTreeSet;
+
 #[derive(Debug, Clone, Copy, PartialEq, Hash, PartialOrd)]
 pub enum Item {
     Wall,
@@ -17,7 +19,7 @@ pub enum Move {
 }
 
 /// (0,0) is upper left
-#[derive(Debug, Clone, Copy, PartialEq, Hash, PartialOrd, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Hash, PartialOrd, Ord, Default, Eq)]
 pub struct Coords {
     row : usize,
     col : usize,
@@ -30,10 +32,13 @@ impl Coords {
 }
 
 
-#[derive(Debug, Clone, PartialEq, Hash, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct State {
     cells: Vec<Vec<Item>>,
     man: Coords,
+
+    /// coordinates where there still is a dot
+    dots: BTreeSet<Coords>,
 }
 
 impl std::ops::Index<Coords> for State {
@@ -47,16 +52,23 @@ impl std::ops::Index<Coords> for State {
 impl State {
     pub fn new(cells: Vec<Vec<Item>>) -> Self {
         let mut man : Coords = Default::default();
+        let mut dots = BTreeSet::new();
         for ridx in 0..cells.len() {
             let row = &cells[ridx];
             for cidx in 0..row.len() {
                 let cell = row[cidx];
-                if cell == Item::Man {
-                    man = Coords::new(ridx, cidx)
+                match cell {
+                    Item::Man => {
+                        man = Coords::new(ridx, cidx)
+                    }
+                    Item::Dot => {
+                        dots.insert(Coords::new(ridx, cidx));
+                    }
+                    _ => (),
                 }
             }
         }
-        Self { cells, man }
+        Self { cells, man, dots }
     }
 
     pub fn width(&self) -> usize {
@@ -94,10 +106,18 @@ impl State {
     }
 
     pub fn do_move(&mut self, mv: Move) {
-        if self.move_is_legal(mv) {
-
+        match self.coords_after_move(mv) {
+            None => {
+                panic!("illegal move")
+            }
+            Some(man2) => {
+                self.man = man2
+            }
         }
+    }
 
+    pub fn is_done(&self) -> bool {
+        self.dots.is_empty()
     }
 }
 
