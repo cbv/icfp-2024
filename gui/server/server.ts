@@ -2,6 +2,7 @@ import { writeFileSync } from 'fs';
 import * as fs from 'fs';
 import express from 'express';
 import * as path from 'path';
+import { spawn } from 'node:child_process';
 
 const token = fs.readFileSync(path.join(__dirname, '../../API_KEY'), 'utf8').replace(/\n/g, '');
 const app = express();
@@ -32,6 +33,28 @@ app.post('/api/space', async (req, res) => {
   const presp = await fetch(preq);
   const ptext = await presp.text();
   res.end(ptext);
+});
+
+app.post('/api/eval', async (req, res) => {
+  const body = req.body.rawString;
+
+  const child = spawn(path.join(__dirname, '../../cc/icfp.exe'), []);
+  child.stdin.write(body);
+  child.stdin.end();
+
+  let output = '';
+  child.stdout.on('data', (data) => {
+    output += data;
+  });
+
+  child.stderr.on('data', (data) => {
+    output += data;
+  });
+
+  child.on('close', (code) => {
+    res.end(output);
+  });
+
 });
 
 const PORT = process.env.PORT == undefined ? 8000 : parseInt(process.env.PORT);

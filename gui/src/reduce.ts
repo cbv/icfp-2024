@@ -20,9 +20,9 @@ export function reduce(state: AppState, action: Action): AppState {
         s.modeState = mkModeState(action.mode);
       });
     }
-    case 'sendText': {
+    case 'doEffect': {
       return produce(state, s => {
-        s.effects.push({ t: 'sendText', text: action.text });
+        s.effects.push(action.effect);
       });
     }
     case 'compile': {

@@ -5,6 +5,7 @@ import { AppState } from "./state";
 export type Effect =
   | { t: 'none' }
   | { t: 'sendText', text: string }
+  | { t: 'evalText', text: string }
   ;
 
 export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): void {
@@ -27,6 +28,18 @@ export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): v
         else {
           console.log(`don't know how to handle ${ptext}`);
         }
+      })();
+    }
+    case 'evalText': {
+      (async () => {
+        const preq = new Request("/api/eval", {
+          method: 'POST',
+          body: JSON.stringify({ rawString: effect.text }),
+          headers: { "Content-type": "application/json" },
+        });
+        const presp = await fetch(preq);
+        const ptext = await presp.text();
+        dispatch({ t: 'setOutputText', text: ptext });
       })();
     }
   }

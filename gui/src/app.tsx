@@ -42,7 +42,7 @@ function renderEvaluate(state: AppState, modeState: AppModeState & { t: 'evaluat
       </div>
     </div>
     <div className="action-bar">
-      <button>Evaluate</button>
+      <button onClick={(e) => { dispatch({ t: 'doEffect', effect: { t: 'evalText', text: state.modeState.inputText } }) }}>Evaluate</button>
     </div>
   </div>;
 }
@@ -81,9 +81,9 @@ function renderCommunicate(state: AppState, modeState: AppModeState & { t: 'comm
       </div>
     </div>
     <div className="action-bar">
-      <button onClick={(e) => { dispatch({ t: 'sendText', text: state.modeState.inputText }) }}>Send</button>
+      <button onClick={(e) => { dispatch({ t: 'doEffect', effect: { t: 'sendText', text: state.modeState.inputText } }) }}>Send</button>
     </div>
-  </div>;
+  </div >;
 }
 
 function renderLambda(state: AppState, modeState: AppModeState & { t: 'lambdaman' }, dispatch: Dispatch): JSX.Element {
