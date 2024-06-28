@@ -173,6 +173,6 @@ pub fn parse_lambda_puzzle(puzzle: String) -> State {
         .lines()
         .map(|line| line.chars().map(parse_lambdaman_char).collect())
         .collect();
-    println!("{:?}", x);
+    //println!("{:?}", x);
     State::new(x)
 }

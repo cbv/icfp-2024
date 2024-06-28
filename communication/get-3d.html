@@ -1,0 +1,146 @@
+<style>
+  div {max-width: 40em; margin-left: 10em;}
+</style>
+<div>
+<p>Welcome to the 3D course!</p>
+<p>Back in the old days, when the Cult of the Bound Variable still lived on earth, programming languages were still quite primitive. For example, people wrote their programs in 2D, thereby ignoring the third dimension of time. Clearly the spacetime complexity of a program is 3-dimensional, and in this course you will learn to optimize the spacetime volume of your programs.</p>
+<p>Below is a complete reference of the 3D language, which is a time-travel-oriented programming language. To keep the spacetime volume as small as possible, your program can use time warping to keep the time-axis small.</p>
+<h1 id="syntax">Syntax</h1>
+<p>A 3D program is a text file that represents a 2D grid of cells. The rows are separated by newlines. Within each row, cells are represented by non-whitespace tokens separated by whitespace.</p>
+<p>It is human-friendly but not mandatory to keep the columns aligned by adding extra whitespace between cells; each row is processed separately. Rows do not have to have the same length; short rows are assumed to be left-aligned: empty on the right.</p>
+<h2 id="available-tokens">Available tokens</h2>
+<ul>
+<li><code>.</code> represents an empty cell</li>
+<li>an integer between <code>-99</code> and <code>99</code> (inclusive) represents that integer</li>
+<li>the following characters <code>&lt;</code>, <code>&gt;</code>, <code>^</code>, <code>v</code>, <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>, <code>@</code>, <code>=</code>, <code>#</code>, <code>S</code>, <code>A</code>, <code>B</code> represent operators. See <a href="#operator-reference">the operator reference</a> for their meaning.</li>
+</ul>
+<h1 id="semantics">Semantics</h1>
+<p>The board is an infinite 2D grid of cells. Each cell is either empty or contains a value. A value is either an arbitrarily sized integer or an operator.</p>
+<p>Programs cannot contain arbitrarily sized integer literals. Integer literals can only range between <code>-99</code> and <code>99</code>, inclusive. This is a source-code-only restriction. At runtime, programs are free to compute with integers of arbitrary size.</p>
+<h2 id="basic-2d-reduction">Basic 2D reduction</h2>
+<p>Time flows in discrete units, called ticks. The initial board is identical to the source code and its time coordinate is <code>t=1</code>. With each tick, we perform one round of reductions across the whole board simultaneously.</p>
+<p><a href="#operator-reference">The operator reference</a> defines the reduction rules of all operators. Generally, all operators perform local rewriting on their surroundings. For example, the “move right” operator <code>&gt;</code> rewrites <code>x &gt; .</code> to <code>. &gt; x</code>.</p>
+<p>Operators are values, too, so <code>+ &gt; .</code> reduces to <code>. &gt; +</code>. This way, it’s also possible to shuffle operators around.</p>
+<p>Binary operators, like <code>+</code>, <code>*</code>, or <code>-</code>, rewrite like this:</p>
+<pre><code>. y .     .  .   .
+x - .  ~&gt; .  -  x-y
+. . .     . x-y  .</code></pre>
+<p>Operators <code>A</code> and <code>B</code> are replaced with the input values (if any) after parsing. This mechanism is used to give different inputs to your program.</p>
+<p>There is operator <code>S</code>, which you can overwrite to terminate the program and submit the answer. It is an error to submit multiple different values, submitting the same value simultaneously multiple times is fine.</p>
+<p>Some reduction principles:</p>
+<ol type="1">
+<li><p>If the preconditions of an operator are not met, reduction simply does not take place. For example, if a binary operator has only one operand available, things stay as they are until the other operand arrives.</p></li>
+<li><p>Outputs of operators overwrite the output cells.</p>
+<p><code>1 &gt; +</code> reduces to <code>. &gt; 1</code></p></li>
+<li><p>Reading a value removes/consumes it.</p></li>
+<li><p>Two operators can read from the same input cell at the same time. Both operators receive a copy of the input value before it’s removed from the board.</p>
+<p><code>. &lt; 6 &gt; .</code> reduces to <code>6 &lt; . &gt; 6</code></p></li>
+<li><p>Conflicting writes into the same cell like <code>3 &gt; . &lt; 3</code> or <code>3 &gt; . &lt; 4</code> are disallowed and will crash the simulation.</p></li>
+<li><p>In every tick, all reads (and removals) happen before all the writes.</p>
+<p><code>1 &gt; 2 &gt; .</code> reduces to <code>. &gt; 1 &gt; 2</code></p></li>
+</ol>
+<h3 id="operator-reference">Operator reference</h3>
+<p>In the diagrams below, the symbol <code>.</code> generally stands for an empty cell or a non-empty cell containing any value. We use the dot instead of metavariables for readability.</p>
+<p>Arrows move values of any type (integers or operators).</p>
+<pre><code>. &lt; x   ~&gt;   x &lt; .         x &gt; .   ~&gt;   . &gt; x
+
+
+  .            x             x            .
+  ^     ~&gt;     ^             v     ~&gt;     v
+  x            .             .            x</code></pre>
+<p>Binary arithmetic operators reduce only for integer arguments. They write their outputs both to the right and below at the same time.</p>
+<pre><code>. y .        .  .  .       . y .        .  .  .
+x + .   ~&gt;   .  + x+y      x * .   ~&gt;   .  * x*y
+. . .        . x+y .       . . .        . x*y .
+
+
+. y .        .  .  .
+x - .   ~&gt;   .  - x-y
+. . .        . x-y .</code></pre>
+<p>Operators <code>/</code> and <code>%</code> represent the quotient and remainder operations: operator <code>/</code> truncates the result towards zero; <code>x%y</code> has the same sign as <code>x</code>.</p>
+<pre><code>. y .        .  .  .       . y .        .  .  .
+x / .   ~&gt;   .  / x/y      x % .   ~&gt;   .  % x%y
+. . .        . x/y .       . . .        . x%y .</code></pre>
+<p>Equality comparison reduces only if its two operands are equal. It works for both integers and operators.</p>
+<pre><code>. x .        . . .         . y .        . y .
+x = .   ~&gt;   . = x         x = .   ~&gt;   x = .  (if x!=y)
+. . .        . x .         . . .        . . .</code></pre>
+<p>Dually, the not-equal operator reduces only when the operands are not equal:</p>
+<pre><code>. x .        . x .         . y .        . . .
+x # .   ~&gt;   x # .         x # .   ~&gt;   . # y  (if x!=y)
+. . .        . . .         . . .        . x .</code></pre>
+<p>Operators <code>A</code> and <code>B</code> have no reduction rules defined. They may appear in the program code but they are replaced with the input values (if any) immediately after parsing.</p>
+<p>Operator <code>S</code> (“submit”) does not have any reduction rules defined, either. The program submits its results by overwriting operator <code>S</code> with the result value.</p>
+<p>The time warp operator is described in <a href="#time-warp">its own section</a>.</p>
+<h2 id="scoring">Scoring</h2>
+<p>Your score is the total spacetime volume of the program: * maximal X coordinate ever used minus minimal X coordinate ever used + 1 * times (maximal Y coordinate ever used minus minimal Y coordinate ever used + 1) * times (maximal T coordinate ever used minus minimal T coordinate ever used + 1)</p>
+<p>In this definition, “ever used” ranges across the entire simulation and across all time warps.</p>
+<h2 id="limits">Limits</h2>
+<p>After <code>1_000_000</code> ticks, the program is terminated without submitting a value, regardless of its current time coordinate.</p>
+<h2 id="time-warp">Time warp</h2>
+<p>You may be able to reduce the time complexity of your program, defined as the maximum time coordinate reached, using time travel. Time travel is triggered with the (quaternary) warp operator:</p>
+<pre><code> .  v  .
+dx  @ dy
+ . dt  .</code></pre>
+<p>This rolls back the history of the board by <code>dt</code> time steps, writes value <code>v</code> into the cell with coordinates <code>(-dx, -dy)</code> relative to the <code>@</code> operator (note the negative signs!) on this past board, which means that the time coordinate of the target board is unchanged but the content is mutated. Then simulation then restarts from the modified point onward.</p>
+<p>The minimal value of <code>dt</code> is <code>1</code>, which means stepping back one time step.</p>
+<pre><code>2 &gt; . .        . &gt; 2 .        2 &gt; . .
+. 2 @ 0   ~&gt;   . 2 @ 0   ~&gt;   2 2 @ 0
+. . 1 .        . . 1 .        . . 1 .</code></pre>
+<h3 id="time-travel-principles">Time travel principles</h3>
+<ol type="1">
+<li><p>Time is discrete and starts with <code>t=1</code> with the initial board.</p></li>
+<li><p>Each tick, time <code>t</code> increases by 1, and the board is changed according to the action of all its operators.</p></li>
+<li><p>The time warp operator rolls back time to any point in the past, up to and including <code>t=1</code> (the initial board).</p></li>
+<li><p>Time warping with <code>dt=0</code> is not allowed.</p></li>
+<li><p>After time warping to time <code>t</code>, the history before <code>t</code> is preserved but the future after <code>t</code> is discarded and its new version will be recomputed again.</p></li>
+<li><p>If two different warp operators attempt to write different values into the same destination cell at the same destination time, the simulation will crash.</p>
+<p>Writing the same value into the same cell is fine, as is writing different values into different cells.</p></li>
+<li><p>If two different warp operators attempt to travel to different times in the same tick, the simulation will crash.</p></li>
+<li><p>As soon as the submit operator is overwritten, the entire simulation stops.</p>
+<p>A board can contain multiple submit operators but if more than one are overwritten at the same time, the simulation will crash.</p></li>
+<li><p>If no operator on a board can reduce, the simulation terminates without submitting an answer.</p></li>
+</ol>
+<h1 id="example">Example</h1>
+<p>As an example, the following program computes <code>A * B</code> by time-looping <code>B</code> times, adding <code>A</code> every time (for the sake of the example; of course there is also is the <code>*</code> operator):</p>
+<pre><code>. . . . 0 . . . .
+. B &gt; . = . . . .
+. v 1 . . &gt; . . .
+. . - . . . + S .
+. . . . . ^ . . .
+. . v . . 0 &gt; . .
+. . . . . . A + .
+. 1 @ 6 . . &lt; . .
+. . 3 . 0 @ 3 . .
+. . . . . 3 . . .</code></pre>
+<p>When running this for <code>A = 3</code> and <code>B = 4</code>, this program has a spacetime volume of <code>320</code> (<code>vx * vy * vt = 8 * 10 * 4 = 320</code>). You can see the execution trace at [3d-example].</p>
+<h1 id="problems">Problems</h1>
+<p>The following problems are available:</p>
+<ul>
+<li>[3d1] Best score: 7000.</li>
+<li>[3d2] Best score: 5328.</li>
+<li>[3d3] Best score: 5614.</li>
+<li>[3d4] Best score: 25344.</li>
+<li>[3d5]</li>
+<li>[3d6]</li>
+<li>[3d7]</li>
+<li>[3d8]</li>
+<li>[3d9]</li>
+<li>[3d10]</li>
+<li>[3d11]</li>
+<li>[3d12]</li>
+</ul>
+<p>To submit a solution, send an ICFP expression that evaluates to <code>solve 3dX</code> followed by your 3D program, e.g.:</p>
+<pre><code>solve 3dX
+. . . . .
+. . . . .
+. . . . .</code></pre>
+<p>Your score is the sum of the spacetime complexity of your submission over the secret test cases, so a lower score is better.</p>
+<h1 id="testing">Testing</h1>
+<p>You can test your 3D programs by sending:</p>
+<pre><code>test 3d A B
+. . . . .
+. . . . .
+. . . . .</code></pre>
+<p>where <code>A</code> and <code>B</code> must be integer values which are given to the corresponding inputs. Unlike the <code>solve</code> command, the <code>test</code> command has a tick limit of <code>4</code>.</p>
+</div>

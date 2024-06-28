@@ -1,12 +1,9 @@
 
 #include "icfp.h"
 
-#include <iostream>
-#include <cinttypes>
-
+#include <unordered_set>
 #include <optional>
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <utility>
 #include <variant>
@@ -15,7 +12,18 @@
 #include <cassert>
 #include <string_view>
 
+#include "bignum/big.h"
+#include "bignum/big-overloads.h"
+
 namespace icfp {
+
+// (size includes terminating \0, unused)
+static constexpr const char DECODE_STRING[RADIX + 1] =
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
+
+static constexpr const char ENCODE_STRING[128] =
+  "..........~.....................}_`abcdefghijklmUVWXYZ[\\]"
+  "^nopqrst;<=>?@ABCDEFGHIJKLMNOPQRSTuvwxyz!\"#$%&'()*+,-./0123456789:.{.|";
 
 std::string ValueString(const Value &v) {
 
@@ -23,9 +31,7 @@ std::string ValueString(const Value &v) {
     return b->b ? "true" : "false";
 
   } else if (const Int *i = std::get_if<Int>(&v)) {
-    char buf[100];
-    sprintf(buf, "%" PRId64, i->i);
-    return buf;
+    return IntToString(i->i);
 
   } else if (const String *s = std::get_if<String>(&v)) {
     return "\"" + s->s + "\"";
@@ -41,10 +47,10 @@ std::string ValueString(const Value &v) {
 
 // Also used by lambda and variables.
 static std::optional<int_type> ConvertInt(std::string_view body) {
-  int64_t val = 0;
+  int_type val{0};
   for (char c : body) {
-    assert(val < std::numeric_limits<int64_t>::max() / 94);
-    val *= 94;
+    // assert(val < std::numeric_limits<int64_t>::max() / 94);
+    val = val * 94;
 
     static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
     if (c >= '!' && c <= '~') {
@@ -64,13 +70,71 @@ static int_type ParseInt(std::string_view body) {
     return i.value();
   } else {
     assert(!"Unparseable integer literal (or lambda/var arg)");
-    return 0;
+    return int_type{0};
   }
 }
 
+static void PopulateFreeVars(const Exp *e, std::unordered_set<int_type> *fvs) {
+  for (;;) {
+    if (const Bool *b = std::get_if<Bool>(e)) {
+      return;
+
+    } else if (const Int *i = std::get_if<Int>(e)) {
+      return;
+
+    } else if (const String *s = std::get_if<String>(e)) {
+      return;
+
+    } else if (const Unop *u = std::get_if<Unop>(e)) {
+      e = u->arg.get();
+
+    } else if (const Binop *b = std::get_if<Binop>(e)) {
+      PopulateFreeVars(b->arg1.get(), fvs);
+      e = b->arg2.get();
+
+    } else if (const If *i = std::get_if<If>(e)) {
+      PopulateFreeVars(i->cond.get(), fvs);
+      PopulateFreeVars(i->t.get(), fvs);
+      e = i->f.get();
+
+    } else if (const Lambda *lam = std::get_if<Lambda>(e)) {
+
+      std::unordered_set<int_type> bfvs;
+      PopulateFreeVars(lam->body.get(), &bfvs);
+      // But the lambda's argument is bound.
+      bfvs.erase(lam->v);
+
+      // And then union them.
+      for (auto &i : bfvs) fvs->insert(i);
+      return;
+
+    } else if (const Var *var = std::get_if<Var>(e)) {
+
+      fvs->insert(var->v);
+      return;
+    } else {
+      assert(!"illegal exp");
+    }
+  }
+}
+
+std::unordered_set<int_type> Evaluation::FreeVars(const Exp *e) {
+  std::unordered_set<int_type> ret;
+  PopulateFreeVars(e, &ret);
+  return ret;
+}
+
 // [e1/v]e2. Avoids capture (unless simple=true).
-std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, int_type v,
+std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, const int_type &v,
                                        std::shared_ptr<Exp> e2, bool simple) {
+  return SubstInternal(FreeVars(e1.get()), e1, v, e2, simple);
+}
+
+std::shared_ptr<Exp> Evaluation::SubstInternal(
+    const std::unordered_set<int_type> &fvs,
+    std::shared_ptr<Exp> e1, const int_type &v,
+    std::shared_ptr<Exp> e2, bool simple) {
+
   if (const Bool *b = std::get_if<Bool>(e2.get())) {
     return e2;
 
@@ -107,15 +171,14 @@ std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, int_type v,
     if (lam->v == v)
       return e2;
 
-    if (simple) {
+    if (simple || !fvs.contains(lam->v)) {
       return std::make_shared<Exp>(Lambda{
           .v = lam->v,
           .body = Subst(e1, v, lam->body),
       });
     } else {
       // Rename target lambda so that we can't have capture.
-      // PERF only do this if we would incur capture?
-      int_type new_var = next_var;
+      int_type new_var = int_type{next_var};
       next_var--;
       std::shared_ptr<Exp> new_var_exp =
           std::make_shared<Exp>(Var{.v = new_var});
@@ -366,10 +429,10 @@ Value Evaluation::Eval(const Exp *exp) {
         }
       }
 
+      /*
       printf("NO:%s\n%s\n", ValueString(arg1).c_str(),
              ValueString(arg2).c_str());
-
-
+      */
 
       return Value(
           Error{.msg = "binop = needs two args of the same base type"});
@@ -414,14 +477,16 @@ Value Evaluation::Eval(const Exp *exp) {
       return EvalToInt(
           b->arg1.get(), [&](Int arg1) {
             return EvalToString(b->arg2.get(), [&](String arg2) {
-                if (arg1.i < 0) {
+                const int64_t len = GetInt64(arg1.i);
+
+                if (len < 0) {
                   return Value(Error{.msg = "negative length in T"});
                 } else {
                   // Corner case: length is bigger than string length
-                  if (arg1.i > (int64_t)arg2.s.size()) {
+                  if (len > (int64_t)arg2.s.size()) {
                     return Value(Error{.msg = "length exceeds string size in T"});
                   } else {
-                    return Value(String{.s = arg2.s.substr(0, arg1.i)});
+                    return Value(String{.s = arg2.s.substr(0, len)});
                   }
                 }
               });
@@ -434,14 +499,15 @@ Value Evaluation::Eval(const Exp *exp) {
       return EvalToInt(
           b->arg1.get(), [&](Int arg1) {
             return EvalToString(b->arg2.get(), [&](String arg2) {
-                if (arg1.i < 0) {
+                const int64_t len = GetInt64(arg1.i);
+                if (len < 0) {
                   return Value(Error{.msg = "negative length in D"});
                 } else {
                   // Corner case: length is bigger than string length
-                  if (arg1.i > (int64_t)arg2.s.size()) {
+                  if (len > (int64_t)arg2.s.size()) {
                     return Value(Error{.msg = "length exceeds string size in D"});
                   } else {
-                    return Value(String{.s = arg2.s.substr(arg1.i, std::string::npos)});
+                    return Value(String{.s = arg2.s.substr(len, std::string::npos)});
                   }
                 }
               });
@@ -566,5 +632,24 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
     assert(!"invalid indicator");
   }
 }
+
+std::string EncodeString(std::string_view s) {
+  std::string enc;
+  enc.reserve(s.size());
+  for (uint8_t c : s) {
+    assert(c <= 128 && "character out of range in EncodeString");
+    enc.push_back(ENCODE_STRING[c]);
+  }
+  return enc;
+}
+
+uint8_t DecodeChar(uint8_t digit) {
+  assert(digit < RADIX);
+  return DECODE_STRING[digit];
+}
+
+// Secret ops?
+// ~: might be alias for B$, or maybe it is memoizing?
+//
 
 }  // namespace icfp

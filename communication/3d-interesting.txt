@@ -1,0 +1,39 @@
+interesting-3d
+==============
+
+I sent the encoded string literal
+
+```
+test 3d 1 1
+> >
+```
+
+per the 3d instructions to see what happens when operators move operators
+and I got the raw response
+
+```
+B$ B$ L" B$ L# B$ v" B$ v# v# L# B$ v" B$ v# v# L" L# ? B= v# I! Su B. B$ v" B/ v# I? BT I" BD B% v# I? Su4qVj}89w~rWXYZ=2!3(%$nN)#+F-? I%XKju%R:Qg*;*R,XJ7X-2xbR{53h#DuOu$a$Hmqv|iJ[)Lx^f3N;cXX#'iVMl2RyK2I/Bu"mEvpPri/T6-GdUPhbD5]a;Nn;KL
+```
+
+which evaluates to the string
+
+```
+[t=1, x=1, y=1]
+> >
+
+[t=2, x=2, y=1]
+> >
+
+[t=3, x=3, y=1]
+> >
+
+[t=4, x=4, y=1]
+> >
+
+[t=5, x=5, y=1]
+> >
+
+Crashed: TickLimitExceeded
+```
+
+So we can see that `> >` is a "glider" that travels to the right.
