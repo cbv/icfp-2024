@@ -66,7 +66,7 @@ fn main() -> Result<()> {
     let gd = git_dir.trim();
 
     let puzzpath = Path::new(gd)
-        .join("puzzles/lambdaman/lambdaman2.txt")
+        .join("puzzles/lambdaman/lambdaman4.txt")
         .into_os_string()
         .into_string()
         .unwrap();
