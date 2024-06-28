@@ -72,7 +72,7 @@ fn main() -> Result<()> {
         .into_os_string()
         .into_string()
         .unwrap();
-    println!("{}", puzzpath);
+    //println!("{}", puzzpath);
 
     let message: String = fs::read_to_string(puzzpath)?;
 //    println!("{}", message);
