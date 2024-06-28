@@ -191,10 +191,12 @@ struct Evaluation {
 
   template<class F>
   Value EvalToInt(const Exp *exp,
-                      const F &f) {
+                  const F &f) {
     Value v = Eval(exp);
     if (const Int *i = std::get_if<Int>(&v)) {
       return f(std::move(*i));
+    } else if (const Error *e = std::get_if<Error>(&v)) {
+      return v;
     }
     return Value(Error{.msg = "Expected int"});
   }
@@ -203,8 +205,10 @@ struct Evaluation {
   Value EvalToBool(const Exp *exp,
                    const F &f) {
     Value v = Eval(exp);
-     if (const Bool *b = std::get_if<Bool>(&v)) {
+    if (const Bool *b = std::get_if<Bool>(&v)) {
       return f(std::move(*b));
+    } else if (const Error *e = std::get_if<Error>(&v)) {
+      return v;
     }
     return Value(Error{.msg = "Expected bool"});
   }
@@ -276,6 +280,8 @@ struct Evaluation {
           std::shared_ptr<Exp> e = Subst(b->arg2, lam->v, lam->body);
           return Eval(e.get());
 
+        } else if (const Error *e = std::get_if<Error>(&arg1)) {
+          return arg1;
         } else {
           return Value(Error{.msg = "Expected lambda"});
         }
@@ -366,7 +372,34 @@ struct Evaluation {
 
         // Ugh, needs to be polymorphic.
         // TODO: Corner case: What if we compare values of different type?
-        assert(!"unimplemented");
+        Value arg1 = Eval(b->arg1.get());
+        Value arg2 = Eval(b->arg2.get());
+
+        {
+          const Int *i1 = std::get_if<Int>(&arg1);
+          const Int *i2 = std::get_if<Int>(&arg2);
+          if (i1 != nullptr && i2 != nullptr) {
+            return Value(Bool{.b = i1->i == i2->i});
+          }
+        }
+
+        {
+          const Bool *b1 = std::get_if<Bool>(&arg1);
+          const Bool *b2 = std::get_if<Bool>(&arg2);
+          if (b1 != nullptr && b2 != nullptr) {
+            return Value(Bool{.b = b1->b == b2->b});
+          }
+        }
+
+        {
+          const String *s1 = std::get_if<String>(&arg1);
+          const String *s2 = std::get_if<String>(&arg2);
+          if (s1 != nullptr && s2 != nullptr) {
+            return Value(Bool{.b = s1->s == s2->s});
+          }
+        }
+
+        return Value(Error{.msg = "binop = needs two args of the same base type"});
       }
 
       case '|': {
@@ -595,6 +628,8 @@ static std::string ValueString(const Value &v) {
 
   } else if (const Lambda *l = std::get_if<Lambda>(&v)) {
     return "(lambda)";
+  } else if (const Error *err = std::get_if<Error>(&v)) {
+    return "(ERROR:" + err->msg + ")";
   }
 
   return "(!!invalid value!!)";
