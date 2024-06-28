@@ -72,7 +72,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "icfp-2024"
+name = "icfp"
 version = "0.1.0"
 dependencies = [
  "anyhow",

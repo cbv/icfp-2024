@@ -1,5 +1,5 @@
 [package]
-name = "icfp-2024"
+name = "icfp"
 version = "0.1.0"
 edition = "2021"
 
@@ -15,6 +15,11 @@ name = "communicate"
 path = "rust/communicate.rs"
 
 [[bin]]
+
+name = "decode"
+path = "rust/decode.rs"
+
+[lib]
 
 name = "icfp"
 path = "rust/icfp.rs"
