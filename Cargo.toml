@@ -1,0 +1,15 @@
+[package]
+name = "icfp-2024"
+version = "0.1.0"
+edition = "2021"
+
+
+[[bin]]
+
+name = "test-api-token"
+path = "rust/test-api-token.rs"
+
+[dependencies]
+
+ureq = "2.9.7"
+anyhow = "1.0"
