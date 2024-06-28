@@ -14,6 +14,10 @@ path = "rust/test-api-token.rs"
 name = "communicate"
 path = "rust/communicate.rs"
 
+[[bin]]
+
+name = "icfp"
+path = "rust/icfp.rs"
 
 [dependencies]
 
