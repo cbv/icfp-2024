@@ -338,7 +338,9 @@ Value Evaluation::Eval(const Exp *exp) {
       // Ugh, needs to be polymorphic.
       // TODO: Corner case: What if we compare values of different type?
       Value arg1 = Eval(b->arg1.get());
+      if (const Error *e1 = std::get_if<Error>(&arg1)) return *e1;
       Value arg2 = Eval(b->arg2.get());
+      if (const Error *e2 = std::get_if<Error>(&arg2)) return *e2;
 
       {
         const Int *i1 = std::get_if<Int>(&arg1);
@@ -366,6 +368,8 @@ Value Evaluation::Eval(const Exp *exp) {
 
       printf("NO:%s\n%s\n", ValueString(arg1).c_str(),
              ValueString(arg2).c_str());
+
+
 
       return Value(
           Error{.msg = "binop = needs two args of the same base type"});
@@ -445,7 +449,7 @@ Value Evaluation::Eval(const Exp *exp) {
     }
 
     default:
-      return Value(Error{.msg = "Invalid unop"});
+      return Value(Error{.msg = "Invalid binop"});
     }
 
   } else if (const If *i = std::get_if<If>(exp)) {
