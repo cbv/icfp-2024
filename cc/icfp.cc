@@ -191,10 +191,12 @@ struct Evaluation {
 
   template<class F>
   Value EvalToInt(const Exp *exp,
-                      const F &f) {
+                  const F &f) {
     Value v = Eval(exp);
     if (const Int *i = std::get_if<Int>(&v)) {
       return f(std::move(*i));
+    } else if (const Error *e = std::get_if<Error>(&v)) {
+      return v;
     }
     return Value(Error{.msg = "Expected int"});
   }
@@ -203,8 +205,10 @@ struct Evaluation {
   Value EvalToBool(const Exp *exp,
                    const F &f) {
     Value v = Eval(exp);
-     if (const Bool *b = std::get_if<Bool>(&v)) {
+    if (const Bool *b = std::get_if<Bool>(&v)) {
       return f(std::move(*b));
+    } else if (const Error *e = std::get_if<Error>(&v)) {
+      return v;
     }
     return Value(Error{.msg = "Expected bool"});
   }
@@ -276,6 +280,8 @@ struct Evaluation {
           std::shared_ptr<Exp> e = Subst(b->arg2, lam->v, lam->body);
           return Eval(e.get());
 
+        } else if (const Error *e = std::get_if<Error>(&arg1)) {
+          return arg1;
         } else {
           return Value(Error{.msg = "Expected lambda"});
         }
@@ -366,7 +372,34 @@ struct Evaluation {
 
         // Ugh, needs to be polymorphic.
         // TODO: Corner case: What if we compare values of different type?
-        assert(!"unimplemented");
+        Value arg1 = Eval(b->arg1.get());
+        Value arg2 = Eval(b->arg2.get());
+
+        {
+          const Int *i1 = std::get_if<Int>(&arg1);
+          const Int *i2 = std::get_if<Int>(&arg2);
+          if (i1 != nullptr && i2 != nullptr) {
+            return Value(Bool{.b = i1->i == i2->i});
+          }
+        }
+
+        {
+          const Bool *b1 = std::get_if<Bool>(&arg1);
+          const Bool *b2 = std::get_if<Bool>(&arg2);
+          if (b1 != nullptr && b2 != nullptr) {
+            return Value(Bool{.b = b1->b == b2->b});
+          }
+        }
+
+        {
+          const String *s1 = std::get_if<String>(&arg1);
+          const String *s2 = std::get_if<String>(&arg2);
+          if (s1 != nullptr && s2 != nullptr) {
+            return Value(Bool{.b = s1->s == s2->s});
+          }
+        }
+
+        return Value(Error{.msg = "binop = needs two args of the same base type"});
       }
 
       case '|': {
@@ -443,7 +476,7 @@ struct Evaluation {
 
     } else if (const If *i = std::get_if<If>(exp)) {
 
-      EvalToBool(i->cond.get(), [&](Bool cond) {
+      return EvalToBool(i->cond.get(), [&](Bool cond) {
           if (cond.b) {
             return Eval(i->t.get());
           } else {
@@ -460,12 +493,32 @@ struct Evaluation {
       return Value(Error{.msg = "unbound variable"});
     }
 
+    assert(exp != nullptr);
+
     assert(!"bug: invalid exp variant in eval");
     return Value(Error{.msg = "invalid exp variant"});
   }
 
 };
 
+
+// Also used by lambda and variables.
+static int_type ParseInt(std::string_view body) {
+  int64_t val = 0;
+  for (char c : body) {
+    assert(val < std::numeric_limits<int64_t>::max() / 94);
+    val *= 94;
+
+    static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
+    if (c >= '!' && c <= '~') {
+      val += int64_t(c - '!');
+    } else {
+      assert(!"Uninterpretable character in integer.");
+    }
+  }
+
+  return val;
+}
 
 // Simple recursive-descent parser. Consumes an expression from the beginning
 // of the string view.
@@ -501,19 +554,7 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   case 'I': {
     assert(!body.empty() && "expected non-empty body for integer");
 
-    int64_t val = 0;
-    for (char c : body) {
-      assert(val < std::numeric_limits< int64_t >::max() / 94);
-      val *= 94;
-
-      static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
-      if (c >= '!' && c <= '~') {
-        val += int64_t(c - '!');
-      } else {
-        assert(!"Uninterpretable character in integer.");
-      }
-    }
-
+    int_type val = ParseInt(body);
     return std::make_shared<Exp>(Int{.i = val});
   }
 
@@ -529,20 +570,43 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
     return std::make_shared<Exp>(String{.s = std::move(translated)});
   }
 
-  case 'U':
-    assert(!"unimplemented");
+  case 'U': {
+    assert(body.size() == 1 && "unop body should be one char");
+    Unop unop;
+    unop.op = body[0];
+    unop.arg = ParseLeadingExp(s);
+    return std::make_shared<Exp>(std::move(unop));
+  }
 
-  case 'B':
-    assert(!"unimplemented");
+  case 'B': {
+    assert(body.size() == 1 && "binop body should be one char");
+    Binop binop;
+    binop.op = body[0];
+    binop.arg1 = ParseLeadingExp(s);
+    binop.arg2 = ParseLeadingExp(s);
+    return std::make_shared<Exp>(std::move(binop));
+  }
 
-  case '?':
-    assert(!"unimplemented");
+  case '?': {
+    assert(body.empty() && "if should have empty body");
+    If iff;
+    iff.cond = ParseLeadingExp(s);
+    iff.t = ParseLeadingExp(s);
+    iff.f = ParseLeadingExp(s);
+    return std::make_shared<Exp>(std::move(iff));
+  }
 
-  case 'L':
-    assert(!"unimplemented");
+  case 'L': {
+    Lambda lam;
+    lam.v = ParseInt(body);
+    lam.body = ParseLeadingExp(s);
+    return std::make_shared<Exp>(std::move(lam));
+  }
 
-  case 'v':
-    assert(!"unimplemented");
+  case 'v': {
+    int_type i = ParseInt(body);
+    return std::make_shared<Exp>(Var{.v = i});
+  }
 
   default:
     assert(!"invalid indicator");
@@ -564,6 +628,8 @@ static std::string ValueString(const Value &v) {
 
   } else if (const Lambda *l = std::get_if<Lambda>(&v)) {
     return "(lambda)";
+  } else if (const Error *err = std::get_if<Error>(&v)) {
+    return "(ERROR:" + err->msg + ")";
   }
 
   return "(!!invalid value!!)";
