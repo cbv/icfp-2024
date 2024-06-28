@@ -31,6 +31,21 @@ fn test_base_94 () {
     assert_eq!(parse_base94(b"/6").unwrap(), 1337)
 }
 
+const CHARS : &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
+
+fn parse_str (b : &[u8]) -> anyhow::Result<String> {
+    let mut result = String::new();
+    for idx in 0 .. b.len() {
+        result.push(CHARS[(b[idx] - 33) as usize] as char);
+    }
+    Ok(result)
+}
+
+#[test]
+fn test_parse_str() {
+    assert_eq!(parse_str(b"B%,,/}Q/2,$_").unwrap(), "Hello World!".to_string());
+}
+
 pub fn parse_token (s : &[u8]) -> anyhow::Result<Tok> {
     if s.len() < 1 {
         return Err(anyhow!("empty token!"))
@@ -39,6 +54,7 @@ pub fn parse_token (s : &[u8]) -> anyhow::Result<Tok> {
         b'T' => Ok(Tok::Bool(true)),
         b'F' => Ok(Tok::Bool(false)),
         b'I' => Ok(Tok::Int(parse_base94(&s[1..])?)),
+        b'S' => Ok(Tok::Str(parse_str(&s[1..])?)),
         c => Err(anyhow!("unrecognized token: {c}")),
     }
 }
