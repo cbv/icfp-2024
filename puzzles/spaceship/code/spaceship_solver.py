@@ -1,3 +1,17 @@
+import sys
+
+def main(file):
+    f = open(file, 'r')
+    coords_str = f.read()
+    coords_array = coords_str.split()
+    target_squares = make_squares(coords_array)
+    return calculate_inputs(target_squares)
+
+def make_squares(coordinates):
+    squares = []
+    for i in range(int(len(coordinates)/2)):
+        squares.append((int(coordinates[2*i]), int(coordinates[2*i + 1])))
+    return(squares)
 
 def spaceship_tracker(movement):
     results = []
@@ -23,7 +37,7 @@ def spaceship_tracker(movement):
 # start_movement = '236659'
 # spaceship_tracker(start_movement)
 
-def calculate_inputs(squares):
+def calculate_inputs(target_squares):
     result = ""
     x = 0
     y = 0
@@ -56,7 +70,6 @@ def calculate_inputs(squares):
         y = square[1]
     return(result)
 
-#target_squares = [(1, -1), (1, -3), (2, -5), (2, -8), (3, -10)]
-#spaceship_inputs = calculate_inputs(target_squares)
-#squares_visited = spaceship_tracker(spaceship_inputs)
-#all([square in squares_visited for square in target_squares])
+if __name__ == "__main__":
+    file_name = sys.argv[1]
+    sys.exit(main(file_name))
