@@ -1,5 +1,6 @@
+#include "icfp.hpp"
+
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <cstdint>
 #include <limits>
@@ -8,15 +9,7 @@
 #include <cassert>
 
 
-//index this with char - 33:
-//                                  0         1         2         3         4         5         6         7         8         9
-//                                  0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-[[maybe_unused]] static const char *DECODE_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
-
-//index this with char:
-[[maybe_unused]] static const char ENCODE_STRING[128] = "..........~.....................}_`abcdefghijklmUVWXYZ[\\]^nopqrst;<=>?@ABCDEFGHIJKLMNOPQRSTuvwxyz!\"#$%&'()*+,-./0123456789:.{.|";
-
-int main(int argc, char **argv) {
+int main(int, char **) {
 
 	/*
 	//helpful encoding-table-maker:
@@ -32,19 +25,6 @@ int main(int argc, char **argv) {
 
 	std::cout << ENCODE_STRING << std::endl;
 	*/
-
-	if (argc != 2) {
-		std::cerr <<
-		"Usage:\n"
-		"    pretty <program.icfp>\n"
-		"Parses and pretty-prints an icfp expression."
-		<< std::endl;
-		return 1;
-	}
-
-	std::string infilepath = argv[1];
-
-	std::ifstream infile(infilepath, std::ios::binary);
 
 	std::vector< size_t > indents; //count is remaining tokens to print at this indentation level
 
@@ -64,7 +44,7 @@ int main(int argc, char **argv) {
 	};
 
 	std::string tok;
-	while (infile >> tok) {
+	while (std::cin >> tok) {
 		assert(tok.size() >= 1);
 
 		if (tok[0] == 'T') {
@@ -92,7 +72,9 @@ int main(int argc, char **argv) {
 				print(std::to_string(val));
 			}
 		} else if (tok[0] == 'S') {
-			std::string translated;
+			std::string translated = string_from_token(tok);
+			/*
+			//more graceful error handling that string_from_token:
 			for (char c : tok.substr(1)) {
 				if (c >= 33 && c <= 126) {
 					translated += DECODE_STRING[c - 33];
@@ -100,6 +82,7 @@ int main(int argc, char **argv) {
 					translated += "[" + std::to_string(uint32_t(c)) + "]";
 				}
 			}
+			*/
 			print('"' + translated + '"');
 		} else if (tok[0] == 'U') {
 			if (tok.size() != 2) {
