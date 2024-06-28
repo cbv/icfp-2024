@@ -3,13 +3,16 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <variant>
 #include <array>
 #include <memory>
 #include <cstdio>
+#include <optional>
+#include <cassert>
 
 // TODO: Use bignum, but I want something super portable to start
-using int_type = uint64_t;
+using int_type = int64_t;
 
 static constexpr int RADIX = 94;
 
@@ -123,10 +126,91 @@ struct Var {
   int_type v;
 };
 
+// static std::optional<Value> GetValue(const Exp &exp);
+
 struct Evaluation {
+  int64_t betas = 0;
+
+  template<class F>
+  Value EvalToInteger(const Exp *exp,
+                      const F &f) {
+    Value v = Eval(exp);
+    if (const Int *i = std::get_if<Int>(&v)) {
+      return f(std::move(*i));
+    }
+    return Value(Error{.msg = "Expected int"});
+  }
+
+  template<class F>
+  Value EvalToBool(const Exp *exp,
+                   const F &f) {
+    Value v = Eval(exp);
+    if (const Bool *b = std::get_if<Bool>(&v)) {
+      return f(std::move(*b));
+    }
+    return Value(Error{.msg = "Expected bool"});
+  }
+
+  // Evaluate to a value.
+  Value Eval(const Exp *exp) {
+    if (const Bool *b = std::get_if<Bool>(exp)) {
+      return Value(*b);
+
+    } else if (const Int *i = std::get_if<Int>(exp)) {
+      return Value(*i);
+
+    } else if (const String *s = std::get_if<String>(exp)) {
+      return Value(*s);
+
+    } else if (const Unop *u = std::get_if<Unop>(exp)) {
+
+      switch (u->op) {
+      case '-': {
+        // - Integer negation  U- I$ -> -3
+        return EvalToInteger(u->arg.get(), [&](Int arg) {
+            return Value(Int{.i = -arg.i});
+          });
+      }
+      case '!': {
+        // ! Boolean not U! T -> false
+        return EvalToBool(u->arg.get(), [&](Bool arg) {
+            return Value(Bool{.b = !arg.b});
+          });
+      }
+      case '#': {
+        // # string-to-int: interpret a string as a base-94 number
+        // U# S4%34 -> 15818151
+        assert(!"Unimplemented");
+      }
+      case '$': {
+        // $ int-to-string: inverse of the above U$ I4%34 -> test
+        assert(!"Unimplemented");
+      }
+      default:
+        return Value(Error{.msg = "Invalid unop"});
+      }
+
+    } else if (const Binop *b = std::get_if<Binop>(exp)) {
 
 
-  int betas = 0;
+
+    } else if (const If *i = std::get_if<If>(exp)) {
+
+      EvalToBool(i->cond.get(), [&](Bool cond) {
+          if (cond.b) {
+            return Eval(i->t.get());
+          } else {
+            return Eval(i->f.get());
+          }
+        });
+
+    } else if (const Lambda *l = std::get_if<Lambda>(exp)) {
+
+    } else if (const Var *v = std::get_if<Var>(exp)) {
+
+    }
+  }
+
 };
 
 
