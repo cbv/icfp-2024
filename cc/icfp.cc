@@ -567,4 +567,19 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   }
 }
 
+std::string EncodeString(std::string_view s) {
+  std::string enc;
+  enc.reserve(s.size());
+  for (uint8_t c : s) {
+    assert(c <= 128 && "character out of range in EncodeString");
+    enc.push_back(ENCODE_STRING[c]);
+  }
+  return enc;
+}
+
+
+// Secret ops?
+// ~: might be alias for B$, or maybe it is memoizing?
+//
+
 }  // namespace icfp

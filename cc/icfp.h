@@ -1,18 +1,11 @@
 
 // #include "bignum/big.h"
 
-#include <iostream>
-#include <cinttypes>
-
-#include <optional>
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <utility>
 #include <variant>
 #include <memory>
-#include <cstdio>
-#include <cassert>
 #include <string_view>
 
 namespace icfp {
@@ -29,6 +22,8 @@ static constexpr const char DECODE_STRING[RADIX + 1] =
 static constexpr const char ENCODE_STRING[128] =
   "..........~.....................}_`abcdefghijklmUVWXYZ[\\]"
   "^nopqrst;<=>?@ABCDEFGHIJKLMNOPQRSTuvwxyz!\"#$%&'()*+,-./0123456789:.{.|";
+
+std::string EncodeString(std::string_view s);
 
 // Defined as a variant below.
 struct Bool;
