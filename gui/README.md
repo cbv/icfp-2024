@@ -1,8 +1,7 @@
-Frontend Template
-=================
+GUI
+===
 
-This repository is meant as a convenient starting point that bakes in
-a few of my favorite libraries for frontend development.
+Status: Doesn't do anything useful yet
 
 Building
 --------
