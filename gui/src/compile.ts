@@ -33,7 +33,11 @@ function letbind(bindings: Binding[], body: Expr): Expr {
 
 export function lambdaman6() {
   const repeat = rec(R => lam(n => cond(equ(n, litnum(1)), litstr("R"), concat(litstr("R"), appSpine(R, [sub(n, litnum(1))])))));
-  return expToIcfp(concat(litstr("solve lambdaman6 "), appSpine(repeat, [litnum(199)])))
+  let quad = vuse("q");
+  return expToIcfp(concat(litstr("solve lambdaman6 "), letbind([{
+    v: 'q', body:
+      lam(a => concat(concat(a, a), concat(a, a)))
+  }], app(quad, app(quad, app(quad, litstr("RRRR")))))));
 }
 
 export function lambdaman8() {
