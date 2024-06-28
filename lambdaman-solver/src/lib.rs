@@ -58,6 +58,47 @@ impl State {
         }
         Self { cells, man }
     }
+
+    pub fn width(&self) -> usize {
+        if self.cells.is_empty() {
+            0
+        } else {
+            self.cells[0].len()
+        }
+    }
+
+    pub fn height(&self) -> usize {
+        self.cells.len()
+    }
+
+    pub fn move_is_legal(&self, mv: Move) -> bool {
+        match mv {
+            Move::Left => self.man.col > 0,
+            Move::Right => self.man.col + 1 < self.width(),
+            Move::Up => self.man.row > 0,
+            Move::Down => self.man.row + 1 < self.height(),
+        }
+    }
+
+    pub fn coords_after_move(&self, mv: Move) -> Option<Coords> {
+        if ! self.move_is_legal(mv) {
+            None
+        } else {
+            match mv {
+                Move::Left => Some (Coords { col: self.man.col - 1, ..self.man}),
+                Move::Right => Some (Coords { col: self.man.col + 1, ..self.man}),
+                Move::Up => Some (Coords { row: self.man.row - 1, ..self.man}),
+                Move::Down => Some (Coords { row: self.man.row + 1, ..self.man}),
+            }
+        }
+    }
+
+    pub fn do_move(&mut self, mv: Move) {
+        if self.move_is_legal(mv) {
+
+        }
+
+    }
 }
 
 
