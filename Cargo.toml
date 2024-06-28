@@ -9,6 +9,12 @@ edition = "2021"
 name = "test-api-token"
 path = "rust/test-api-token.rs"
 
+[[bin]]
+
+name = "communicate"
+path = "rust/communicate.rs"
+
+
 [dependencies]
 
 ureq = "2.9.7"
