@@ -64,12 +64,8 @@ export function lambdaman8() {
         // Otherwise do some moves and recurse
         concat(
           concat(
-            concat(
-              appSpine(repeat, [litstr("D"), M]),
-              appSpine(repeat, [litstr("L"), M])),
-            concat(
-              appSpine(repeat, [litstr("U"), M]),
-              appSpine(repeat, [litstr("R"), M])),
+            appSpine(repeat, [litstr("DL"), M]),
+            appSpine(repeat, [litstr("UR"), M])
           ),
           app(S, add(n, litnum(4)))
         ),
