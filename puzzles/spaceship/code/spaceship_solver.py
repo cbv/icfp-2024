@@ -1,4 +1,5 @@
 import sys
+import math
 
 coords_str = "0 1 0 1 -1 2 -1 4"
 
@@ -40,8 +41,32 @@ def spaceship_tracker(movement):
         results.append((x, y))
     return results
 
-# start_movement = '236659'
-# spaceship_tracker(start_movement)
+def get_opp_direction(direction):
+    if direction == "2":
+        return "8"
+    if direction == "4":
+        return "6"
+    if direction == "6":
+        return "4"
+    if direction == "8":
+        return "2"
+    raise ValueError("Invalid direction!")
+
+def get_fast_distance(distance, direction):
+    result = ""
+    accel_time = math.floor(math.sqrt(distance))
+    result = direction * accel_time
+    excess = distance - accel_time**2
+    opp_direction = get_opp_direction(direction)
+    speed = accel_time
+    while speed > 0:
+        if (excess >= speed):
+            result = result + "5"
+            excess = excess - speed
+        else:
+            result = result + opp_direction
+            speed -= 1
+    return(result)
 
 def calculate_inputs(target_squares):
     result = ""
@@ -52,29 +77,23 @@ def calculate_inputs(target_squares):
         y_offset = square[1] - y
         if (x_offset != 0):
             if (x_offset < 0):
-                result = result + "4"
-                if (abs(x_offset) > 1):
-                    result = result + "5" * (abs(x_offset) - 1)
-                result = result + "6"
-            if (x_offset > 0):
-                result = result + "6"
-                if (abs(x_offset) > 1):
-                    result = result + "5" * (abs(x_offset) - 1)
-                result = result + "4"
+                direction = "4"
+            else:
+                direction = "6"
+            distance = abs(x_offset)
+            result += get_fast_distance(distance, direction)
         if (y_offset != 0):
             if (y_offset < 0):
-                result = result + "2"
-                if (abs(y_offset) > 1):
-                    result = result + "5" * (abs(y_offset) - 1)
-                result = result + "8"
-            if (y_offset > 0):
-                result = result + "8"
-                if (abs(y_offset) > 1):
-                    result = result + "5" * (abs(y_offset) - 1)
-                result = result + "2"
+                direction = "2"
+            else:
+                direction = "8"
+            distance = abs(y_offset)
+            result += get_fast_distance(distance, direction)
         x = square[0]
         y = square[1]
     return(result)
+
+
 
 if __name__ == "__main__":
     file_name = sys.argv[1]
