@@ -71,7 +71,7 @@ pub fn parse_token (s : &[u8]) -> anyhow::Result<Tok> {
 
 pub fn parse_toks (s : &str) -> anyhow::Result<Vec<Tok>> {
     let mut result = vec![];
-    for s in s.split(' ') {
+    for s in s.split_whitespace() {
         result.push(parse_token(s.as_bytes())?);
     }
     Ok(result)
