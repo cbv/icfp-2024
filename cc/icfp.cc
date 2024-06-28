@@ -56,6 +56,7 @@ using Value = std::variant<
   Bool,
   Int,
   String,
+  Lambda,
   Error>;
 
 struct Error {
@@ -126,7 +127,61 @@ struct Var {
   int_type v;
 };
 
-// static std::optional<Value> GetValue(const Exp &exp);
+// [e1/v]e2
+// TODO: Avoid capture!
+static std::shared_ptr<Exp> Subst(std::shared_ptr<Exp> e1,
+                                  int_type v,
+                                  std::shared_ptr<Exp> e2) {
+  if (const Bool *b = std::get_if<Bool>(e2.get())) {
+    return e2;
+
+  } else if (const Int *i = std::get_if<Int>(e2.get())) {
+    return e2;
+
+  } else if (const String *s = std::get_if<String>(e2.get())) {
+    return e2;
+
+  } else if (const Unop *u = std::get_if<Unop>(e2.get())) {
+
+    return std::make_shared<Exp>(
+        Unop{.op = u->op, .arg = Subst(e1, v, u->arg)});
+
+  } else if (const Binop *b = std::get_if<Binop>(e2.get())) {
+
+    return std::make_shared<Exp>(Binop{
+        .op = b->op,
+        .arg1 = Subst(e1, v, b->arg1),
+        .arg2 = Subst(e1, v, b->arg2),
+    });
+
+  } else if (const If *i = std::get_if<If>(e2.get())) {
+
+    return std::make_shared<Exp>(If{
+        .cond = Subst(e1, v, i->cond),
+        .t = Subst(e1, v, i->t),
+        .f = Subst(e1, v, i->f),
+    });
+
+  } else if (const Lambda *l = std::get_if<Lambda>(e2.get())) {
+
+    // XXX this is wrong; need to rename first
+    return std::make_shared<Exp>(Lambda{
+        .v = l->v,
+        .body = Subst(e1, v, l->body),
+    });
+
+  } else if (const Var *var = std::get_if<Var>(e2.get())) {
+
+    if (var->v == v) {
+      return e1;
+    } else {
+      return e2;
+    }
+  }
+
+  assert(!"bug: invalid exp variant");
+  return nullptr;
+}
 
 struct Evaluation {
   int64_t betas = 0;
@@ -145,7 +200,7 @@ struct Evaluation {
   Value EvalToBool(const Exp *exp,
                    const F &f) {
     Value v = Eval(exp);
-    if (const Bool *b = std::get_if<Bool>(&v)) {
+     if (const Bool *b = std::get_if<Bool>(&v)) {
       return f(std::move(*b));
     }
     return Value(Error{.msg = "Expected bool"});
@@ -180,11 +235,11 @@ struct Evaluation {
       case '#': {
         // # string-to-int: interpret a string as a base-94 number
         // U# S4%34 -> 15818151
-        assert(!"Unimplemented");
+        assert(!"Unimplemented unop #");
       }
       case '$': {
         // $ int-to-string: inverse of the above U$ I4%34 -> test
-        assert(!"Unimplemented");
+        assert(!"Unimplemented unop $");
       }
       default:
         return Value(Error{.msg = "Invalid unop"});
@@ -192,7 +247,83 @@ struct Evaluation {
 
     } else if (const Binop *b = std::get_if<Binop>(exp)) {
 
+      switch (b->op) {
 
+      case '$': {
+        // $ Apply term x to y (see Lambda abstractions)
+
+        // This operator is lazy: We evaluate the LHS to get a lambda, but the RHS
+        // is just substituted without evaluating it first.
+
+        Value arg1 = Eval(b->arg1.get());
+        if (const Lambda *lam = std::get_if<Lambda>(&arg1)) {
+          betas++;
+          // TODO: Check limits
+          // TODO PERF: This can be tail recursive.
+          std::shared_ptr<Exp> e = Subst(b->arg2, lam->v, lam->body);
+          return Eval(e.get());
+
+        } else {
+          return Value(Error{.msg = "Expected lambda"});
+        }
+      }
+
+      case '+': {
+        // + Integer addition  B+ I# I$ -> 5
+        assert(!"unimplemented");
+      }
+      case '-': {
+        // - Integer subtraction B- I$ I# -> 1
+        assert(!"unimplemented");
+      }
+      case '*': {
+        // * Integer multiplication  B* I$ I# -> 6
+        assert(!"unimplemented");
+      }
+      case '/': {
+        // / Integer division (truncated towards zero) B/ U- I( I# -> -3
+        assert(!"unimplemented");
+      }
+      case '%': {
+        // % Integer modulo  B% U- I( I# -> -1
+        assert(!"unimplemented");
+      }
+      case '<': {
+        // < Integer comparison  B< I$ I# -> false
+        assert(!"unimplemented");
+      }
+      case '>': {
+        // > Integer comparison  B> I$ I# -> true
+        assert(!"unimplemented");
+      }
+      case '=': {
+        // = Equality comparison, works for int, bool and string B= I$ I# -> false
+        assert(!"unimplemented");
+      }
+      case '|': {
+        // | Boolean or  B| T F -> true
+        assert(!"unimplemented");
+      }
+      case '&': {
+        // & Boolean and B& T F -> false
+        assert(!"unimplemented");
+      }
+      case '.': {
+        // . String concatenation  B. S4% S34 -> "test"
+        assert(!"unimplemented");
+      }
+      case 'T': {
+        // T Take first x chars of string y  BT I$ S4%34 -> "tes"
+        assert(!"unimplemented");
+      }
+      case 'D': {
+        // D Drop first x chars of string y  BD I$ S4%34 -> "t"
+        assert(!"unimplemented");
+      }
+
+      default:
+        return Value(Error{.msg = "Invalid unop"});
+      }
 
     } else if (const If *i = std::get_if<If>(exp)) {
 
@@ -206,9 +337,15 @@ struct Evaluation {
 
     } else if (const Lambda *l = std::get_if<Lambda>(exp)) {
 
+      return Value(*l);
+
     } else if (const Var *v = std::get_if<Var>(exp)) {
 
+      return Value(Error{.msg = "unbound variable"});
     }
+
+    assert(!"bug: invalid exp variant in eval");
+    return Value(Error{.msg = "invalid exp variant"});
   }
 
 };
