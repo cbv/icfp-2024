@@ -467,6 +467,24 @@ struct Evaluation {
 };
 
 
+// Also used by lambda and variables.
+static int_type ParseInt(std::string_view body) {
+  int64_t val = 0;
+  for (char c : body) {
+    assert(val < std::numeric_limits<int64_t>::max() / 94);
+    val *= 94;
+
+    static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
+    if (c >= '!' && c <= '~') {
+      val += int64_t(c - '!');
+    } else {
+      assert(!"Uninterpretable character in integer.");
+    }
+  }
+
+  return val;
+}
+
 // Simple recursive-descent parser. Consumes an expression from the beginning
 // of the string view.
 std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
@@ -501,19 +519,7 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   case 'I': {
     assert(!body.empty() && "expected non-empty body for integer");
 
-    int64_t val = 0;
-    for (char c : body) {
-      assert(val < std::numeric_limits< int64_t >::max() / 94);
-      val *= 94;
-
-      static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
-      if (c >= '!' && c <= '~') {
-        val += int64_t(c - '!');
-      } else {
-        assert(!"Uninterpretable character in integer.");
-      }
-    }
-
+    int_type val = ParseInt(body);
     return std::make_shared<Exp>(Int{.i = val});
   }
 
@@ -546,14 +552,26 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
     return std::make_shared<Exp>(std::move(binop));
   }
 
-  case '?':
-    assert(!"unimplemented");
+  case '?': {
+    assert(body.empty() && "if should have empty body");
+    If iff;
+    iff.cond = ParseLeadingExp(s);
+    iff.t = ParseLeadingExp(s);
+    iff.f = ParseLeadingExp(s);
+    return std::make_shared<Exp>(std::move(iff));
+  }
 
-  case 'L':
-    assert(!"unimplemented");
+  case 'L': {
+    Lambda lam;
+    lam.v = ParseInt(body);
+    lam.body = ParseLeadingExp(s);
+    return std::make_shared<Exp>(std::move(lam));
+  }
 
-  case 'v':
-    assert(!"unimplemented");
+  case 'v': {
+    int_type i = ParseInt(body);
+    return std::make_shared<Exp>(Var{.v = i});
+  }
 
   default:
     assert(!"invalid indicator");
