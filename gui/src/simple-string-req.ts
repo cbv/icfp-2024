@@ -25,3 +25,16 @@ export async function simpleStringReq(text: string): Promise<string> {
     throw new DecodeError(`don't know how to handle ${ptext}`, ptext);
   }
 }
+
+// no encoding/decoding
+export async function simpleStringReqRaw(text: string): Promise<string> {
+  const body = text;
+  const preq = new Request("https://boundvariable.space/communicate", {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body
+  });
+  const presp = await fetch(preq);
+  const ptext = await presp.text();
+  return ptext;
+}
