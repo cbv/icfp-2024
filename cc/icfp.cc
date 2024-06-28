@@ -443,7 +443,7 @@ struct Evaluation {
 
     } else if (const If *i = std::get_if<If>(exp)) {
 
-      EvalToBool(i->cond.get(), [&](Bool cond) {
+      return EvalToBool(i->cond.get(), [&](Bool cond) {
           if (cond.b) {
             return Eval(i->t.get());
           } else {
@@ -459,6 +459,8 @@ struct Evaluation {
 
       return Value(Error{.msg = "unbound variable"});
     }
+
+    assert(exp != nullptr);
 
     assert(!"bug: invalid exp variant in eval");
     return Value(Error{.msg = "invalid exp variant"});
