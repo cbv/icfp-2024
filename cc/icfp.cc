@@ -1,22 +1,27 @@
 
 // #include "bignum/big.h"
 
+#include <iostream>
+#include <cinttypes>
+
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <utility>
 #include <variant>
 #include <memory>
 #include <cstdio>
 #include <cassert>
+#include <string_view>
 
 // TODO: Use bignum, but I want something super portable to start
 using int_type = int64_t;
 
-static constexpr int RADIX = 94;
+[[maybe_unused]] static constexpr int RADIX = 94;
 
 // (size includes terminating \0, unused)
-static constexpr char tostring_chars[RADIX + 1] =
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
+// static constexpr char tostring_chars[RADIX + 1] =
+//   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
 
 enum TokenType {
   BOOL,
@@ -462,11 +467,129 @@ struct Evaluation {
 };
 
 
+// Simple recursive-descent parser. Consumes an expression from the beginning
+// of the string view.
+std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
+  while (!s->empty() && (*s)[0] == ' ') s->remove_prefix(1);
+  assert(!s->empty() && "expected expression but got eos");
+
+  // Always one indicator char.
+  char ind = (*s)[0];
+  s->remove_prefix(1);
+
+  // Always get body. Might end by EOS or space.
+  const size_t body_size = [&]() {
+      for (size_t i = 0; i < s->size(); i++) {
+        if ((*s)[i] == ' ') return i;
+      }
+      return s->size();
+    }();
+
+  std::string_view body = s->substr(0, body_size);
+  s->remove_prefix(body_size);
+
+  // printf("Indicator '%c' with body [%s]\n", ind, std::string(body).c_str());
+
+  switch (ind) {
+  case 'T':
+    assert(body.empty() && "expected empty body for boolean");
+    return std::make_shared<Exp>(Bool{.b = true});
+  case 'F':
+    assert(body.empty() && "expected empty body for boolean");
+    return std::make_shared<Exp>(Bool{.b = false});
+
+  case 'I': {
+    assert(!body.empty() && "expected non-empty body for integer");
+
+    int64_t val = 0;
+    for (char c : body) {
+      assert(val < std::numeric_limits< int64_t >::max() / 94);
+      val *= 94;
+
+      static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
+      if (c >= '!' && c <= '~') {
+        val += int64_t(c - '!');
+      } else {
+        assert(!"Uninterpretable character in integer.");
+      }
+    }
+
+    return std::make_shared<Exp>(Int{.i = val});
+  }
+
+  case 'S': {
+    static constexpr const char *DECODE_STRING =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        "!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
+    std::string translated;
+    for (char c : body) {
+      assert(c >= 33 && c <= 126 && "Bad char in string body");
+      translated.push_back(DECODE_STRING[c - 33]);
+    }
+    return std::make_shared<Exp>(String{.s = std::move(translated)});
+  }
+
+  case 'U':
+    assert(!"unimplemented");
+
+  case 'B':
+    assert(!"unimplemented");
+
+  case '?':
+    assert(!"unimplemented");
+
+  case 'L':
+    assert(!"unimplemented");
+
+  case 'v':
+    assert(!"unimplemented");
+
+  default:
+    assert(!"invalid indicator");
+  }
+}
+
+static std::string ValueString(const Value &v) {
+
+  if (const Bool *b = std::get_if<Bool>(&v)) {
+    return b->b ? "true" : "false";
+
+  } else if (const Int *i = std::get_if<Int>(&v)) {
+    char buf[100];
+    sprintf(buf, "%" PRId64, i->i);
+    return buf;
+
+  } else if (const String *s = std::get_if<String>(&v)) {
+    return "\"" + s->s + "\"";
+
+  } else if (const Lambda *l = std::get_if<Lambda>(&v)) {
+    return "(lambda)";
+  }
+
+  return "(!!invalid value!!)";
+}
+
 int main(int argc, char **argv) {
+  std::string input;
+  for (char c; std::cin.get(c); ) {
+    input.push_back(c);
+  }
 
-  // TODO
+  std::string_view input_view(input);
 
+  // Strip leading and trailing whitespace.
+  while (!input_view.empty() && (input_view[0] == ' ' || input_view[0] == '\n'))
+    input_view.remove_prefix(1);
+  while (!input_view.empty() && (input_view.back() == ' ' || input_view.back() == '\n'))
+    input_view.remove_suffix(1);
 
-  printf("OK\n");
+  std::shared_ptr<Exp> exp = ParseLeadingExp(&input_view);
+
+  assert(input_view.empty() && "extra stuff after expression?");
+
+  Evaluation evaluation;
+  Value v = evaluation.Eval(exp.get());
+
+  printf("%s\n", ValueString(v).c_str());
   return 0;
 }
