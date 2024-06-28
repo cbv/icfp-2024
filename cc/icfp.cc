@@ -529,11 +529,22 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
     return std::make_shared<Exp>(String{.s = std::move(translated)});
   }
 
-  case 'U':
-    assert(!"unimplemented");
+  case 'U': {
+    assert(body.size() == 1 && "unop body should be one char");
+    Unop unop;
+    unop.op = body[0];
+    unop.arg = ParseLeadingExp(s);
+    return std::make_shared<Exp>(std::move(unop));
+  }
 
-  case 'B':
-    assert(!"unimplemented");
+  case 'B': {
+    assert(body.size() == 1 && "binop body should be one char");
+    Binop binop;
+    binop.op = body[0];
+    binop.arg1 = ParseLeadingExp(s);
+    binop.arg2 = ParseLeadingExp(s);
+    return std::make_shared<Exp>(std::move(binop));
+  }
 
   case '?':
     assert(!"unimplemented");
