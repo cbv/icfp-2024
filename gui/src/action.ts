@@ -3,6 +3,7 @@ import { AppMode } from "./state";
 
 export type Action =
   | { t: 'setInputText', text: string }
+  | { t: 'setOutputText', text: string }
   | { t: 'setMode', mode: AppMode }
   ;
 

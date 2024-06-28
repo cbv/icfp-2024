@@ -1,6 +1,6 @@
 const spaceEncoding = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
 
-function decodeString(text: string): string {
+export function decodeString(text: string): string {
   let rv: string = '';
   for (const x of text.split('')) {
     const ix = x.charCodeAt(0) - 33;
@@ -11,7 +11,7 @@ function decodeString(text: string): string {
   return rv;
 }
 
-function encodeString(text: string): string {
+export function encodeString(text: string): string {
   let rv: string = '';
   for (const x of text.split('')) {
     const ix = spaceEncoding.indexOf(x);

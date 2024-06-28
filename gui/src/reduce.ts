@@ -9,6 +9,11 @@ export function reduce(state: AppState, action: Action): AppState {
         s.mode.inputText = action.text;
       });
     }
+    case 'setOutputText': {
+      return produce(state, s => {
+        s.mode.outputText = action.text;
+      });
+    }
     case 'setMode': {
       return produce(state, s => {
         s.mode = action.mode;

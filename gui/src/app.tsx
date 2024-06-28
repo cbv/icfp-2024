@@ -6,6 +6,7 @@ import { useEffectfulReducer } from './lib/use-effectful-reducer';
 import { reduce } from './reduce';
 import { AppState, mkState } from './state';
 import { Dispatch } from './action';
+import { decodeString, encodeString } from './codec';
 
 export type AppProps = {
 };
@@ -54,8 +55,8 @@ function renderAppBody(state: AppState, dispatch: Dispatch): JSX.Element {
         </div>
       </div>
       <div className="action-bar">
-        <button>Encode</button>
-        <button>Decode</button>
+        <button onClick={(e) => { dispatch({ t: 'setOutputText', text: encodeString(state.mode.inputText) }) }}>Encode</button>
+        <button onClick={(e) => { dispatch({ t: 'setOutputText', text: decodeString(state.mode.inputText) }) }}>Decode</button>
       </div>
     </div>;
   }
