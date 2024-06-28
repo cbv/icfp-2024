@@ -21,8 +21,9 @@ using int_type = int64_t;
 [[maybe_unused]] static constexpr int RADIX = 94;
 
 // (size includes terminating \0, unused)
-// static constexpr char tostring_chars[RADIX + 1] =
-//   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
+[[maybe_unused]]
+static constexpr char tostring_chars[RADIX + 1] =
+   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
 
 enum TokenType {
   BOOL,
@@ -331,10 +332,24 @@ struct Evaluation {
         // # string-to-int: interpret a string as a base-94 number
         // U# S4%34 -> 15818151
         return EvalToString(u->arg.get(), [&](String arg) {
-            if (std::optional<int_type> i = ConvertInt(arg.s)) {
+            // reencode
+            std::string enc;
+            enc.reserve(arg.s.size());
+            for (uint8_t c : arg.s) {
+              [[maybe_unused]] static const char ENCODE_STRING[128] =
+                "..........~.....................}_`abcdefghijklmUVWXYZ[\\]"
+                "^nopqrst;<=>?@ABCDEFGHIJKLMNOPQRSTuvwxyz!\"#$%&'()*+,-./0123456789:.{.|";
+              if (c >= 128) {
+                return Value(Error{.msg = "unconvertible string (bad char) in string-to-int"});
+              } else {
+                enc.push_back(ENCODE_STRING[c]);
+              }
+            }
+
+            if (std::optional<int_type> i = ConvertInt(enc)) {
               return Value(Int{.i = i.value()});
             } else {
-              return Value(Error{.msg = "unconvertible string in string-to-int"});
+              return Value(Error{.msg = "unconvertible string (not int) in string-to-int"});
             }
           });
       }
