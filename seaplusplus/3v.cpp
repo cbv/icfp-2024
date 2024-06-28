@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
 
 			//figure out where we are traveling to:
 			if (dt <= 0) throw std::runtime_error("negative time travel");
-			int32_t dest = int32_t(ticks.size()) - dt;
+			int32_t dest = int32_t(ticks.size()) - dt - 1;
 			if (dest < 0) throw std::runtime_error("time travel into pre-history");
 			assert(uint32_t(dest) < ticks.size());
 
