@@ -1,0 +1,169 @@
+a {
+  color: #017170;
+}
+
+a:visited {
+  color: #67aaa9;
+}
+
+@font-face {
+    font-family: 'Birb';
+    src: url('Birbaslo.ttf') format('truetype');
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background-color: #bbd9d9;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, .header {
+  font-family: Birb;
+}
+
+.header {
+  user-select: none;
+}
+
+.topnav {
+  background-color: #017170;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+
+    align-items: stretch;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+/* Style the links inside the navigation bar */
+.topnav a, .topnav div {
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.5em 1em;
+  font-size: 1.25em;
+}
+
+.topnav div.pigeon-container {
+  padding-right: 0;
+  margin-right: -1em;
+}
+
+div.header {
+  font-weight: bold;
+  font-size: 2em;
+}
+
+/* Change the color of links on hover */
+.topnav a:hover {
+  background-color: #fff;
+  color:  #017170;
+}
+
+/* Add a color to the active/current link */
+.topnav a.active {
+  background-color: #f16424;
+  color: white;
+}
+
+div.body {
+  background-color: white;
+  flex-grow: 1;
+  margin: 1em auto;
+  padding: 1em 2em;
+  width: 40em;
+}
+
+.pigeon-container img {
+  height: 2.5em;
+  display: inline-block;
+}
+
+
+.interface-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.app {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+}
+
+.textarea-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  flex-grow: 1;
+}
+
+.textarea-container {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+  gap: 1em;
+  padding: 1em;
+
+}
+
+.textarea-panel div {
+  text-align: center;
+}
+
+textarea {
+  font-family: monospace;
+  resize: none;
+  overflow: scroll;
+  flex-grow: 1;
+  border: none;
+}
+
+.action-bar {
+  background-color: #017170;
+  text-align: center;
+  padding: 1em;
+}
+
+.title {
+  font-family: sans-serif;
+  font-weight: bold;
+}
+
+.action-bar button {
+  background-color: #f16424;
+
+}
+
+button:not([disabled]):active, .pseudo-button:active {
+  color: #017170;
+  background-color: white;
+}
+
+button, .pseudo-button {
+  user-select: none;
+  font-family: sans-serif;
+  font-size: 1em;
+  display: inline-block;
+  color: white;
+  background-color: #017170;
+  border: 0;
+  border-radius: 1.25em;
+  padding: 0.75em 1.25em ;
+  cursor: pointer;
+  margin: 0em 0.5em;
+}
