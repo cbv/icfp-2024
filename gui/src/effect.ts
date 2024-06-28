@@ -30,6 +30,7 @@ export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): v
         }
       })();
     }
+      break;
     case 'evalText': {
       (async () => {
         const preq = new Request("/api/eval", {
@@ -42,5 +43,6 @@ export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): v
         dispatch({ t: 'setOutputText', text: ptext });
       })();
     }
+      break;
   }
 }
