@@ -31,7 +31,12 @@ function letbind(bindings: Binding[], body: Expr): Expr {
   return body;
 }
 
-export function compileExample() {
+export function lambdaman6() {
+  const repeat = rec(R => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, appSpine(R, [s, sub(n, litnum(1))]))))));
+  return expToIcfp(concat(litstr("solve lambdaman6 "), appSpine(repeat, [litstr("R"), litnum(199)])))
+}
+
+export function lambdaman8() {
   // let rv = '';
   // for (let i = 1; i < 48; i++) {
   //   rv += repeat('D', 2 * i) + repeat('L', 2 * i);
@@ -71,4 +76,8 @@ export function compileExample() {
     mul(x, app(f, sub(x, litnum(1)))))));
 
   return expToIcfp(concat(litstr("solve lambdaman8 "), appSpine(spiral, [litnum(2)])));
+}
+
+export function compileExample() {
+  return lambdaman6();
 }
