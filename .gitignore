@@ -3,3 +3,7 @@ API_KEY
 # Added by cargo
 
 /target
+
+*.o
+*.exe
+*~
