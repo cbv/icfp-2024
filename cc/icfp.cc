@@ -5,10 +5,8 @@
 #include <string>
 #include <utility>
 #include <variant>
-#include <array>
 #include <memory>
 #include <cstdio>
-#include <optional>
 #include <cassert>
 
 // TODO: Use bignum, but I want something super portable to start
@@ -187,7 +185,7 @@ struct Evaluation {
   int64_t betas = 0;
 
   template<class F>
-  Value EvalToInteger(const Exp *exp,
+  Value EvalToInt(const Exp *exp,
                       const F &f) {
     Value v = Eval(exp);
     if (const Int *i = std::get_if<Int>(&v)) {
@@ -206,6 +204,16 @@ struct Evaluation {
     return Value(Error{.msg = "Expected bool"});
   }
 
+  template<class F>
+  Value EvalToString(const Exp *exp,
+                   const F &f) {
+    Value v = Eval(exp);
+     if (const String *s = std::get_if<String>(&v)) {
+      return f(std::move(*s));
+    }
+    return Value(Error{.msg = "Expected string"});
+  }
+
   // Evaluate to a value.
   Value Eval(const Exp *exp) {
     if (const Bool *b = std::get_if<Bool>(exp)) {
@@ -222,7 +230,7 @@ struct Evaluation {
       switch (u->op) {
       case '-': {
         // - Integer negation  U- I$ -> -3
-        return EvalToInteger(u->arg.get(), [&](Int arg) {
+        return EvalToInt(u->arg.get(), [&](Int arg) {
             return Value(Int{.i = -arg.i});
           });
       }
@@ -270,55 +278,158 @@ struct Evaluation {
 
       case '+': {
         // + Integer addition  B+ I# I$ -> 5
-        assert(!"unimplemented");
+
+        return EvalToInt(b->arg1.get(), [&](Int arg1) {
+            return EvalToInt(b->arg2.get(), [&](Int arg2) {
+                return Value(Int{.i = arg1.i + arg2.i});
+              });
+          });
       }
+
       case '-': {
         // - Integer subtraction B- I$ I# -> 1
-        assert(!"unimplemented");
+
+        return EvalToInt(b->arg1.get(), [&](Int arg1) {
+            return EvalToInt(b->arg2.get(), [&](Int arg2) {
+                return Value(Int{.i = arg1.i - arg2.i});
+              });
+          });
       }
+
       case '*': {
         // * Integer multiplication  B* I$ I# -> 6
-        assert(!"unimplemented");
+
+        return EvalToInt(b->arg1.get(), [&](Int arg1) {
+            return EvalToInt(b->arg2.get(), [&](Int arg2) {
+                return Value(Int{.i = arg1.i * arg2.i});
+              });
+          });
       }
+
       case '/': {
         // / Integer division (truncated towards zero) B/ U- I( I# -> -3
-        assert(!"unimplemented");
+
+        return EvalToInt(b->arg1.get(), [&](Int arg1) {
+            return EvalToInt(b->arg2.get(), [&](Int arg2) {
+                if (arg2.i == 0) {
+                  return Value(Error{.msg = "division by zero"});
+                } else {
+                  // This should be what they want (c truncation), but worth checking
+                  return Value(Int{.i = arg1.i / arg2.i});
+                }
+              });
+          });
       }
+
       case '%': {
         // % Integer modulo  B% U- I( I# -> -1
-        assert(!"unimplemented");
+
+        return EvalToInt(b->arg1.get(), [&](Int arg1) {
+            return EvalToInt(b->arg2.get(), [&](Int arg2) {
+                if (arg2.i == 0) {
+                  return Value(Error{.msg = "modulus by zero"});
+                } else {
+                  // This should be what they want (c truncation), but worth checking
+                  return Value(Int{.i = arg1.i % arg2.i});
+                }
+              });
+          });
       }
+
       case '<': {
         // < Integer comparison  B< I$ I# -> false
-        assert(!"unimplemented");
+
+        return EvalToInt(b->arg1.get(), [&](Int arg1) {
+            return EvalToInt(b->arg2.get(), [&](Int arg2) {
+                return Value(Bool{.b = arg1.i < arg2.i});
+              });
+          });
       }
+
       case '>': {
         // > Integer comparison  B> I$ I# -> true
-        assert(!"unimplemented");
+
+        return EvalToInt(b->arg1.get(), [&](Int arg1) {
+            return EvalToInt(b->arg2.get(), [&](Int arg2) {
+                return Value(Bool{.b = arg1.i > arg2.i});
+              });
+          });
       }
+
       case '=': {
         // = Equality comparison, works for int, bool and string B= I$ I# -> false
+
+        // Ugh, needs to be polymorphic.
+        // TODO: Corner case: What if we compare values of different type?
         assert(!"unimplemented");
       }
+
       case '|': {
         // | Boolean or  B| T F -> true
-        assert(!"unimplemented");
+
+        return EvalToBool(b->arg1.get(), [&](Bool arg1) {
+            return EvalToBool(b->arg2.get(), [&](Bool arg2) {
+                return Value(Bool{.b = arg1.b || arg2.b});
+              });
+          });
       }
+
       case '&': {
         // & Boolean and B& T F -> false
-        assert(!"unimplemented");
+
+        return EvalToBool(b->arg1.get(), [&](Bool arg1) {
+            return EvalToBool(b->arg2.get(), [&](Bool arg2) {
+                return Value(Bool{.b = arg1.b && arg2.b});
+              });
+          });
       }
+
       case '.': {
         // . String concatenation  B. S4% S34 -> "test"
-        assert(!"unimplemented");
+
+        return EvalToString(b->arg1.get(), [&](String arg1) {
+            return EvalToString(b->arg2.get(), [&](String arg2) {
+                return Value(String{.s = arg1.s + arg2.s});
+              });
+          });
       }
+
       case 'T': {
         // T Take first x chars of string y  BT I$ S4%34 -> "tes"
-        assert(!"unimplemented");
+
+        return EvalToInt(b->arg1.get(), [&](Int arg1) {
+            return EvalToString(b->arg2.get(), [&](String arg2) {
+                if (arg1.i < 0) {
+                  return Value(Error{.msg = "negative length in T"});
+                } else {
+                  // Corner case: length is bigger than string length
+                  if (arg1.i > (int64_t)arg2.s.size()) {
+                    return Value(Error{.msg = "length exceeds string size in T"});
+                  } else {
+                    return Value(String{.s = arg2.s.substr(0, arg1.i)});
+                  }
+                }
+              });
+            });
       }
+
       case 'D': {
         // D Drop first x chars of string y  BD I$ S4%34 -> "t"
-        assert(!"unimplemented");
+
+        return EvalToInt(b->arg1.get(), [&](Int arg1) {
+            return EvalToString(b->arg2.get(), [&](String arg2) {
+                if (arg1.i < 0) {
+                  return Value(Error{.msg = "negative length in D"});
+                } else {
+                  // Corner case: length is bigger than string length
+                  if (arg1.i > (int64_t)arg2.s.size()) {
+                    return Value(Error{.msg = "length exceeds string size in D"});
+                  } else {
+                    return Value(String{.s = arg2.s.substr(arg1.i, std::string::npos)});
+                  }
+                }
+              });
+            });
       }
 
       default:
