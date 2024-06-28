@@ -32,12 +32,13 @@ export function compileExample() {
   // rv += repeat('D', 98);
   // rv += repeat('L', 97);
 
-  const repeat = rec(R => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, app(app(R, s), sub(n, litnum(1))))))));
+  // repeat "D" 3 = "DDD"
+  const repeat = rec(R => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, appSpine(R, [s, sub(n, litnum(1))]))))));
 
   const fact = rec(f => lam(x => cond(equ(litnum(0), x),
     litnum(1),
     mul(x, app(f, sub(x, litnum(1)))))));
 
-  return expToIcfp(app(app(repeat, litstr("D")), litnum(10)));
+  return expToIcfp(appSpine(repeat, [litstr("D"), litnum(10)]));
 
 }
