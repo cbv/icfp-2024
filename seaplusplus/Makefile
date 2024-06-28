@@ -10,3 +10,6 @@ encode : encode.cpp icfp.hpp
 
 eval : eval.cpp icfp.hpp
 	$(CPP) -o '$@' '$<'
+
+evel : evel.cpp icfp.hpp
+	$(CPP) -o '$@' '$<'
