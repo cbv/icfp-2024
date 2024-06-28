@@ -356,7 +356,27 @@ struct Evaluation {
 
       case '$': {
         // $ int-to-string: inverse of the above U$ I4%34 -> test
-        assert(!"Unimplemented unop $");
+        return EvalToInt(u->arg.get(), [&](Int arg) {
+            if (arg.i < 0) {
+              return Value(Error{.msg = "don't know how to convert negative integers to "
+                  "base-94?"});
+            }
+
+            std::string rev;
+            int_type i = arg.i;
+            while (i > 0) {
+              uint8_t digit = i % RADIX;
+              rev.push_back(tostring_chars[digit]);
+              i /= RADIX;
+            }
+
+            std::string s;
+            s.resize(rev.size());
+            for (int i = 0; i < (int)rev.size(); i++) {
+              s[rev.size() - 1 - i] = rev[i];
+            }
+            return Value(String{.s = s});
+          });
       }
 
       default:
