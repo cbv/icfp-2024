@@ -1,0 +1,18 @@
+import * as compile from '../src/compile';
+import * as process from 'process';
+
+
+function go(name: string) {
+  switch (name) {
+    case 'lambdaman6': return compile.lambdaman6();
+    case 'lambdaman8': return compile.lambdaman8();
+    default: throw new Error(`not found: ${name}`);
+  }
+}
+
+if (process.argv.length != 3) {
+  console.log("usage : ts-node compile-lambdaman.ts PROGRAM_NAME")
+} else {
+  let result = go(process.argv[2]);
+  console.log(result);
+}
