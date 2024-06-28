@@ -33,7 +33,7 @@ fn test_base_94 () {
 
 const CHARS : &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
 
-fn parse_str (b : &[u8]) -> anyhow::Result<String> {
+pub fn parse_str (b : &[u8]) -> anyhow::Result<String> {
     let mut result = String::new();
     for idx in 0 .. b.len() {
         result.push(CHARS[(b[idx] - 33) as usize] as char);
@@ -45,6 +45,16 @@ fn parse_str (b : &[u8]) -> anyhow::Result<String> {
 fn test_parse_str() {
     assert_eq!(parse_str(b"B%,,/}Q/2,$_").unwrap(), "Hello World!".to_string());
 }
+
+pub fn encode_str (b : &str) -> String {
+    let mut result = String::new();
+    result.push('S');
+    for _c in b.chars() {
+        todo!()
+    }
+    todo!()
+}
+
 
 pub fn parse_token (s : &[u8]) -> anyhow::Result<Tok> {
     if s.len() < 1 {
@@ -59,6 +69,10 @@ pub fn parse_token (s : &[u8]) -> anyhow::Result<Tok> {
     }
 }
 
-pub fn main() {
-    println!("hello world");
+pub fn parse_toks (s : &str) -> anyhow::Result<Vec<Tok>> {
+    let mut result = vec![];
+    for s in s.split(' ') {
+        result.push(parse_token(s.as_bytes())?);
+    }
+    Ok(result)
 }
