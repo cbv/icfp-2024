@@ -193,3 +193,7 @@ export function arrayJoin<T>(xs: T[], delim: T): T[] {
   });
   return rv;
 }
+
+export function toTitleCase(x: string): string {
+  return x.replace(/./, y => y.toUpperCase());
+}

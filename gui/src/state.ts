@@ -1,6 +1,20 @@
 import { Effect } from "./effect";
 
 export type AppMode =
+  | 'evaluate'
+  | 'codec'
+  | 'communicate'
+  ;
+
+export function mkModeState(mode: AppMode): AppModeState {
+  switch (mode) {
+    case 'evaluate': return { t: 'evaluate', inputText: '', outputText: '' };
+    case 'codec': return { t: 'codec', inputText: '', outputText: '' };
+    case 'communicate': return { t: 'communicate', inputText: '', outputText: '' };
+  }
+}
+
+export type AppModeState =
   | {
     t: 'evaluate',
     inputText: string,
@@ -21,8 +35,9 @@ export type AppMode =
 export type AppState = {
   effects: Effect[],
   mode: AppMode,
+  modeState: AppModeState,
 }
 
 export function mkState(): AppState {
-  return { effects: [], mode: { t: 'codec', inputText: '', outputText: '' } };
+  return { effects: [], mode: 'codec', modeState: { t: 'codec', inputText: '', outputText: '' } };
 }
