@@ -1,7 +1,9 @@
 import { writeFileSync } from 'fs';
+import * as fs from 'fs';
 import express from 'express';
 import * as path from 'path';
 
+const token = fs.readFileSync(path.join(__dirname, '../../API_KEY'), 'utf8').replace(/\n/g, '');
 const app = express();
 
 app.post('/export', (req, res) => {
@@ -18,6 +20,17 @@ app.post('/export', (req, res) => {
   });
 });
 app.use('/', express.static(path.join(__dirname, '../public')));
+
+app.get('/api/space', async (req, res) => {
+  const preq = new Request("https://boundvariable.space/communicate", {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+    body: "S'%4}).$%8"
+  });
+  const presp = await fetch(preq);
+  const ptext = await presp.text();
+  res.end(ptext);
+});
 
 const PORT = process.env.PORT == undefined ? 8000 : parseInt(process.env.PORT);
 
