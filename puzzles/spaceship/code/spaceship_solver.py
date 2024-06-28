@@ -68,6 +68,32 @@ def get_fast_distance(distance, direction):
             speed -= 1
     return(result)
 
+def combine_inputs(x_inputs, y_inputs):
+    result = ""
+    combined_length = min(len(x_inputs), len(y_inputs))
+    for i in range(combined_length):
+        if (x_inputs[i] == "4"):
+            if (y_inputs[i] == "8"):
+                result += "7"
+            elif (y_inputs[i] == "5"):
+                result += "4"
+            elif (y_inputs[i] == "2"):
+                result += "1"
+        elif (x_inputs[i] == "5"):
+            result += y_inputs[i]
+        elif (x_inputs[i] == "6"):
+            if (y_inputs[i] == "8"):
+                result += "9"
+            elif (y_inputs[i] == "5"):
+                result += "6"
+            elif (y_inputs[i] == "2"):
+                result += "3"
+    if (len(x_inputs) > len(y_inputs)):
+        result += x_inputs[combined_length:]
+    elif (len(y_inputs) > len(x_inputs)):
+        result += y_inputs[combined_length:]
+    return result
+
 def calculate_inputs(target_squares):
     result = ""
     x = 0
@@ -75,25 +101,28 @@ def calculate_inputs(target_squares):
     for square in target_squares:
         x_offset = square[0] - x
         y_offset = square[1] - y
-        if (x_offset != 0):
+        if (x_offset == 0):
+            x_inputs = ""
+        else:
             if (x_offset < 0):
                 direction = "4"
             else:
                 direction = "6"
             distance = abs(x_offset)
-            result += get_fast_distance(distance, direction)
-        if (y_offset != 0):
+            x_inputs = get_fast_distance(distance, direction)
+        if (y_offset == 0):
+            y_inputs = ""
+        else:
             if (y_offset < 0):
                 direction = "2"
             else:
                 direction = "8"
             distance = abs(y_offset)
-            result += get_fast_distance(distance, direction)
+            y_inputs = get_fast_distance(distance, direction)
+        result += combine_inputs(x_inputs, y_inputs)
         x = square[0]
         y = square[1]
     return(result)
-
-
 
 if __name__ == "__main__":
     file_name = sys.argv[1]
