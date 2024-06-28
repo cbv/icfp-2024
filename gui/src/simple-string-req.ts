@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { decodeString, encodeString } from '../src/codec';
+import { decodeString, encodeString } from './codec';
 const token = fs.readFileSync(path.join(__dirname, '../../API_KEY'), 'utf8').replace(/\n/g, '');
 
 export class DecodeError extends Error {
