@@ -6,6 +6,7 @@
 #include <variant>
 #include <memory>
 #include <string_view>
+#include <unordered_set>
 
 // Seems some problems want bignum, but if you have trouble compiling
 // that, you could just use int64.
@@ -148,7 +149,7 @@ struct Evaluation {
 
   // [e1/v]e2. Avoids capture (unless simple=true).
   std::shared_ptr<Exp> Subst(std::shared_ptr<Exp> e1,
-                             int_type v,
+                             const int_type &v,
                              std::shared_ptr<Exp> e2,
                              bool simple = false);
 
@@ -188,6 +189,16 @@ struct Evaluation {
 
   // Evaluate to a value.
   Value Eval(const Exp *exp);
+
+  static std::unordered_set<int_type> FreeVars(const Exp *e);
+
+ private:
+  std::shared_ptr<Exp> SubstInternal(
+      const std::unordered_set<int_type> &fvs,
+      std::shared_ptr<Exp> e1,
+      const int_type &v,
+      std::shared_ptr<Exp> e2,
+      bool simple);
 };
 
 // Simple recursive-descent parser. Consumes an expression from the beginning

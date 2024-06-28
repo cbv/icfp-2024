@@ -1,6 +1,7 @@
 
 #include "icfp.h"
 
+#include <unordered_set>
 #include <optional>
 #include <cstdint>
 #include <string>
@@ -73,9 +74,67 @@ static int_type ParseInt(std::string_view body) {
   }
 }
 
+static void PopulateFreeVars(const Exp *e, std::unordered_set<int_type> *fvs) {
+  for (;;) {
+    if (const Bool *b = std::get_if<Bool>(e)) {
+      return;
+
+    } else if (const Int *i = std::get_if<Int>(e)) {
+      return;
+
+    } else if (const String *s = std::get_if<String>(e)) {
+      return;
+
+    } else if (const Unop *u = std::get_if<Unop>(e)) {
+      e = u->arg.get();
+
+    } else if (const Binop *b = std::get_if<Binop>(e)) {
+      PopulateFreeVars(b->arg1.get(), fvs);
+      e = b->arg2.get();
+
+    } else if (const If *i = std::get_if<If>(e)) {
+      PopulateFreeVars(i->cond.get(), fvs);
+      PopulateFreeVars(i->t.get(), fvs);
+      e = i->f.get();
+
+    } else if (const Lambda *lam = std::get_if<Lambda>(e)) {
+
+      std::unordered_set<int_type> bfvs;
+      PopulateFreeVars(lam->body.get(), &bfvs);
+      // But the lambda's argument is bound.
+      bfvs.erase(lam->v);
+
+      // And then union them.
+      for (auto &i : bfvs) fvs->insert(i);
+      return;
+
+    } else if (const Var *var = std::get_if<Var>(e)) {
+
+      fvs->insert(var->v);
+      return;
+    } else {
+      assert(!"illegal exp");
+    }
+  }
+}
+
+std::unordered_set<int_type> Evaluation::FreeVars(const Exp *e) {
+  std::unordered_set<int_type> ret;
+  PopulateFreeVars(e, &ret);
+  return ret;
+}
+
 // [e1/v]e2. Avoids capture (unless simple=true).
-std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, int_type v,
+std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, const int_type &v,
                                        std::shared_ptr<Exp> e2, bool simple) {
+  return SubstInternal(FreeVars(e1.get()), e1, v, e2, simple);
+}
+
+std::shared_ptr<Exp> Evaluation::SubstInternal(
+    const std::unordered_set<int_type> &fvs,
+    std::shared_ptr<Exp> e1, const int_type &v,
+    std::shared_ptr<Exp> e2, bool simple) {
+
   if (const Bool *b = std::get_if<Bool>(e2.get())) {
     return e2;
 
@@ -112,14 +171,13 @@ std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, int_type v,
     if (lam->v == v)
       return e2;
 
-    if (simple) {
+    if (simple || !fvs.contains(lam->v)) {
       return std::make_shared<Exp>(Lambda{
           .v = lam->v,
           .body = Subst(e1, v, lam->body),
       });
     } else {
       // Rename target lambda so that we can't have capture.
-      // PERF only do this if we would incur capture?
       int_type new_var = int_type{next_var};
       next_var--;
       std::shared_ptr<Exp> new_var_exp =
@@ -371,10 +429,10 @@ Value Evaluation::Eval(const Exp *exp) {
         }
       }
 
+      /*
       printf("NO:%s\n%s\n", ValueString(arg1).c_str(),
              ValueString(arg2).c_str());
-
-
+      */
 
       return Value(
           Error{.msg = "binop = needs two args of the same base type"});
