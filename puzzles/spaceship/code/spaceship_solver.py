@@ -1,10 +1,16 @@
 import sys
 
+coords_str = "0 1 0 1 -1 2 -1 4"
+
 def main(file):
     f = open(file, 'r')
     coords_str = f.read()
     coords_array = coords_str.split()
     target_squares = make_squares(coords_array)
+    spaceship_inputs = calculate_inputs(target_squares)
+    visited_squares = spaceship_tracker(spaceship_inputs)
+    if not all([square in visited_squares for square in target_squares]):
+        raise AssertionError('Spaceship Movement does not visit all targets!')
     return calculate_inputs(target_squares)
 
 def make_squares(coordinates):
@@ -63,8 +69,8 @@ def calculate_inputs(target_squares):
                 result = result + "8"
             if (y_offset > 0):
                 result = result + "8"
-                if (abs(x_offset) > 1):
-                    result = result + "5" * (abs(x_offset) - 1)
+                if (abs(y_offset) > 1):
+                    result = result + "5" * (abs(y_offset) - 1)
                 result = result + "2"
         x = square[0]
         y = square[1]
