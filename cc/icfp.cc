@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cinttypes>
 
+#include <optional>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -150,6 +151,35 @@ static std::string ValueString(const Value &v) {
   }
 
   return "(!!invalid value!!)";
+}
+
+// Also used by lambda and variables.
+static std::optional<int_type> ConvertInt(std::string_view body) {
+  int64_t val = 0;
+  for (char c : body) {
+    assert(val < std::numeric_limits<int64_t>::max() / 94);
+    val *= 94;
+
+    static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
+    if (c >= '!' && c <= '~') {
+      val += int64_t(c - '!');
+    } else {
+      return std::nullopt;
+    }
+  }
+
+  return {val};
+}
+
+
+// Also used by lambda and variables.
+static int_type ParseInt(std::string_view body) {
+  if (std::optional<int_type> i = ConvertInt(body)) {
+    return i.value();
+  } else {
+    assert(!"Unparseable integer literal (or lambda/var arg)");
+    return 0;
+  }
 }
 
 struct Evaluation {
@@ -300,12 +330,20 @@ struct Evaluation {
       case '#': {
         // # string-to-int: interpret a string as a base-94 number
         // U# S4%34 -> 15818151
-        assert(!"Unimplemented unop #");
+        return EvalToString(u->arg.get(), [&](String arg) {
+            if (std::optional<int_type> i = ConvertInt(arg.s)) {
+              return Value(Int{.i = i.value()});
+            } else {
+              return Value(Error{.msg = "unconvertible string in string-to-int"});
+            }
+          });
       }
+
       case '$': {
         // $ int-to-string: inverse of the above U$ I4%34 -> test
         assert(!"Unimplemented unop $");
       }
+
       default:
         return Value(Error{.msg = "Invalid unop"});
       }
@@ -550,25 +588,6 @@ struct Evaluation {
   }
 
 };
-
-
-// Also used by lambda and variables.
-static int_type ParseInt(std::string_view body) {
-  int64_t val = 0;
-  for (char c : body) {
-    assert(val < std::numeric_limits<int64_t>::max() / 94);
-    val *= 94;
-
-    static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
-    if (c >= '!' && c <= '~') {
-      val += int64_t(c - '!');
-    } else {
-      assert(!"Uninterpretable character in integer.");
-    }
-  }
-
-  return val;
-}
 
 // Simple recursive-descent parser. Consumes an expression from the beginning
 // of the string view.
