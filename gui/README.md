@@ -1,7 +1,7 @@
 GUI
 ===
 
-Status: Doesn't do anything useful yet
+Status: does a few things
 
 Building
 --------
@@ -13,6 +13,13 @@ $ make
 ```
 
 should spin up a local http server on port 8000.
+
+Commandline Tools
+-----------------
+
+- `scripts/send`
+
+Sends stdin to their servers as a string literal, and expects a string literal from their server, and prints it on stdout.
 
 Development
 -----------
