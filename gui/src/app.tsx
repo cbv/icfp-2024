@@ -104,7 +104,7 @@ function renderLambda(state: AppState, modeState: AppModeState & { t: 'lambdaman
   </div>;
 }
 
-function renderAppBody(props: AppProps, state: AppState, dispatch: Dispatch): JSX.Element {
+function renderAppBody(state: AppState, dispatch: Dispatch): JSX.Element {
   const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
   switch (state.mode) {
     case 'evaluate':
@@ -121,7 +121,7 @@ function renderAppBody(props: AppProps, state: AppState, dispatch: Dispatch): JS
       return renderLambda(state, state.modeState, dispatch);
     case 'threed':
       if (state.modeState.t != state.mode) throw new Error(`mode state inconsistency`);
-      return renderThreed(state, state.modeState, props.threedSolutions, dispatch);
+      return renderThreed(state, state.modeState, dispatch);
   }
 }
 
@@ -131,9 +131,9 @@ export function App(props: AppProps): JSX.Element {
   }
 
   const mode = document.location.hash == undefined ? undefined : modeOfHash(document.location.hash);
-  const [state, dispatch] = useEffectfulReducer(mkState(mode), extractEffects(reduce), doEffect);
+  const [state, dispatch] = useEffectfulReducer(mkState(props, mode), extractEffects(reduce), doEffect);
 
-  const appBody = renderAppBody(props, state, dispatch);
+  const appBody = renderAppBody(state, dispatch);
   return <>
     <Navbar state={state} dispatch={dispatch} />
     {appBody}

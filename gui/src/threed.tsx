@@ -71,9 +71,9 @@ export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRe
   return renderThreedPuzzleArray(globalArray);
 }
 
-export function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, puzzles: PuzzleSolution[], dispatch: Dispatch): JSX.Element {
+export function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: Dispatch): JSX.Element {
   const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
-  const renderedPuzzleItems = puzzles.map(puzzle => {
+  const renderedPuzzleItems = state.threedSolutions.map(puzzle => {
     const klass: string[] = ["puzzle-item"];
     if (puzzle.name == modeState.curPuzzleName) {
       klass.push('puzzle-item-selected');
@@ -86,7 +86,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
   const trace = modeState.executionTrace;
 
   if (modeState.curPuzzleName != undefined) {
-    const puzzle = puzzles.find(p => p.name == modeState.curPuzzleName);
+    const puzzle = state.threedSolutions.find(p => p.name == modeState.curPuzzleName);
     if (puzzle != undefined) {
       const stripped = puzzle.body.replace(/solve .*\n/, '');
       program = stripped;
