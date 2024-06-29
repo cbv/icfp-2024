@@ -233,11 +233,13 @@ int main(int argc, char **argv) {
       i++;
       max_len = atoi(argv[i++]);
     } else {
-      printf("./compress.exe [-max-len n] < file.txt > file.icfp\n"
-             "\n"
-             "max-len gives the maximum string length to try\n"
-             "factoring out. For big files, setting this much\n"
-             "smaller will make it much faster!\n");
+      fprintf(stderr,
+              "./compress.exe [-max-len n] < file.txt > file.icfp\n"
+              "\n"
+              "max-len gives the maximum string length to try\n"
+              "factoring out. For big files, setting this much\n"
+              "smaller will make it much faster!\n");
+      return -1;
     }
   }
 

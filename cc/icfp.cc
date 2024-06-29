@@ -420,7 +420,8 @@ Value Evaluation::Eval(const Exp *exp) {
                 if (arg2.i == 0) {
                   return Value(Error{.msg = "division by zero"});
                 } else {
-                  // This should be what they want (c truncation), but worth checking
+                  // This should be what they want (c truncation), but
+                  // worth checking
                   return Value(Int{.i = arg1.i / arg2.i});
                 }
               });
@@ -436,7 +437,8 @@ Value Evaluation::Eval(const Exp *exp) {
                 if (arg2.i == 0) {
                   return Value(Error{.msg = "modulus by zero"});
                 } else {
-                  // This should be what they want (c truncation), but worth checking
+                  // This should be what they want (c truncation), but
+                  // worth checking
                   return Value(Int{.i = arg1.i % arg2.i});
                 }
               });
@@ -498,11 +500,6 @@ Value Evaluation::Eval(const Exp *exp) {
           return Value(Bool{.b = s1->s == s2->s});
         }
       }
-
-      /*
-      printf("NO:%s\n%s\n", ValueString(arg1).c_str(),
-             ValueString(arg2).c_str());
-      */
 
       return Value(
           Error{.msg = "binop = needs two args of the same base type"});

@@ -1,14 +1,10 @@
 
-#include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <cstdlib>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-#include <variant>
-#include <string>
 #include <string_view>
+#include <unordered_map>
+#include <vector>
+#include <string>
 
 #include "ansi.h"
 #include "timer.h"
@@ -20,7 +16,7 @@
 
 #include "icfp.h"
 
-static std::string BaseXEncode(const std::string &input) {
+static std::string BaseXEncode(std::string_view input) {
   // Count each char in the input. For now, we just have a
   // flat base. But I think it would be doable to perform
   // Huffman encoding.
@@ -41,6 +37,13 @@ static std::string BaseXEncode(const std::string &input) {
 
   const int radix = counts.size();
 
+  fprintf(stderr, "%d distinct chars\n\n", radix);
+  for (const auto &[c, count] : counts) {
+    if (count > 0) {
+      fprintf(stderr, "'%c' x %d\n", c, count);
+    }
+  }
+
   // The decoding code looks like this
   // fun emit 0 _ = ""
   //   | emit count num =
@@ -53,18 +56,36 @@ static std::string BaseXEncode(const std::string &input) {
   // the lowest order digit of the number. This means
   // we will work from back to front on the input string.
 
+
+  Periodically status_per(1.0);
+  Timer timer;
+
   BigInt encoded{0};
   for (int i = input.size() - 1; i >= 0; i--) {
-    encoded = encoded * radix;
-
     uint8_t c = input[i];
     CHECK(syms[c] != -1);
-    encoded = encoded + syms[c];
+    encoded = encoded * radix + syms[c];
+    // encoded = encoded + syms[c];
+
+    if (status_per.ShouldRun()) {
+      fprintf(stderr,
+              ANSI_UP "%s\n",
+              ANSI::ProgressBar(input.size() - i, input.size(),
+                                "Encoding",
+                                timer.Seconds()).c_str());
+    }
   }
+
+  fprintf(stderr, "Generate constants...\n");
 
   std::string zero = icfp::IntConstant(BigInt{0});
   std::string one = icfp::IntConstant(BigInt{1});
   const std::string radix_exp = icfp::IntConstant(BigInt(radix));
+
+  const std::string encoded_exp = icfp::IntConstant(encoded);
+
+  fprintf(stderr, "Constant is %d bytes. Output decoder...\n",
+          (int)encoded_exp.size());
 
   std::string raw_lookup;
   for (uint8_t c : chars) raw_lookup.push_back(c);
@@ -122,33 +143,46 @@ static std::string BaseXEncode(const std::string &input) {
     StringPrintf("B$ B$ %s %s %s",
                  fix.c_str(),
                  icfp::IntConstant(BigInt(input.size())).c_str(),
-                 icfp::IntConstant(encoded).c_str());
+                 encoded_exp.c_str());
 
   return all;
 }
 
 int main(int argc, char **argv) {
-#if 0
-  int max_len = -1;
+  std::string prefix;
+  bool force_pow2 = false;
   for (int i = 1; i < argc; i++) {
-    if (std::string(argv[i]) == "-max-len") {
+    if (std::string(argv[i]) == "-prefix") {
       CHECK(i + 1 < argc);
       i++;
-      max_len = atoi(argv[i++]);
+      prefix = argv[i++];
+    } else if (std::string(argv[i]) == "-pow2") {
+      force_pow2 = true;
     } else {
-      printf("./compress.exe [-max-len n] < file.txt > file.icfp\n"
-             "\n"
-             "max-len gives the maximum string length to try\n"
-             "factoring out. For big files, setting this much\n"
-             "smaller will make it much faster!\n");
+      fprintf(stderr,
+              "./encode.exe [-prefix \"message\"] [-pow2] "
+              "< file.txt > file.icfp\n");
+      return -1;
     }
   }
-#endif
 
   std::string input = icfp::ReadAllInput();
 
-  std::string output = BaseXEncode(input);
-  printf("%s\n", output.c_str());
+  CHECK(input.find(prefix) == 0) << "Input must start with exactly the "
+    "prefix.";
+
+  std::string_view input_view(input);
+  input_view.remove_prefix(prefix.size());
+
+  std::string output = BaseXEncode(input_view);
+
+  if (prefix.empty()) {
+    printf("%s\n", output.c_str());
+  } else {
+    printf("B. S%s %s\n",
+           icfp::EncodeString(prefix).c_str(),
+           output.c_str());
+  }
 
   return 0;
 }
