@@ -72,7 +72,7 @@ function getParamNames(func: any) {
   // but node v20.11.0 stringifies them like this:
   //  f => app(lam(x => app(f, app(x, x))), lam(x => app(f, app(x, x))))
   if (lhs.indexOf('(') == -1) {
-    result = lhs;
+    result = [lhs.trim()];
   } else {
     result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
   }
@@ -91,7 +91,6 @@ const ycomb = lam(f => app(lam(x => app(f, app(x, x))), lam(x => app(f, app(x, x
 export function rec(body: (x: Expr) => Expr): Expr {
   //horrible trick to enable HOAS
   const vf = getParamNames(body)[0];
-
   return app(ycomb, rawlam(vf, body(vuse(vf))))
 };
 
