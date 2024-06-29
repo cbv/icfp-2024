@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use anyhow::anyhow;
+
 use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, Copy, PartialEq, Hash, PartialOrd)]
@@ -16,6 +18,29 @@ pub enum Move {
     Right,
     Up,
     Down,
+}
+
+impl Move {
+    pub fn of_char(c : char) -> Option<Self> {
+        match c {
+            'L' => Some(Move::Left),
+            'R' => Some(Move::Right),
+            'U' => Some(Move::Up),
+            'D' => Some(Move::Down),
+            _ => None
+        }
+    }
+}
+
+pub fn parse_moves(s : &str) -> anyhow::Result<Vec<Move>> {
+    let mut result = vec![];
+    for c in s.chars() {
+        match Move::of_char(c) {
+            Some(m) => result.push(m),
+            None => return Err(anyhow!("bad move character: {c}")),
+        }
+    }
+    Ok(result)
 }
 
 impl std::fmt::Display for Move {
@@ -57,6 +82,24 @@ impl std::ops::Index<Coords> for State {
 
     fn index(&self, index: Coords) -> &Item {
         &self.cells[index.row as usize][index.col as usize]
+    }
+}
+
+impl std::fmt::Display for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for ridx in 0..self.height() {
+            for cidx in 0..self.width() {
+                let item = self[Coords::new(ridx, cidx)];
+                match item {
+                    Item::Man => write!(f, "L")?,
+                    Item::Empty => write!(f, " ")?,
+                    Item::Dot => write!(f, ".")?,
+                    Item::Wall => write!(f, "#")?,
+                }
+            }
+            write!(f, "\n")?;
+        }
+        Ok(())
     }
 }
 
