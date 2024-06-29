@@ -125,13 +125,15 @@ static std::string BaseXEncode(std::string_view input, bool force_pow2) {
   std::string rest =
     StringPrintf("B/ vn %s", radix_exp.c_str());
 
+  #define APP "B!"
+
   // render digit ^ emit (count - 1) rest
   std::string concat =
     StringPrintf("B. "
                  // render digit
                  "%s "
                  // emit (count - 1) rest
-                 "B! B! v" EMIT " B- vc %s %s",
+                 APP " " APP " v" EMIT " B- vc %s %s",
                  render_digit.c_str(),
                  one.c_str(), rest.c_str());
 
