@@ -60,9 +60,8 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
     const frames = trace.flatMap(x => x.t == 'frame' ? [x.frame] : []);
 
     program = frames[modeState.currentFrame];
-    console.log(modeState.currentFrame, frames.length - 1);
     renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzle(program)}</div>
-      <input type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
+      <input style={{ width: '40em' }} type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
         dispatch({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
       }}></input></div>;
 

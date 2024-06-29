@@ -21,6 +21,7 @@ function setOutputText(state: AppState, text: string): AppState {
     const executionTrace = JSON.parse(text) as EvalThreedResponse;
     const newModeState = produce(state.modeState, s => {
       s.executionTrace = executionTrace;
+      s.currentFrame = 0;
     });
     return produce(state, s => { s.modeState = newModeState; })
   }
