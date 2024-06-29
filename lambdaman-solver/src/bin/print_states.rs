@@ -1,7 +1,8 @@
 use anyhow::anyhow;
 
 use std::fs;
-//use std::process;
+use std::io::{Read, Write};
+use std::process;
 use std::ffi::OsStr;
 
 pub fn main() -> anyhow::Result<()> {
@@ -14,24 +15,41 @@ pub fn main() -> anyhow::Result<()> {
     }
 
     let solution_path = std::path::Path::new(&args[2]);
-    let solution = fs::read_to_string(&args[2])?;
 
-    let moves = match solution_path.extension().and_then(OsStr::to_str).unwrap() {
+    let solution_str = fs::read_to_string(solution_path)?;
+
+    let moves_str = match solution_path.extension().and_then(OsStr::to_str).unwrap() {
         "icfp" => {
-            //process::Command::new("../cc/eval.exe");
-            // ...
-            todo!()
+            let mut child = process::Command::new("../cc/eval.exe")
+                .stdout(process::Stdio::piped())
+                .stdin(process::Stdio::piped())
+                .spawn()?;
+            let mut stdin = child.stdin.take().unwrap();
+            stdin.write_all(solution_str.as_bytes())?;
+            drop(stdin);
+            let mut stdout = child.stdout.take().unwrap();
+            let mut result = String::new();
+            stdout.read_to_string(&mut result)?;
+            let mut result2 = String::new();
+            for c in result.chars() {
+                if c != '"' {
+                    result2.push(c);
+                }
+            }
+            result2
         }
         "txt" => {
-            // need to strip away the "solve lambdamanX "
-            let moves_str = solution.split_whitespace().nth(2).unwrap();
-            let moves = lambdaman::parse_moves(&moves_str)?;
-            moves
+            solution_str
         }
         e => {
             return Err(anyhow!("unknown extension: {e}"))
         }
     };
+
+
+    // need to strip away the "solve lambdamanX "
+    let moves_str = moves_str.split_whitespace().nth(2).unwrap();
+    let moves = lambdaman::parse_moves(&moves_str)?;
 
     let problem = fs::read_to_string(&args[1])?;
     let mut state = lambdaman::parse_lambda_puzzle(problem);
