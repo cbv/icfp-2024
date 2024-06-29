@@ -19,7 +19,9 @@ function arrow(rotate: number): JSX.Element {
   </svg>
 };
 
-export function renderRow(row: string[]): JSX.Element {
+type LocalDispatch = (action: ThreedAction) => void;
+
+export function renderRow(row: string[], rowIndex: number, dispatch: LocalDispatch): JSX.Element {
   function divwrap(x: JSX.Element | string, cname: string = "threed-cell"): JSX.Element {
     return <div className={cname}>{x}</div>;
   }
@@ -36,22 +38,24 @@ export function renderRow(row: string[]): JSX.Element {
       default: return divwrap(x);
     }
   }
-  return <tr>{row.map(x => <td>{renderCell(x)}</td>)}</tr>;
+  return <tr>{row.map((rowData, x) => <td onMouseDown={() => { dispatch({ t: 'setProgramCell', x, y: rowIndex, v: '.' }) }}>{
+    renderCell(rowData)}</td>)
+  }</tr>;
 }
 
 type Point = { x: number, y: number };
 type Rect = { min: Point, max: Point };
 
-export function renderThreedPuzzleArray(array: string[][]): JSX.Element {
-  return <table><tbody>{array.map(renderRow)}</tbody></table>;
+export function renderThreedPuzzleArray(array: string[][], dispatch: LocalDispatch): JSX.Element {
+  return <table><tbody>{array.map((row, y) => renderRow(row, y, dispatch))}</tbody></table>;
 }
 
-export function renderThreedPuzzle(text: string): JSX.Element {
+export function renderThreedPuzzle(text: string, dispatch: LocalDispatch): JSX.Element {
   const lines = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));;
-  return renderThreedPuzzleArray(lines);
+  return renderThreedPuzzleArray(lines, dispatch);
 }
 
-export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRect: Rect): JSX.Element {
+export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRect: Rect, dispatch: LocalDispatch): JSX.Element {
   const localArray = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));
 
   const globalArray: string[][] = [];
@@ -69,7 +73,7 @@ export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRe
     }
   }
 
-  return renderThreedPuzzleArray(globalArray);
+  return renderThreedPuzzleArray(globalArray, dispatch);
 }
 
 export function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: Dispatch): JSX.Element {
@@ -102,13 +106,13 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
       min: { x: frame.min[0], y: frame.min[1] },
       max: { x: frame.max[0], y: frame.max[1] },
     };
-    renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzleInRect(frame.frame, globalRect, localRect)}</div>
+    renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzleInRect(frame.frame, globalRect, localRect, ldis)}</div>
       <input style={{ width: '40em' }} type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
         ldis({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
       }}></input></div>;
   }
   else if (program != undefined) {
-    renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzleArray(program)}</div>;
+    renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzleArray(program, ldis)}</div>;
   }
 
   const runProgram: React.MouseEventHandler = (e) => {

@@ -6,6 +6,7 @@ export type ThreedAction =
   | { t: 'setCurrentItem', item: string }
   | { t: 'setCurrentFrame', frame: number }
   | { t: 'setValue', which: 'a' | 'b', v: string }
+  | { t: 'setProgramCell', x: number, y: number, v: string }
   ;
 
 export type Action =

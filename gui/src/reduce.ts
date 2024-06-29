@@ -70,6 +70,13 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
         s[action.which] = action.v;
       });
     }
+    case 'setProgramCell': {
+      return produceMs(state, ms, s => {
+        if (s.curProgram != undefined)
+          s.curProgram[action.y][action.x] = action.v;
+      });
+
+    }
   }
 }
 

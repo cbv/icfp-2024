@@ -201,6 +201,8 @@ button, .pseudo-button {
 table { border-collapse: collapse; }
 td {
   padding: 1px;
+  cursor: pointer;
+  user-select: none;
 }
 
 .threed-cell {
