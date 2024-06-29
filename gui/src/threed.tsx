@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Dispatch, threedAction } from './action';
+import { Dispatch, ThreedAction, threedAction } from './action';
 import { AppModeState, AppState } from './state';
 import { PuzzleSolution } from './types';
 import { unparseThreedProgram } from './threed-util';
@@ -73,13 +73,18 @@ export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRe
 }
 
 export function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: Dispatch): JSX.Element {
+
+  function ldis(action: ThreedAction): void {
+    dispatch(threedAction(action));
+  }
+
   const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
   const renderedPuzzleItems = state.threedSolutions.map(puzzle => {
     const klass: string[] = ["puzzle-item"];
     if (puzzle.name == modeState.curPuzzleName) {
       klass.push('puzzle-item-selected');
     }
-    return <div className={klass.join(" ")} onMouseDown={(e) => { dispatch(threedAction({ t: 'setCurrentItem', item: puzzle.name })) }}>{puzzle.name}</div>;
+    return <div className={klass.join(" ")} onMouseDown={(e) => { ldis({ t: 'setCurrentItem', item: puzzle.name }) }}>{puzzle.name}</div>;
   });
   let renderedPuzzle: JSX.Element | undefined;
 
@@ -99,7 +104,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
     };
     renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzleInRect(frame.frame, globalRect, localRect)}</div>
       <input style={{ width: '40em' }} type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
-        dispatch(threedAction({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) }))
+        ldis({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
       }}></input></div>;
   }
   else if (program != undefined) {
@@ -117,7 +122,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
   function runApparatus(): JSX.Element {
     function onChange(which: 'a' | 'b') {
       return (e: React.ChangeEvent<HTMLInputElement>) => {
-        dispatch(threedAction({ t: 'setValue', which, v: e.currentTarget.value }))
+        ldis({ t: 'setValue', which, v: e.currentTarget.value })
       }
     }
     return <>
