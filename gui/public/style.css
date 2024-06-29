@@ -167,3 +167,16 @@ button, .pseudo-button {
   cursor: pointer;
   margin: 0em 0.5em;
 }
+
+
+.threed-container {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+  background-color: white;
+}
+
+.threed-puzzlist {
+  border-right: 1px solid black;
+  background-color: white;
+}
