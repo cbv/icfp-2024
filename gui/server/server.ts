@@ -73,7 +73,10 @@ app.post('/api/eval', async (req, res) => {
 app.post('/api/eval-threed', async (req, res) => {
   const body = req.body as EvalThreedRpc;
 
-  const child = spawn(path.join(__dirname, '../../seaplusplus/3v'), ['--json', body.a + '', body.b + '']);
+  // XXX raise this limit maybe
+  const LIMIT = '200';
+
+  const child = spawn(path.join(__dirname, '../../seaplusplus/3v'), ['--limit', LIMIT, '--json', body.a + '', body.b + '']);
   child.stdin.write(body.program);
   child.stdin.end();
 
