@@ -50,12 +50,12 @@ export function lambdaman8() {
   // rv += repeat('L', 97);
 
   // repeat "D" 3 = "DDD"
-  const R2 = rec(R => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, appSpine(R, [s, sub(n, litnum(1))]))))));
-  let repeat = vuse('R2');
+  const R = rec(r => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, appSpine(r, [s, sub(n, litnum(1))]))))));
+  let repeat = vuse('R');
   const Mbody = litnum(205);
   const M = vuse('M')
   const spiral = letbind(
-    [{ v: 'R2', body: R2 }, { v: 'M', body: Mbody }],
+    [{ v: 'R', body: R }, { v: 'M', body: Mbody }],
     rec(S => lam(n =>
       // have we finished?
       cond(equ(n, litnum(98)),
