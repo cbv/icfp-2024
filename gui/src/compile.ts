@@ -37,7 +37,7 @@ export function lambdaman4() {
   const zag =
     rec(S => lam(n => lam(r =>
       // have we finished?
-      cond(equ(n, litnum(1000000)),
+      cond(equ(n, litnum(100000)),
         // done
         litstr(""),
         // Otherwise do some moves and recurse
@@ -67,7 +67,7 @@ export function lambdaman6() {
 }
 
 export function lambdaman7() {
-  // 21 x 21 maze
+  // pacman maze
   // use a linear congruential RNG and do a random walk
   const zag =
     rec(S => lam(n => lam(r =>
@@ -90,9 +90,7 @@ export function lambdaman7() {
             litnum(0xffffffff))]))))));
 
   return expToIcfp(concat(litstr("solve lambdaman7 "), appSpine(zag, [litnum(0), litnum(0)])));
-
 }
-
 
 export function lambdaman8() {
   // let rv = '';
@@ -152,6 +150,64 @@ export function lambdaman9() {
 
   return expToIcfp(concat(litstr("solve lambdaman9 "), appSpine(zag, [litnum(0)])));
 }
+
+export function lambdaman10() {
+  // sparse obstacles
+
+  // use a linear congruential RNG and do a random walk
+  // (this doesn't work because the area is too big)
+  const zag =
+    rec(S => lam(n => lam(r =>
+      // have we finished?
+      cond(equ(n, litnum(1000000)),
+        // done
+        litstr(""),
+        // Otherwise do some moves and recurse
+        concat(
+          letbind([{ v: 'x', body: mod(div(r, litnum(0x3fffffff)), litnum(4)) }],
+            cond(equ(litnum(0), vuse('x')),
+              litstr("U"),
+              cond(equ(litnum(1), vuse('x')),
+                litstr("D"),
+                cond(equ(litnum(2), vuse('x')),
+                  litstr("L"),
+                  litstr("R"))))),
+          appSpine(S, [add(n, litnum(1)),
+          mod(add(mul(r, litnum(1664525)), litnum(1013904223)),
+            litnum(0xffffffff))]))))));
+
+  return expToIcfp(concat(litstr("solve lambdaman10 "), appSpine(zag, [litnum(0), litnum(11)])));
+}
+
+export function lambdaman11() {
+  // big maze
+
+  // use a linear congruential RNG and do a random walk
+  // (this doesn't work because the area is too big)
+  const zag =
+    rec(S => lam(n => lam(r =>
+      // have we finished?
+      cond(equ(n, litnum(1000000)),
+        // done
+        litstr(""),
+        // Otherwise do some moves and recurse
+        concat(
+          letbind([{ v: 'x', body: mod(div(r, litnum(0x3fffffff)), litnum(4)) }],
+            cond(equ(litnum(0), vuse('x')),
+              litstr("U"),
+              cond(equ(litnum(1), vuse('x')),
+                litstr("D"),
+                cond(equ(litnum(2), vuse('x')),
+                  litstr("L"),
+                  litstr("R"))))),
+          appSpine(S, [add(n, litnum(1)),
+          mod(add(mul(r, litnum(1664525)), litnum(1013904223)),
+            litnum(0xffffffff))]))))));
+
+  return expToIcfp(concat(litstr("solve lambdaman11 "), appSpine(zag, [litnum(0), litnum(0)])));
+}
+
+
 
 export function compileExample() {
   return lambdaman8();
