@@ -158,7 +158,13 @@ Similar to previous.
 efficiency11
 ------------
 
-Similar to previous.
+This is like efficiency9 but:
+  - The numbers are in [1, 9] instead of [0, 8]
+  - Some are actually constants
+
+See efficiency11.z3.
+
+The answer is 100573847453233330105890470844482405072957615231969369459908387717689164043268.
 
 efficiency12
 ------------
