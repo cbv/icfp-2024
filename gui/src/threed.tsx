@@ -53,26 +53,29 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
     return <div className={klass.join(" ")} onMouseDown={(e) => { dispatch({ t: 'setCurrentItem', item: puzzle.name }) }}>{puzzle.name}</div>;
   });
   let renderedPuzzle: JSX.Element | undefined;
+  // Program is the current program text in case we need to send it to the evaluator
   let program: string | undefined;
   const trace = modeState.executionTrace;
+
+  if (modeState.curPuzzleName != undefined) {
+    const puzzle = puzzles.find(p => p.name == modeState.curPuzzleName);
+    if (puzzle != undefined) {
+      const stripped = puzzle.body.replace(/solve .*\n/, '');
+      program = stripped;
+    }
+  }
+
   if (trace != undefined) {
-
     const frames = trace.flatMap(x => x.t == 'frame' ? [x.frame] : []);
-
-    program = frames[modeState.currentFrame];
-    renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzle(program)}</div>
+    const frameProgram = frames[modeState.currentFrame];
+    renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzle(frameProgram)}</div>
       <input style={{ width: '40em' }} type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
         dispatch({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
       }}></input></div>;
 
   }
-  else if (modeState.curPuzzleName != undefined) {
-    const puzzle = puzzles.find(p => p.name == modeState.curPuzzleName);
-    if (puzzle != undefined) {
-      const stripped = puzzle.body.replace(/solve .*\n/, '');
-      renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(stripped)}</div>;
-      program = stripped;
-    }
+  else if (program != undefined) {
+    renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(program)}</div>;
   }
 
   // XXX hard-coded a and b
