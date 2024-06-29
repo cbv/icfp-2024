@@ -1,8 +1,9 @@
 import { produce } from 'immer';
-import { AppModeState, AppState, hashOfMode, mkModeState } from './state';
+import { AppModeState, AppState, ThreedProgram, hashOfMode, mkModeState } from './state';
 import { Action, ThreedAction } from './action';
 import { compileExample } from './compile';
 import { EvalThreedResponse } from './types';
+import { parseThreedProgram } from './threed-util';
 
 function setInputText(state: AppState, text: string): AppState {
   if (!(state.modeState.t == 'evaluate' || state.modeState.t == 'codec' || state.modeState.t == 'communicate'
@@ -46,8 +47,16 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
 
   switch (action.t) {
     case 'setCurrentItem': {
+
+      const puzzle = state.threedSolutions.find(p => p.name == action.item);
+      let newProgram: ThreedProgram | undefined = undefined;
+      if (puzzle != undefined) {
+        newProgram = parseThreedProgram(puzzle.body);
+      }
       return produceMs(state, ms, s => {
         s.curPuzzleName = action.item;
+        s.curProgram = newProgram;
+        s.executionTrace = undefined;
       });
 
     }

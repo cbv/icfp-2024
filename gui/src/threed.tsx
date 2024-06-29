@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Dispatch, threedAction } from './action';
 import { AppModeState, AppState } from './state';
 import { PuzzleSolution } from './types';
+import { unparseThreedProgram } from './threed-util';
 
 function arrow(rotate: number): JSX.Element {
   const transform = `
@@ -81,17 +82,9 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
     return <div className={klass.join(" ")} onMouseDown={(e) => { dispatch(threedAction({ t: 'setCurrentItem', item: puzzle.name })) }}>{puzzle.name}</div>;
   });
   let renderedPuzzle: JSX.Element | undefined;
-  // Program is the current program text in case we need to send it to the evaluator
-  let program: string | undefined;
-  const trace = modeState.executionTrace;
 
-  if (modeState.curPuzzleName != undefined) {
-    const puzzle = state.threedSolutions.find(p => p.name == modeState.curPuzzleName);
-    if (puzzle != undefined) {
-      const stripped = puzzle.body.replace(/solve .*\n/, '');
-      program = stripped;
-    }
-  }
+  let program = modeState.curProgram;
+  const trace = modeState.executionTrace;
 
   if (trace != undefined) {
     const frames = trace.flatMap(x => x.t == 'frame' ? [x] : []);
@@ -110,7 +103,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
       }}></input></div>;
   }
   else if (program != undefined) {
-    renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(program)}</div>;
+    renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzleArray(program)}</div>;
   }
 
   const runProgram: React.MouseEventHandler = (e) => {
@@ -118,7 +111,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
     if (isNaN(a)) { alert(`bad value for a: ${modeState.a}`); return }
     let b = parseInt(modeState.b);
     if (isNaN(b)) { alert(`bad value for b: ${modeState.b}`); return }
-    dispatch({ t: 'doEffect', effect: { t: 'evalThreed', text: program!, a, b } })
+    dispatch({ t: 'doEffect', effect: { t: 'evalThreed', text: unparseThreedProgram(program!), a, b } })
   };
 
   function runApparatus(): JSX.Element {
