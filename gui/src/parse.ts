@@ -51,3 +51,30 @@ export function parseIcfp(icfp: string): Expr {
   const [expr, newPos] = getExprFromStream(toks, 0);
   return expr;
 }
+
+export function unparseSexp(e: Expr): string {
+  function prettyVar(x: string) {
+    const nicevars = 'xyzwabcd'.split('');
+    const n = decodeIntLit(x);
+    if (n < nicevars.length) return nicevars[n];
+    return x;
+  }
+  switch (e.t) {
+    case 'binop': {
+      if (e.opr == '$') {
+        return `(${unparseSexp(e.a)} ${unparseSexp(e.b)})`;
+      }
+      else {
+        return `(${e.opr} ${unparseSexp(e.a)} ${unparseSexp(e.b)})`;
+      }
+    }
+    case 'unop': return `(${e.opr} ${unparseSexp(e.a)})`;
+    case 'lam': return `(λ ${prettyVar(e.v)} ${unparseSexp(e.body)})`;
+    case 'cond': return `(if ${unparseSexp(e.cond)} ${unparseSexp(e.tt)} ${unparseSexp(e.ff)})`;
+    case 'str': const escaped = e.x.replace(/(["\\])/g, x => "\\" + x[1]);
+      return `"${escaped}"`;
+    case 'var': return prettyVar(e.v);
+    case 'int': return e.x + '';
+    case 'bool': return e.x ? 'true' : 'false';
+  }
+}
