@@ -20,6 +20,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <cmath>
 
 struct BigInt {
   static_assert(std::integral<size_t>);
