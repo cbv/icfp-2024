@@ -49,6 +49,7 @@ function base94encode(n: number): string {
 export function add(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '+' }; }
 export function mul(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '*' }; }
 export function sub(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '-' }; }
+export function mod(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '%' }; }
 export function concat(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '.' }; }
 export function app(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '$' }; }
 export function litnum(x: number): Expr { return { t: 'int', x }; }
@@ -65,7 +66,17 @@ var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 var ARGUMENT_NAMES = /([^\s,]+)/g;
 function getParamNames(func: any) {
   var fnStr = func.toString().replace(STRIP_COMMENTS, '');
-  var result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+  let lhs = fnStr.split('=>')[0];
+  var result;
+  // The browser stringifies functions like this:
+  //  (f) => app(lam((x) => app(f, app(x, x))), lam((x) => app(f, app(x, x))))
+  // but node v20.11.0 stringifies them like this:
+  //  f => app(lam(x => app(f, app(x, x))), lam(x => app(f, app(x, x))))
+  if (lhs.indexOf('(') == -1) {
+    result = [lhs.trim()];
+  } else {
+    result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+  }
   if (result === null)
     result = [];
   return result;
@@ -81,7 +92,6 @@ const ycomb = lam(f => app(lam(x => app(f, app(x, x))), lam(x => app(f, app(x, x
 export function rec(body: (x: Expr) => Expr): Expr {
   //horrible trick to enable HOAS
   const vf = getParamNames(body)[0];
-
   return app(ycomb, rawlam(vf, body(vuse(vf))))
 };
 
