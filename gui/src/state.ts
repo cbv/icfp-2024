@@ -5,7 +5,9 @@ import { AppProps, EvalThreedResponse, Point, PuzzleSolution, Rect } from "./typ
 export type ThreedProgram = string[][];
 
 export type MouseState =
-  | { t: 'up' };
+  | { t: 'up' }
+  | { t: 'drag', p: Point }
+  ;
 
 export type AppModeState =
   | {
@@ -41,7 +43,6 @@ export type AppModeState =
     mouseState: MouseState,
   }
   ;
-
 
 export type AppMode = AppModeState["t"];
 

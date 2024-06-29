@@ -140,6 +140,22 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
         s.curProgram = newProgram;
       });
     }
+    case 'mouseDown': {
+      if (action.buttons == 2) {
+        return produceMs(state, ms, s => {
+          if (s.curProgram != undefined)
+            s.curProgram[action.y][action.x] = '.';
+        });
+      }
+      if (action.buttons == 1) {
+        const p = { x: action.x, y: action.y };
+        return produceMs(state, ms, s => {
+          s.mouseState = { t: 'drag', p };
+          s.selection = { min: p, max: p };
+        });
+
+      }
+    }
   }
 }
 

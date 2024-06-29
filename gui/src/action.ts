@@ -14,6 +14,7 @@ export type ThreedAction =
   | { t: 'setHover', p: Point }
   | { t: 'clearHover', p: Point }
   | { t: 'editChar', char: string }
+  | { t: 'mouseDown', x: number, y: number, buttons: number }
   ;
 
 export type Action =

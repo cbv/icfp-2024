@@ -22,8 +22,13 @@ function arrow(rotate: number): JSX.Element {
 type LocalDispatch = (action: ThreedAction) => void;
 type LocalModeState = AppModeState & { t: 'threed' };
 
+function pointInRect(p: Point, rect: Rect): boolean {
+  return (p.x >= rect.min.x && p.y >= rect.min.y && p.x <= rect.max.x && p.y <= rect.max.y);
+}
+
 function isHighlighted(ms: LocalModeState, p: Point): boolean {
   if (ms.hoverCell != undefined && p.x == ms.hoverCell.x && p.y == ms.hoverCell.y) return true;
+  if (ms.selection != undefined && pointInRect(p, ms.selection)) return true;
   return false;
 }
 
@@ -54,7 +59,9 @@ export function renderRow(modeState: LocalModeState, row: string[], rowIndex: nu
   return <tr>{row.map((tok, x) => <td
     onMouseEnter={() => dispatch({ t: 'setHover', p: { x, y } })}
     onMouseLeave={() => dispatch({ t: 'clearHover', p: { x, y } })}
-    onMouseDown={() => { dispatch({ t: 'setProgramCell', x, y, v: '.' }) }}>{
+    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); }}
+    onMouseDown={(e) => { dispatch({ t: 'mouseDown', x, y, buttons: e.buttons }); e.preventDefault(); e.stopPropagation(); }}>{
+
       renderCell(tok, x)}</td>)
   }</tr>;
 }
