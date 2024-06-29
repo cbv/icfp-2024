@@ -4,7 +4,7 @@ pub fn main() -> anyhow::Result<()> {
     // 21 x 21 maze
     // use a linear congruential RNG and do a random walk
 
-    let walk =
+     let walk =
         rec("S",
             lam("n",
                 lam("r",

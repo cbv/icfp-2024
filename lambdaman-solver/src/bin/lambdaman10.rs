@@ -4,30 +4,36 @@ pub fn main() -> anyhow::Result<()> {
     // 50 x 50 grid. every eleventh cell has a wall.
     // man starts in upper left.
 
-    // this is copied from lambdaman9. It doesn't work here.
-    let zag = let1(
-        "R", repeat(),
+    // use a linear congruential RNG and do a random walk
+    let walk =
         rec("S",
             lam("n",
-                // have we finished?
-                cond(equ(vuse("n"), litnum(25)),
-                     // done
-                     litstr(""),
-                     // Otherwise do some moves and recurse
-                     concat(
+                lam("r",
+                    // have we finished?
+                    cond(equ(vuse("n"), litnum(1000000)),
+                         // done
+                         litstr(""),
+                         // Otherwise do some moves and recurse
                          concat(
-                             concat(
-                                 app_spine(vuse("R"), vec![litstr("R"), litnum(50)]),
-                                 litstr("D")),
-                             concat(
-                                 app_spine(vuse("R"), vec![litstr("L"), litnum(50)]),
-                                 litstr("D"))),
-                         app(vuse("S"), add(vuse("n"), litnum(1))))))));
+                             let1("x",
+                                  modulus(div(vuse("r"), litnum(0x0fffffff)), litnum(4)),
+                                  cond(equ(litnum(0), vuse("x")),
+                                       litstr("U"),
+                                       cond(equ(litnum(1), vuse("x")),
+                                            litstr("D"),
+                                            cond(equ(litnum(2), vuse("x")),
+                                                 litstr("L"),
+                                                 litstr("R"))))),
+                             app_spine(
+                                 vuse("S"),
+                                 vec![add(vuse("n"), litnum(1)),
+                                      modulus(add(mul(vuse("r"), litnum(1664525)),
+                                                  litnum(1013904223)),
+                                              litnum(0x100000000))]))))));
 
-    let e =
-        concat(
-            litstr("solve lambdaman9 "),
-            app(zag, litnum(0)));
+    let e = concat(litstr("solve lambdaman10 "),
+                   app_spine(walk,
+                             vec![litnum(0), litnum(0)]));
     println!("{e}");
     Ok(())
 }
