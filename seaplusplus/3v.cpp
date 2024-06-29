@@ -58,8 +58,8 @@ std::string to_string(Cell const &cell) {
 
 typedef std::unordered_map< glm::ivec2, Cell > Grid;
 
-void dump(Grid const &grid) {
-	if (grid.empty()) {
+void dump(Grid const &grid, bool json) {
+	if (grid.empty() && !json) {
 		std::cout << "Empty grid." << std::endl;
 	}
 	glm::ivec2 min = grid.begin()->first;
@@ -68,11 +68,17 @@ void dump(Grid const &grid) {
 		min = glm::min(min, kv.first);
 		max = glm::max(max, kv.first);
 	}
-	std::cout << "[" << min.x << ", " << max.x << "]x[" << min.y << ", " << max.y << "]:\n";
+   if (!json) {
+     std::cout << "[" << min.x << ", " << max.x << "]x[" << min.y << ", " << max.y << "]:\n";
+   }
 	std::vector< uint32_t > widths(max.x - min.x + 1, 2);
 	for (auto const &[at, cell] : grid) {
 		widths[at.x - min.x] = std::max< uint32_t >(widths[at.x - min.x], to_string(cell).size());
 	}
+
+   if (json) {
+     std::cout << "{\"t\":\"frame\",\"frame\":\"";
+   }
 
 	for (int32_t y = min.y; y <= max.y; ++y) {
 		for (int32_t x = min.x; x <= max.x; ++x) {
@@ -87,8 +93,18 @@ void dump(Grid const &grid) {
 			while (str.size() < widths[x-min.x]) str = ' ' + str;
 			std::cout << str;
 		}
-		std::cout << '\n';
+      if (json) {
+        std::cout << "\\n";
+      }
+      else {
+        std::cout << '\n';
+      }
 	}
+
+   if (json) {
+     std::cout << "\"}";
+   }
+
 	std::cout.flush();
 }
 
@@ -154,7 +170,7 @@ int main(int argc, char **argv) {
    else {
      std::cout << "------ as loaded ------" << std::endl;
    }
-	dump(grid);
+	dump(grid, json);
 
 	std::vector< Grid > ticks;
 	ticks.emplace_back(grid);
@@ -169,10 +185,13 @@ int main(int argc, char **argv) {
 		}
 	}
 
-   if (!json) {
+   if (json) {
+     std::cout << "," << std::endl;
+   }
+   else {
      std::cout << "------ ticks[0] ------" << std::endl;
    }
-	dump(ticks[0]);
+	dump(ticks[0], json);
 	for (;;) {
 		Grid const &prev = ticks.back();
 		Grid next = prev;
@@ -321,29 +340,44 @@ int main(int argc, char **argv) {
 		resolve_writes();
 
 		if (output) {
-			std::cout << "Output Written: " << to_string(*output) << std::endl;
-			break;
+        if (json) {
+          std::cout << ",\n{\"t\":\"output\",\"output\":" << to_string(*output) << "}";
+        }
+        else {
+          std::cout << "Output Written: " << to_string(*output) << std::endl;
+        }
+        break;
 		}
 
 		//if there was no output, do time travel:
 		if (tt_dest != -1U) {
-			std::cout << "Time traveling to ticks[" << tt_dest << "]." << std::endl;
-			next = std::move(ticks[tt_dest]);
-			writes = std::move(tt_writes);
-			ticks.erase(ticks.begin() + tt_dest, ticks.end());
-			resolve_writes();
+        if (!json) {
+          std::cout << "Time traveling to ticks[" << tt_dest << "]." << std::endl;
+        }
+        next = std::move(ticks[tt_dest]);
+        writes = std::move(tt_writes);
+        ticks.erase(ticks.begin() + tt_dest, ticks.end());
+        resolve_writes();
 		}
 
 		if (output) {
-			std::cout << "Output Written (during time travel): " << to_string(*output) << std::endl;
-			break;
+        if (json) {
+          std::cout << ",\n{\"t\":\"output\",\"output\":" << to_string(*output) << ",\"timetravel\":true}";
+        }
+        else {
+          std::cout << "Output Written (during time travel): " << to_string(*output) << std::endl;
+        }
+        break;
 		}
 
 		ticks.emplace_back(std::move(next));
-      if (!json) {
+      if (json) {
+        std::cout << "," << std::endl;
+      }
+      else {
         std::cout << "------ ticks[" << ticks.size() - 1 << "] ------" << std::endl;
       }
-		dump(ticks.back());
+		dump(ticks.back(), json);
 
 		if (!reduced && !json) {
 			std::cout << "No operator can reduce." << std::endl;
