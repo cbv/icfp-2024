@@ -37,13 +37,13 @@ CC_LIB_OBJECTS=$(CC_LIB)/util.o $(CC_LIB)/base/logging.o $(CC_LIB)/base/stringpr
 
 
 eval.exe : eval.o icfp.o $(CC_LIB_OBJECTS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 compress.exe : compress.o icfp.o $(CC_LIB_OBJECTS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 spaceship.exe : spaceship.o $(CC_LIB_OBJECTS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 clean :
 	rm -f *.o *.exe $(CC_LIB_OBJECTS)
