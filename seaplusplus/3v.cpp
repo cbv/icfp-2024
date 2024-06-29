@@ -34,7 +34,7 @@ struct Cell {
 			(token.size() == 1 && '0' <= token[0] && token[0] <= '9')
 			|| (token.size() == 2 && token[0] == '-' && '0' <= token[1] && token[1] <= '9')
 			|| (token.size() == 2 && '0' <= token[0] && token[0] <= '9' && '0' <= token[1] && token[1] <= '9')
-			|| (token.size() == 3 && token[0] == '_' && '0' <= token[1] && token[1] <= '9' && '0' <= token[2] && token[2] <= '9')) {
+			|| (token.size() == 3 && token[0] == '-' && '0' <= token[1] && token[1] <= '9' && '0' <= token[2] && token[2] <= '9')) {
 			op = '\0';
 			value = std::stoi(token);
 		} else {
@@ -68,15 +68,23 @@ void dump(Grid const &grid) {
 		max = glm::max(max, kv.first);
 	}
 	std::cout << "[" << min.x << ", " << max.x << "]x[" << min.y << ", " << max.y << "]:\n";
+	std::vector< uint32_t > widths(max.x - min.x + 1, 2);
+	for (auto const &[at, cell] : grid) {
+		widths[at.x - min.x] = std::max< uint32_t >(widths[at.x - min.x], to_string(cell).size());
+	}
+
 	for (int32_t y = min.y; y <= max.y; ++y) {
 		for (int32_t x = min.x; x <= max.x; ++x) {
 			auto f = grid.find(glm::ivec2(x,y));
 			if (x != min.x) std::cout << ' ';
+			std::string str;
 			if (f == grid.end()) {
-				std::cout << '.';
+				str = ".";
 			} else {
-				std::cout << to_string(f->second);
+				str = to_string(f->second);
 			}
+			while (str.size() < widths[x-min.x]) str = ' ' + str;
+			std::cout << str;
 		}
 		std::cout << '\n';
 	}
