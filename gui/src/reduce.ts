@@ -112,6 +112,9 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
         s.curPuzzleName = action.item;
         s.curProgram = newProgram;
         s.executionTrace = undefined;
+        s.selection = undefined;
+        // but we leave clipboard intact!
+        s.cutRect = undefined;
       });
 
     }
@@ -265,8 +268,9 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
       newProgram = putContents(newProgram, selection.min, clipboard);
       return produceMs(state, ms, s => {
         s.curProgram = newProgram;
+        s.selection = undefined;
         if (cutRect != undefined) {
-          s.selection = undefined;
+          s.clipboard = undefined;
           s.cutRect = undefined;
         }
       });
