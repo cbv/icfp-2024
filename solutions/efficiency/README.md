@@ -125,13 +125,18 @@ so we're meant to submit the smallest $a > 30$ such that the $a^{th}$ fibonacci 
 efficiency7
 -----------
 
-This looks like a 3SAT problem. Throw it at Z3.
+This is a SAT problem. Tom converted it to Z3 with cc/pp.exe and some
+emacs macros (see efficiency7.z3). Note: It's searching for the
+*minimal* solution.
+
+The answer is 584302217761.
 
 efficiency8
 -----------
 
 This is a SAT problem. Tom converted it to Z3 with cc/pp.exe and some
-emacs macros (see e8.z3). Note: It's searching for the *minimal* solution.
+emacs macros (see efficiency8.z3). Note: It's searching for the
+*minimal* solution.
 
 The answer is 422607674157562.
 

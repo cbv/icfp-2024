@@ -8,10 +8,12 @@
 #include <cstdio>
 #include <memory>
 #include <variant>
+#include <vector>
 
 #include "base/logging.h"
 #include "base/stringprintf.h"
 #include "ansi.h"
+#include "util.h"
 
 using namespace icfp;
 
@@ -23,6 +25,22 @@ static std::string PrettyVar(const icfp::int_type &i) {
   CHECK(ii >= 0);
   if (ii < 26) return StringPrintf("%c", 'a' + ii);
   return StringPrintf("v%zu", (size_t)ii);
+}
+
+static std::string Pretty(const Exp *exp);
+
+// Flatten n-ary operator if it's 'op', or just e.
+static void PrettyFlat(uint8_t op, const Exp *exp,
+                       std::vector<std::string> *out) {
+  if (const Binop *b = std::get_if<Binop>(exp)) {
+    if (b->op == op) {
+      PrettyFlat(op, b->arg1.get(), out);
+      PrettyFlat(op, b->arg2.get(), out);
+      return;
+    }
+  }
+  // Otherwise...
+  out->push_back(Pretty(exp));
 }
 
 static std::string Pretty(const Exp *exp) {
@@ -78,15 +96,23 @@ static std::string Pretty(const Exp *exp) {
                             Pretty(b->arg2.get()).c_str());
       }
 
-    case '|':
-      return StringPrintf("(or %s %s)",
-                          Pretty(b->arg1.get()).c_str(),
-                          Pretty(b->arg2.get()).c_str());
+    case '|': {
+      std::vector<std::string> args;
+      PrettyFlat('|', b->arg1.get(), &args);
+      PrettyFlat('|', b->arg2.get(), &args);
 
-    case '&':
-      return StringPrintf("(and %s %s)",
-                          Pretty(b->arg1.get()).c_str(),
-                          Pretty(b->arg2.get()).c_str());
+      return StringPrintf("(or %s)",
+                          Util::Join(args, " ").c_str());
+    }
+
+    case '&': {
+      std::vector<std::string> args;
+      PrettyFlat('&', b->arg1.get(), &args);
+      PrettyFlat('&', b->arg2.get(), &args);
+
+      return StringPrintf("(and %s)",
+                          Util::Join(args, " ").c_str());
+    }
 
     default:
       return StringPrintf("(%c %s %s)",
