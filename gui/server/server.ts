@@ -28,7 +28,7 @@ app.use('/', express.static(path.join(__dirname, '../public')));
 app.get('/solutions/threed', async (req, res) => {
   const files = await glob(path.join(__dirname, '../../solutions/threed/threed*.txt'))
   const goodFiles: PuzzleSolution[] = files
-    .filter(file => file.match(/\/threed[0-9]+.txt$/))
+    .filter(file => file.match(/\/threed.*\.txt$/))
     .sort()
     .map(file => ({ name: path.basename(file), body: fs.readFileSync(file, 'utf8') }));
   res.json(goodFiles);
