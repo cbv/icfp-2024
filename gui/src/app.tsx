@@ -8,9 +8,7 @@ import { AppMode, AppModeState, AppState, mkState } from './state';
 import { Dispatch } from './action';
 import { toTitleCase } from './lib/util';
 import { decodeString, encodeString } from './codec';
-
-export type AppProps = {
-};
+import { AppProps, PuzzleSolution } from './types';
 
 const modes: AppMode[] = ['codec', 'communicate', 'evaluate', 'lambdaman', 'threed'];
 
@@ -105,11 +103,18 @@ function renderLambda(state: AppState, modeState: AppModeState & { t: 'lambdaman
   </div>;
 }
 
-function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: Dispatch): JSX.Element {
+function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, puzzles: PuzzleSolution[], dispatch: Dispatch): JSX.Element {
   const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
+  const renderedPuzzleItems = puzzles.map(puzzle => {
+    return <div className="puzzle-item">{puzzle.name}</div>;
+  });
   return <div className="interface-container">
     <div className="textarea-container">
-      stub
+      <div className="threed-container">
+        <div className="threed-puzzlist">
+          {renderedPuzzleItems}
+        </div>
+      </div>
     </div>
     <div className="action-bar">
       {/*      <button onClick={(e) => { dispatch({ t: 'compile' }) }}>Compile</button>*/}
@@ -117,7 +122,7 @@ function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }
   </div>;
 }
 
-function renderAppBody(state: AppState, dispatch: Dispatch): JSX.Element {
+function renderAppBody(props: AppProps, state: AppState, dispatch: Dispatch): JSX.Element {
   const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
   switch (state.mode) {
     case 'evaluate':
@@ -134,7 +139,7 @@ function renderAppBody(state: AppState, dispatch: Dispatch): JSX.Element {
       return renderLambda(state, state.modeState, dispatch);
     case 'threed':
       if (state.modeState.t != state.mode) throw new Error(`mode state inconsistency`);
-      return renderThreed(state, state.modeState, dispatch);
+      return renderThreed(state, state.modeState, props.threedSolutions, dispatch);
   }
 }
 
@@ -143,16 +148,19 @@ export function App(props: AppProps): JSX.Element {
 
 
 
-  const appBody = renderAppBody(state, dispatch);
+  const appBody = renderAppBody(props, state, dispatch);
   return <>
     <Navbar state={state} dispatch={dispatch} />
     {appBody}
   </>;
 }
 
-export function init() {
+export async function init() {
+
+  const threedSolutions = await (await fetch(new Request(`/solutions/threed`))).json() as PuzzleSolution[];
+
   const props: AppProps = {
-    color: '#f0f',
+    threedSolutions,
   };
   const root = createRoot(document.querySelector('.app')!);
   root.render(<App {...props} />);

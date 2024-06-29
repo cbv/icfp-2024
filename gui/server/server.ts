@@ -4,6 +4,7 @@ import express from 'express';
 import * as path from 'path';
 import { spawn } from 'node:child_process';
 import { glob } from 'glob';
+import { PuzzleSolution } from '../src/types';
 
 const token = fs.readFileSync(path.join(__dirname, '../../API_KEY'), 'utf8').replace(/\n/g, '');
 const app = express();
@@ -26,11 +27,14 @@ app.use('/', express.static(path.join(__dirname, '../public')));
 
 app.get('/solutions/threed', async (req, res) => {
   const files = await glob(path.join(__dirname, '../../solutions/threed/threed*.txt'))
-  res.json(files.filter(file => file.match(/\/threed[0-9]+.txt$/)).sort());
+  const goodFiles: PuzzleSolution[] = files
+    .filter(file => file.match(/\/threed[0-9]+.txt$/))
+    .sort()
+    .map(file => ({ name: path.basename(file), body: fs.readFileSync(file, 'utf8') }));
+  res.json(goodFiles);
 });
 
 app.use('/solutions', express.static(path.join(__dirname, '../../solutions')));
-
 
 app.post('/api/space', async (req, res) => {
   const body = req.body.rawString;
