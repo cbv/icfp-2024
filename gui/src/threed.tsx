@@ -41,14 +41,34 @@ export function renderRow(row: string[]): JSX.Element {
 type Point = { x: number, y: number };
 type Rect = { min: Point, max: Point };
 
+export function renderThreedPuzzleArray(array: string[][]): JSX.Element {
+  return <table><tbody>{array.map(renderRow)}</tbody></table>;
+}
+
 export function renderThreedPuzzle(text: string): JSX.Element {
   const lines = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));;
-  return <table><tbody>{lines.map(renderRow)}</tbody></table>;
+  return renderThreedPuzzleArray(lines);
 }
 
 export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRect: Rect): JSX.Element {
-  const lines = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));;
-  return <table><tbody>{lines.map(renderRow)}</tbody></table>;
+  const localArray = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));
+
+  const globalArray: string[][] = [];
+  for (let y = 0; y < globalRect.max.y - globalRect.min.y + 1; y++) {
+    const row: string[] = [];
+    globalArray.push(row);
+    for (let x = 0; x < globalRect.max.x - globalRect.min.x + 1; x++) {
+      row.push('.');
+    }
+  }
+
+  for (let y = 0; y < localRect.max.y - localRect.min.y + 1; y++) {
+    for (let x = 0; x < localRect.max.x - localRect.min.x + 1; x++) {
+      globalArray[y + localRect.min.y - globalRect.min.y][x + localRect.min.x - globalRect.min.x] = localArray[y][x];
+    }
+  }
+
+  return renderThreedPuzzleArray(globalArray);
 }
 
 export function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, puzzles: PuzzleSolution[], dispatch: Dispatch): JSX.Element {
