@@ -126,6 +126,9 @@ function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDi
 
 export function RenderThreed(props: { state: AppState, modeState: LocalModeState, dispatch: Dispatch }): JSX.Element {
   const { state, modeState, dispatch } = props;
+  const onMouseUp = (e: MouseEvent) => {
+    ldis({ t: 'mouseUp' });
+  };
   const onKeyDown = (e: KeyboardEvent) => {
     if (handleKey(state, modeState, ldis, e.code, e.key)) {
       e.preventDefault();
@@ -134,8 +137,10 @@ export function RenderThreed(props: { state: AppState, modeState: LocalModeState
   };
   React.useEffect(() => {
     window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('mouseup', onMouseUp);
     return () => {
       window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('mouseup', onMouseUp);
     };
   }, [state]);
   function ldis(action: ThreedAction): void {
@@ -172,7 +177,7 @@ export function RenderThreed(props: { state: AppState, modeState: LocalModeState
       }}></input></div>;
   }
   else if (program != undefined) {
-    renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzleArray(modeState, program, ldis)}</div>;
+    renderedPuzzle = <div className="rendered-puzzle" onMouseDown={() => { ldis({ t: 'clearSelection' }) }}>{renderThreedPuzzleArray(modeState, program, ldis)}</div>;
   }
 
   const runProgram: React.MouseEventHandler = (e) => {

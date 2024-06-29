@@ -2,7 +2,7 @@ import { produce } from 'immer';
 import { AppModeState, AppState, ThreedProgram, hashOfMode, mkModeState } from './state';
 import { Action, ThreedAction } from './action';
 import { compileExample } from './compile';
-import { EvalThreedResponse } from './types';
+import { EvalThreedResponse, Point, Rect } from './types';
 import { framesOfTrace, parseThreedProgram } from './threed-util';
 
 function setInputText(state: AppState, text: string): AppState {
@@ -54,6 +54,13 @@ function keyFold(oldVal: string, keycode: string): string {
   if (oldVal == '.') return keycode;
   if (oldVal == '-' || oldVal.match(/-?[0-9]+/)) return oldVal + keycode;
   return keycode;
+}
+
+function spanRect(p1: Point, p2: Point): Rect {
+  return {
+    max: { x: Math.max(p1.x, p2.x), y: Math.max(p1.y, p2.y) },
+    min: { x: Math.min(p1.x, p2.x), y: Math.min(p1.y, p2.y) },
+  }
 }
 
 function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, action: ThreedAction): AppState {
@@ -116,6 +123,14 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
       });
     }
     case 'setHover': {
+      if (ms.mouseState.t == 'drag') {
+        const p1 = ms.mouseState.p;
+        const p2 = action.p;
+        const newSel = spanRect(p1, p2);
+        return produceMs(state, ms, s => {
+          s.selection = newSel;
+        });
+      }
       return produceMs(state, ms, s => {
         s.hoverCell = action.p;
       });
@@ -155,6 +170,17 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
         });
 
       }
+      return state;
+    }
+    case 'mouseUp': {
+      return produceMs(state, ms, s => {
+        s.mouseState = { t: 'up' };
+      });
+    }
+    case 'clearSelection': {
+      return produceMs(state, ms, s => {
+        s.selection = undefined;
+      });
     }
   }
 }
