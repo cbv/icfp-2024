@@ -216,6 +216,28 @@ std::shared_ptr<Exp> Evaluation::SubstInternal(
   return nullptr;
 }
 
+std::shared_ptr<Exp> ValueToExp(const Value &v) {
+  if (const Bool *b = std::get_if<Bool>(&v)) {
+    return std::make_shared<Exp>(*b);
+
+  } else if (const Int *i = std::get_if<Int>(&v)) {
+    return std::make_shared<Exp>(*i);
+
+  } else if (const String *s = std::get_if<String>(&v)) {
+    return std::make_shared<Exp>(*s);
+
+  } else if (const Lambda *l = std::get_if<Lambda>(&v)) {
+    return std::make_shared<Exp>(*l);
+
+  } else if (const Error *err = std::get_if<Error>(&v)) {
+    assert(!"cannot make error values into expressions");
+
+  }
+
+  assert(!"invalid value");
+  return nullptr;
+}
+
 // Evaluate to a value.
 Value Evaluation::Eval(const Exp *exp) {
   if (const Bool *b = std::get_if<Bool>(exp)) {
@@ -309,6 +331,31 @@ Value Evaluation::Eval(const Exp *exp) {
         // TODO: Check limits
         // TODO PERF: This can be tail recursive.
         std::shared_ptr<Exp> e = Subst(b->arg2, lam->v, lam->body);
+        return Eval(e.get());
+
+      } else if (const Error *e = std::get_if<Error>(&arg1)) {
+        (void)e;
+        return arg1;
+      } else {
+        return Value(Error{.msg = "Expected lambda"});
+      }
+    }
+
+    case '!': {
+      // Secret call-by-value version of application.
+      Value arg1 = Eval(b->arg1.get());
+      if (const Lambda *lam = std::get_if<Lambda>(&arg1)) {
+
+        Value arg2 = Eval(b->arg2.get());
+        if (const Error *e = std::get_if<Error>(&arg2)) {
+          (void)e;
+          return arg2;
+        }
+
+        betas++;
+        // TODO: Check limits
+        // TODO PERF: This can be tail recursive.
+        std::shared_ptr<Exp> e = Subst(ValueToExp(arg2), lam->v, lam->body);
         return Eval(e.get());
 
       } else if (const Error *e = std::get_if<Error>(&arg1)) {

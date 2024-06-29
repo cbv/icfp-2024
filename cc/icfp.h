@@ -201,6 +201,8 @@ struct Evaluation {
       bool simple);
 };
 
+std::shared_ptr<Exp> ValueToExp(const Value &v);
+
 // Simple recursive-descent parser. Consumes an expression from the beginning
 // of the string view.
 std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s);

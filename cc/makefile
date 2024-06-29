@@ -48,6 +48,9 @@ spaceship.exe : spaceship.o $(CC_LIB_OBJECTS)
 pp.exe : pp.o icfp.o $(CC_LIB_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
+encode.exe : encode.o icfp.o $(CC_LIB_OBJECTS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
 clean :
 	rm -f *.o *.exe $(CC_LIB_OBJECTS)
 
