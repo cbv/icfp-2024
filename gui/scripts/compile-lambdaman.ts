@@ -4,6 +4,7 @@ import * as process from 'process';
 
 function go(name: string) {
   switch (name) {
+    case 'lambdaman4': return compile.lambdaman4();
     case 'lambdaman6': return compile.lambdaman6();
     case 'lambdaman8': return compile.lambdaman8();
     case 'lambdaman9': return compile.lambdaman9();

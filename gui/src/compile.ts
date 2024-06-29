@@ -1,5 +1,5 @@
 import { repeat } from './lib/util';
-import { Expr, add, app, concat, cond, equ, expToIcfp, expToToks, lam, litbool, litnum, litstr, mul, rawlam, rec, sub, vuse } from './expr';
+import { Expr, add, mod, app, concat, cond, equ, expToIcfp, expToToks, lam, litbool, litnum, litstr, mul, rawlam, rec, sub, vuse } from './expr';
 
 /*
 
@@ -31,8 +31,32 @@ function letbind(bindings: Binding[], body: Expr): Expr {
   return body;
 }
 
+export function lambdaman4() {
+  // 21 x 21 maze
+
+  //  const  = rec(r => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, appSpine(r, [s, sub(n, litnum(1))]))))));
+  //  let repeat = vuse('R');
+  const zag =
+    rec(S => lam(n => lam(r =>
+      // have we finished?
+      cond(equ(n, litnum(25)),
+        // done
+        litstr(""),
+        // Otherwise do some moves and recurse
+        concat(
+          cond(equ(litnum(0), mod(n, litnum(4))),
+            litstr("U"),
+            litstr("D")),
+          appSpine(S, [r, add(n, litnum(1))]))
+      )
+    )
+    ));
+
+  return expToIcfp(concat(litstr("solve lambdaman4 "), appSpine(zag, [litnum(0), litnum(0)])));
+
+}
+
 export function lambdaman6() {
-  const repeat = rec(R => lam(n => cond(equ(n, litnum(1)), litstr("R"), concat(litstr("R"), appSpine(R, [sub(n, litnum(1))])))));
   let quad = vuse("q");
   return expToIcfp(concat(litstr("solve lambdaman6 "), letbind([{
     v: 'q', body:
@@ -98,7 +122,6 @@ export function lambdaman9() {
 
   return expToIcfp(concat(litstr("solve lambdaman9 "), appSpine(zag, [litnum(0)])));
 }
-
 
 export function compileExample() {
   return lambdaman8();
