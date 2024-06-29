@@ -2,11 +2,14 @@ import { decodeIntLit, decodeString } from './codec';
 import { Binop, Expr, Unop } from './expr';
 
 function getExprFromStream(toks: string[], pos: number): [Expr, number] {
+  if (pos >= toks.length) {
+    throw new Error(`Ran off end of token stream trying to parse`);
+  }
   const tok = toks[pos];
   switch (tok[0]) {
     case 'T': return [{ t: 'bool', x: true }, pos + 1];
     case 'F': return [{ t: 'bool', x: false }, pos + 1];
-    case 'I': {
+    case '?': {
       const [cond, afterCond] = getExprFromStream(toks, pos + 1);
       const [tt, afterFf] = getExprFromStream(toks, afterCond);
       const [ff, afterTt] = getExprFromStream(toks, afterFf);
@@ -39,12 +42,12 @@ function getExprFromStream(toks: string[], pos: number): [Expr, number] {
       const x = decodeIntLit(tok.substring(1));
       return [{ t: 'int', x }, pos + 1];
     }
+    default: throw new Error(`Don't understand indicator '${tok[0]}'`);
   }
 }
 
 export function parseIcfp(icfp: string): Expr {
   const toks = icfp.split(/\s+/);
-
   const [expr, newPos] = getExprFromStream(toks, 0);
   return expr;
 }
