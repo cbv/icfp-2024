@@ -79,7 +79,7 @@ fun z 0 = 1
  |  z a = z(a-1) + z(a-2)
 z 40
 ```
-so the 40th fibonacci function 165580141
+so the 40th fibonacci number 165580141
 
 Note: this would be accessible to direct eval if we had caching call-by-need or something
 
