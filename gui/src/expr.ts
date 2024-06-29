@@ -65,7 +65,17 @@ var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 var ARGUMENT_NAMES = /([^\s,]+)/g;
 function getParamNames(func: any) {
   var fnStr = func.toString().replace(STRIP_COMMENTS, '');
-  var result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+  let lhs = fnStr.split('=>')[0];
+  var result;
+  // The browser stringifies functions like this:
+  //  (f) => app(lam((x) => app(f, app(x, x))), lam((x) => app(f, app(x, x))))
+  // but node v20.11.0 stringifies them like this:
+  //  f => app(lam(x => app(f, app(x, x))), lam(x => app(f, app(x, x))))
+  if (lhs.indexOf('(') == -1) {
+    result = lhs;
+  } else {
+    result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
+  }
   if (result === null)
     result = [];
   return result;
