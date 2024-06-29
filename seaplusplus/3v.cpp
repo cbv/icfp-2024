@@ -116,21 +116,31 @@ void dump(Grid const &grid, bool json) {
 
 int main(int argc, char **argv) {
 
-  bool json = false;
-  int curArg = 1;
+   bool json = false;
+   int cur_arg = 1;
+   int limit_steps = -1;
 
-  if (!strcmp(argv[curArg], "--json")) {
-    json = true;
-    curArg++;
-  }
+   for (;;) {
+     if (!strcmp(argv[cur_arg], "--json")) {
+       json = true;
+       cur_arg++;
+       continue;
+     }
+     if (!strcmp(argv[cur_arg], "--limit")) {
+       limit_steps = std::stoi(argv[cur_arg+1]);
+       cur_arg += 2;
+       continue;
+     }
+     break;
+   }
 
-	if (argc - curArg != 2) {
-		std::cout << "Usage:\n3v [--json] <A> <B> < program.3d" << std::endl;
-		return 1;
-	}
+   if (argc - cur_arg != 2) {
+     std::cout << "Usage:\n3v [--json] [--limit <LIMIT STEPS>] <A> <B> < program.3d" << std::endl;
+     return 1;
+   }
 
-	Integer A = std::stoi(argv[curArg]);
-	Integer B = std::stoi(argv[curArg+1]);
+	Integer A = std::stoi(argv[cur_arg]);
+	Integer B = std::stoi(argv[cur_arg+1]);
 
 	//----------------------------------
 	//load initial grid:
@@ -198,6 +208,8 @@ int main(int argc, char **argv) {
      std::cout << "------ ticks[0] ------" << std::endl;
    }
 	dump(ticks[0], json);
+
+   int sim_steps = 0;
 	for (;;) {
 		Grid const &prev = ticks.back();
 		Grid next = prev;
@@ -389,8 +401,12 @@ int main(int argc, char **argv) {
 			std::cout << "No operator can reduce." << std::endl;
 			break;
 		}
-
+      sim_steps++;
+      if (limit_steps != -1 && sim_steps >= limit_steps) {
+        break;
+      }
 	}
+
    if (json) {
      std::cout << "]";
    }
