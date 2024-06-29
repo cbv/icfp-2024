@@ -108,3 +108,16 @@ let ispow2 = (fix z2 (λ a (if (= a 1) true (if (= (% a 2) 1) false (z2 (/ a 2))
 ((fix first_big_pow2_prime (λ a (if (& (> a 1000000) (& (prime a) (ispow2 (+ a 1)))) a (first_big_pow2_prime (+ a 1))))) 2)
 ```
 so the answer is $2^{31} - 1$.
+
+efficiency6
+-----------
+
+The cleaned up code is
+```
+let is_prime = (λ b ((fix (λ z (λ a (if (= a b) true (if (= (% b a) 0) false (z (+ a 1))))))) 2))
+
+let fib = (fix (λ z (λ a (if (< a 2) 1 (+ (z (- a 1)) (z (- a 2)))))))
+
+((fix (λ z (λ a (if (& (> a 30) (is_prime (fib a))) a (z (+ a 1)))))) 2)
+```
+so we're meant to submit the smallest $a > 30$ such that the $a^{th}$ fibonacci number is prime, which is 42.
