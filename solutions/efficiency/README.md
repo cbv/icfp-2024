@@ -130,7 +130,10 @@ This looks like a 3SAT problem. Throw it at Z3.
 efficiency8
 -----------
 
-This looks like a 3SAT problem. Throw it at Z3.
+This is a SAT problem. Tom converted it to Z3 with cc/pp.exe and some
+emacs macros (see e8.z3). Note: It's searching for the *minimal* solution.
+
+The answer is 422607674157562.
 
 efficiency9
 -----------

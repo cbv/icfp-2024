@@ -63,11 +63,20 @@ static std::string Pretty(const Exp *exp) {
 
     switch (b->op) {
     case '$':
-      // XXX detect LET
-
-      return StringPrintf("%s %s",
-                          Pretty(b->arg1.get()).c_str(),
-                          Pretty(b->arg2.get()).c_str());
+      // If it's ($ (\x. body) rhs) then rewrite this
+      // to "let"
+      if (const Lambda *lam = std::get_if<Lambda>(b->arg1.get())) {
+        return StringPrintf("let %s = %s\n"
+                            "in %s\n"
+                            "end",
+                            PrettyVar(lam->v).c_str(),
+                            Pretty(b->arg2.get()).c_str(),
+                            Pretty(lam->body.get()).c_str());
+      } else {
+        return StringPrintf("%s %s",
+                            Pretty(b->arg1.get()).c_str(),
+                            Pretty(b->arg2.get()).c_str());
+      }
 
     case '|':
       return StringPrintf("(or %s %s)",
