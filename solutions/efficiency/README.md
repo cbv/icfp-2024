@@ -143,8 +143,12 @@ The answer is 422607674157562.
 efficiency9
 -----------
 
-This is some kind of constraint solving problem that is picking out digits
-in base 9. Z3 could be helpful.
+This problem has a bunch of variables that have values in [0, 8] (digits base 9)
+and then a bunch of inequalities on them. The hard part is finding the minimal
+value. My trick is to use a lexicographic objective rather than trying to directly
+minimize the sum of powers of 9. See efficiency9.z3.
+
+The answer is 3072297283032850841637141056325154790039828427723724157541484782406577456068.
 
 efficiency10
 ------------
