@@ -8,7 +8,7 @@ UNAME := $(shell uname -o)
 ifeq ($(UNAME),Msys)
   # for 64 bits on windows (msys2).
   # CXXFLAGS=-fsanitize=address -march=native -Wall -Wextra -Wno-unused-parameter -I. -I$(CC_LIB) --std=c++20 -g -O $(FLTO)
-  CXXFLAGS=-fsanitize=address -O -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter -I. -I$(CC_LIB) --std=c++20
+  CXXFLAGS=-fsanitize=address -g -O -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter -I. -I$(CC_LIB) --std=c++20
 #  LDFLAGS += -lws2_32
   LDFLAGS += -lgmp
   CXXFLAGS += -DBIG_USE_GMP

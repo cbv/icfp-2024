@@ -67,6 +67,15 @@ static void Bench() {
   printf("Benchmark ran in %s\n", ANSI::Time(timer.Seconds()).c_str());
 }
 
+static void Crash() {
+  constexpr const char *crash = R"(B. S3/,6%},!-"$!-!.Y} B$ B$ B$ Lf B$ Lx B$ vf B$ vx vx Lx B$ vf B$ vx vx LS Ln Lr ? B= vn I"-E S B. B$ Lx ? B= I! vx SO ? B= I" vx S> ? B= I# vx SF SL B% B/ vr I.gg~B I% B$ B$ vS B+ vn I" B% B+ B* vr I#!Dd I-}c|. IX""|J I! I!)";
+
+  Value v = Evaluate(crash);
+  const String *s = std::get_if<String>(&v);
+  CHECK(s != nullptr) << ValueString(v);
+  CHECK(s->s == "??") << "Got:\n" << s->s;
+}
+
 int main(int argc, char **argv) {
   ANSI::Init();
 
@@ -74,6 +83,8 @@ int main(int argc, char **argv) {
   LanguageTest();
 
   Bench();
+
+  Crash();
 
   printf("OK");
   return 0;
