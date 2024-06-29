@@ -121,3 +121,53 @@ let fib = (fix (λ z (λ a (if (< a 2) 1 (+ (z (- a 1)) (z (- a 2)))))))
 ((fix (λ z (λ a (if (& (> a 30) (is_prime (fib a))) a (z (+ a 1)))))) 2)
 ```
 so we're meant to submit the smallest $a > 30$ such that the $a^{th}$ fibonacci number is prime, which is 42.
+
+efficiency7
+-----------
+
+This looks like a 3SAT problem. Throw it at Z3.
+
+efficiency8
+-----------
+
+This looks like a 3SAT problem. Throw it at Z3.
+
+efficiency9
+-----------
+
+This is some kind of constraint solving problem that is picking out digits
+in base 9. Z3 could be helpful.
+
+efficiency10
+------------
+
+Similar to previous.
+
+efficiency11
+------------
+
+Similar to previous.
+
+efficiency12
+------------
+
+It seems like this program looks like
+
+```
+fun z a =
+   let
+      fun b c d = if c = a then d else (b (c+1) (if ((z c) > (c - 1)) (if (= (% a c) 0) (* (/ d (z c)) (- (z c) 1)) d) d))
+
+   in
+   ((min a (+ 1 (if (> a 2) (b 2 a) a))))
+z 1234567
+```
+
+not clear what it's doing.
+
+efficiency13
+------------
+
+This program prepends $2^28$ copies of \texttt{na} to \texttt{heyjude} and computes its length.
+That amounts to
+\[ 2^{29} + 7 = 536870919\]
