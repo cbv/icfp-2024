@@ -75,7 +75,11 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
         if (s.curProgram != undefined)
           s.curProgram[action.y][action.x] = action.v;
       });
-
+    }
+    case 'setExecutionTrace': {
+      return produceMs(state, ms, s => {
+        s.executionTrace = action.trace;
+      });
     }
   }
 }

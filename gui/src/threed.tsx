@@ -124,6 +124,11 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
   };
 
   function runApparatus(): JSX.Element {
+    if (modeState.executionTrace != undefined) {
+      return <>
+        <button onClick={() => { ldis({ t: 'setExecutionTrace', trace: undefined }) }}>Edit</button>
+      </>;
+    }
     function onChange(which: 'a' | 'b') {
       return (e: React.ChangeEvent<HTMLInputElement>) => {
         ldis({ t: 'setValue', which, v: e.currentTarget.value })
