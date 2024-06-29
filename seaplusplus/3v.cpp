@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <optional>
+#include "string.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
@@ -93,13 +94,21 @@ void dump(Grid const &grid) {
 
 int main(int argc, char **argv) {
 
-	if (argc != 3) {
-		std::cout << "Usage:\n3v <A> <B> < program.3d" << std::endl;
+  bool json = false;
+  int curArg = 1;
+
+  if (!strcmp(argv[curArg], "--json")) {
+    json = true;
+    curArg++;
+  }
+
+	if (argc - curArg != 2) {
+		std::cout << "Usage:\n3v [--json] <A> <B> < program.3d" << std::endl;
 		return 1;
 	}
-	
-	Integer A = std::stoi(argv[1]);
-	Integer B = std::stoi(argv[2]);
+
+	Integer A = std::stoi(argv[curArg]);
+	Integer B = std::stoi(argv[curArg+1]);
 
 	//----------------------------------
 	//load initial grid:
@@ -139,8 +148,12 @@ int main(int argc, char **argv) {
 		if (is_end) break;
 	}
 
-	
-	std::cout << "------ as loaded ------" << std::endl;
+   if (json) {
+     std::cout << "[" << std::endl;
+   }
+   else {
+     std::cout << "------ as loaded ------" << std::endl;
+   }
 	dump(grid);
 
 	std::vector< Grid > ticks;
@@ -156,7 +169,9 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	std::cout << "------ ticks[0] ------" << std::endl;
+   if (!json) {
+     std::cout << "------ ticks[0] ------" << std::endl;
+   }
 	dump(ticks[0]);
 	for (;;) {
 		Grid const &prev = ticks.back();
@@ -178,7 +193,7 @@ int main(int argc, char **argv) {
 			auto f = next.find(at);
 			if (f != next.end()) next.erase(f);
 		};
-		
+
 		//write value (accumulates into write buffer for copy into next grid):
 		auto write = [&writes, &prev](glm::ivec2 const &at, Cell const &val) {
 			auto ret = writes.emplace(at, val);
@@ -325,16 +340,21 @@ int main(int argc, char **argv) {
 		}
 
 		ticks.emplace_back(std::move(next));
-		std::cout << "------ ticks[" << ticks.size() - 1 << "] ------" << std::endl;
+      if (!json) {
+        std::cout << "------ ticks[" << ticks.size() - 1 << "] ------" << std::endl;
+      }
 		dump(ticks.back());
 
-		if (!reduced) {
+		if (!reduced && !json) {
 			std::cout << "No operator can reduce." << std::endl;
 			break;
 		}
 
 	}
-	
+   if (json) {
+     std::cout << "]";
+   }
+
 
 	return 0;
 }
