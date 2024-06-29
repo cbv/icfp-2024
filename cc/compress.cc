@@ -231,7 +231,7 @@ int main(int argc, char **argv) {
     if (std::string(argv[i]) == "-max-len") {
       CHECK(i + 1 < argc);
       i++;
-      max_len = atoi(argv[i++]);
+      max_len = atoi(argv[i]);
     } else {
       fprintf(stderr,
               "./compress.exe [-max-len n] < file.txt > file.icfp\n"
