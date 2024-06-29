@@ -173,6 +173,14 @@ pub mod expr {
         app(lam(x, body), val)
     }
 
+    pub fn let_bind(mut bindings: Vec<(&str, Expr)>, mut body: Expr) -> Expr {
+        bindings.reverse();
+        for (v, b) in bindings {
+            body = app(lam(v, body), b)
+        }
+        body
+    }
+
     pub fn repeat() -> Expr {
         rec("r",
             lam("s",

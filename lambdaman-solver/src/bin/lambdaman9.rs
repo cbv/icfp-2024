@@ -3,8 +3,8 @@ use icfp::expr::*;
 pub fn main() -> anyhow::Result<()> {
     // 50 x 50 grid with all empties. Start in upper left.
 
-    let zag = let1(
-        "R", repeat(),
+    let zag = let_bind(
+        vec![("R", repeat())],
         rec("S",
             lam("n",
                 // have we finished?
