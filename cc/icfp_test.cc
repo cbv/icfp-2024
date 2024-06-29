@@ -10,14 +10,19 @@
 #include "ansi.h"
 #include "base/logging.h"
 
-#if NO_BIGNUM
-#error sorry
-#endif
-
 #include "bignum/big.h"
 #include "bignum/big-overloads.h"
 
 using namespace icfp;
+
+static Value Evaluate(std::string_view s) {
+  std::shared_ptr<Exp> exp = ParseLeadingExp(&s);
+  CHECK(s.empty());
+  CHECK(exp.get());
+
+  Evaluation evaluation;
+  return evaluation.Eval(exp.get());
+}
 
 static void TestInt() {
 
@@ -28,14 +33,7 @@ static void TestInt() {
     BigInt b{s};
 
     std::string enc = IntConstant(b);
-    std::string_view enc_view(enc);
-    std::shared_ptr<Exp> exp = ParseLeadingExp(&enc_view);
-    CHECK(enc_view.empty());
-    CHECK(exp.get());
-
-    Evaluation evaluation;
-    Value v = evaluation.Eval(exp.get());
-
+    Value v = Evaluate(enc);
     const Int *i = std::get_if<Int>(&v);
     CHECK(i != nullptr) << ValueString(v);
 
@@ -44,11 +42,22 @@ static void TestInt() {
 
 }
 
+static void LanguageTest() {
+  constexpr const char *test = R"(? B= B$ B$ B$ B$ L$ L$ L$ L# v$ I" I# I$ I% I$ ? B= B$ L$ v$ I+ I+ ? B= BD I$ S4%34 S4 ? B= BT I$ S4%34 S4%3 ? B= B. S4% S34 S4%34 ? U! B& T F ? B& T T ? U! B| F F ? B| F T ? B< U- I$ U- I# ? B> I$ I# ? B= U- I" B% U- I$ I# ? B= I" B% I( I$ ? B= U- I" B/ U- I$ I# ? B= I# B/ I( I$ ? B= I' B* I# I$ ? B= I$ B+ I" I# ? B= U$ I4%34 S4%34 ? B= U# S4%34 I4%34 ? U! F ? B= U- I$ B- I# I& ? B= I$ B- I& I# ? B= S4%34 S4%34 ? B= F F ? B= I$ I$ ? T B. B. SM%,&k#(%#+}IEj}3%.$}z3/,6%},!.'5!'%y4%34} U$ B+ I# B* I$> I1~s:U@ Sz}4/}#,!)-}0/).43}&/2})4 S)&})3}./4}#/22%#4 S").!29}q})3}./4}#/22%#4 S").!29}q})3}./4}#/22%#4 S").!29}q})3}./4}#/22%#4 S").!29}k})3}./4}#/22%#4 S5.!29}k})3}./4}#/22%#4 S5.!29}_})3}./4}#/22%#4 S5.!29}a})3}./4}#/22%#4 S5.!29}b})3}./4}#/22%#4 S").!29}i})3}./4}#/22%#4 S").!29}h})3}./4}#/22%#4 S").!29}m})3}./4}#/22%#4 S").!29}m})3}./4}#/22%#4 S").!29}c})3}./4}#/22%#4 S").!29}c})3}./4}#/22%#4 S").!29}r})3}./4}#/22%#4 S").!29}p})3}./4}#/22%#4 S").!29}{})3}./4}#/22%#4 S").!29}{})3}./4}#/22%#4 S").!29}d})3}./4}#/22%#4 S").!29}d})3}./4}#/22%#4 S").!29}l})3}./4}#/22%#4 S").!29}N})3}./4}#/22%#4 S").!29}>})3}./4}#/22%#4 S!00,)#!4)/.})3}./4}#/22%#4 S!00,)#!4)/.})3}./4}#/22%#4)";
+
+  Value v = Evaluate(test);
+  const String *s = std::get_if<String>(&v);
+  CHECK(s != nullptr) << ValueString(v);
+  CHECK(s->s ==
+        "Self-check OK, send `solve language_test 4w3s0m3` "
+        "to claim points for it");
+}
 
 int main(int argc, char **argv) {
   ANSI::Init();
 
   TestInt();
+  LanguageTest();
 
   printf("OK");
   return 0;

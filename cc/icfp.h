@@ -11,39 +11,16 @@
 #include <string_view>
 #include <unordered_set>
 
-// Seems some problems want bignum, but if you have trouble compiling
-// that, you could just use int64.
-#if NO_BIGNUM
-#else
-# include "bignum/big.h"
-#endif
+// If you have problems with bignum, you'll have to get an older
+// revision. Many problems assume this.
+#include "bignum/big.h"
 
 namespace icfp {
-
-#if NO_BIGNUM
-using int_type = int64_t;
-inline int64_t GetInt64(const int_type &i) { return i; }
-inline std::string IntToString(const int_type &i) {
-  char buf[100];
-  sprintf(buf, "%" PRId64, i->i);
-  return buf;
-}
-#else
-using int_type = BigInt;
-inline int64_t GetInt64(const int_type &i) {
-  auto io = i.ToInt();
-  assert(io.has_value() && "integer to big to convert to 64-bit");
-  return io.value();
-}
-inline std::string IntToString(const int_type &i) {
-  return i.ToString();
-}
-#endif
 
 static constexpr int RADIX = 94;
 
 // Returns e.g. I! for 0.
-std::string IntConstant(const int_type &i);
+std::string IntConstant(const BigInt &i);
 // Without leading S.
 std::string EncodeString(std::string_view s);
 uint8_t DecodeChar(uint8_t c);
@@ -85,7 +62,7 @@ struct Bool {
 };
 
 struct Int {
-  int_type i;
+  BigInt i;
 };
 
 struct String {
@@ -136,12 +113,12 @@ struct If {
 
 struct Lambda {
   // Variable converted to an integer.
-  int_type v;
+  BigInt v;
   std::shared_ptr<Exp> body;
 };
 
 struct Var {
-  int_type v;
+  BigInt v;
 };
 
 std::string ValueString(const Value &v);
@@ -156,7 +133,7 @@ struct Evaluation {
 
   // [e1/v]e2. Avoids capture (unless simple=true).
   std::shared_ptr<Exp> Subst(std::shared_ptr<Exp> e1,
-                             const int_type &v,
+                             const BigInt &v,
                              std::shared_ptr<Exp> e2,
                              bool simple = false);
 
@@ -200,13 +177,13 @@ struct Evaluation {
   // Evaluate to a value.
   Value Eval(const Exp *exp);
 
-  static std::unordered_set<int_type> FreeVars(const Exp *e);
+  static std::unordered_set<BigInt> FreeVars(const Exp *e);
 
  private:
   std::shared_ptr<Exp> SubstInternal(
-      const std::unordered_set<int_type> &fvs,
+      const std::unordered_set<BigInt> &fvs,
       std::shared_ptr<Exp> e1,
-      const int_type &v,
+      const BigInt &v,
       std::shared_ptr<Exp> e2,
       bool simple);
 };

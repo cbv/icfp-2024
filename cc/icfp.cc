@@ -16,13 +16,17 @@
 #include "base/stringprintf.h"
 #include "util.h"
 
-#if NO_BIGNUM
-#else
 #include "bignum/big.h"
 #include "bignum/big-overloads.h"
-#endif
 
 namespace icfp {
+
+static inline int64_t GetInt64(const BigInt &i) {
+  auto io = i.ToInt();
+  CHECK(io.has_value()) << "integer too big to convert to 64-bit: "
+                        << i.ToString();
+  return io.value();
+}
 
 // (size includes terminating \0, unused)
 static constexpr const char DECODE_STRING[RADIX + 1] =
@@ -38,7 +42,7 @@ std::string ValueString(const Value &v) {
     return b->b ? "true" : "false";
 
   } else if (const Int *i = std::get_if<Int>(&v)) {
-    return IntToString(i->i);
+    return i->i.ToString();
 
   } else if (const String *s = std::get_if<String>(&v)) {
     return "\"" + s->s + "\"";
@@ -57,12 +61,9 @@ std::string ValueString(const Value &v) {
 }
 
 // Also used by lambda and variables.
-static std::optional<int_type> ConvertInt(std::string_view body) {
-  int_type val{0};
+static std::optional<BigInt> ConvertInt(std::string_view body) {
+  BigInt val{0};
   for (char c : body) {
-    #if NO_BIGNUM
-    CHECK(val < std::numeric_limits<int64_t>::max() / RADIX);
-    #endif
     val = val * RADIX;
 
     static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
@@ -78,16 +79,16 @@ static std::optional<int_type> ConvertInt(std::string_view body) {
 
 
 // Also used by lambda and variables.
-static int_type ParseInt(std::string_view body) {
-  if (std::optional<int_type> i = ConvertInt(body)) {
+static BigInt ParseInt(std::string_view body) {
+  if (std::optional<BigInt> i = ConvertInt(body)) {
     return i.value();
   } else {
     LOG(FATAL) << "Unparseable integer literal (or lambda/var arg)";
-    return int_type{0};
+    return BigInt{0};
   }
 }
 
-static void PopulateFreeVars(const Exp *e, std::unordered_set<int_type> *fvs) {
+static void PopulateFreeVars(const Exp *e, std::unordered_set<BigInt> *fvs) {
   for (;;) {
     if (const Bool *b = std::get_if<Bool>(e)) {
       (void)b;
@@ -115,7 +116,7 @@ static void PopulateFreeVars(const Exp *e, std::unordered_set<int_type> *fvs) {
 
     } else if (const Lambda *lam = std::get_if<Lambda>(e)) {
 
-      std::unordered_set<int_type> bfvs;
+      std::unordered_set<BigInt> bfvs;
       PopulateFreeVars(lam->body.get(), &bfvs);
       // But the lambda's argument is bound.
       bfvs.erase(lam->v);
@@ -134,21 +135,21 @@ static void PopulateFreeVars(const Exp *e, std::unordered_set<int_type> *fvs) {
   }
 }
 
-std::unordered_set<int_type> Evaluation::FreeVars(const Exp *e) {
-  std::unordered_set<int_type> ret;
+std::unordered_set<BigInt> Evaluation::FreeVars(const Exp *e) {
+  std::unordered_set<BigInt> ret;
   PopulateFreeVars(e, &ret);
   return ret;
 }
 
 // [e1/v]e2. Avoids capture (unless simple=true).
-std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, const int_type &v,
+std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, const BigInt &v,
                                        std::shared_ptr<Exp> e2, bool simple) {
   return SubstInternal(FreeVars(e1.get()), e1, v, e2, simple);
 }
 
 std::shared_ptr<Exp> Evaluation::SubstInternal(
-    const std::unordered_set<int_type> &fvs,
-    std::shared_ptr<Exp> e1, const int_type &v,
+    const std::unordered_set<BigInt> &fvs,
+    std::shared_ptr<Exp> e1, const BigInt &v,
     std::shared_ptr<Exp> e2, bool simple) {
 
   if (const Bool *b = std::get_if<Bool>(e2.get())) {
@@ -197,7 +198,7 @@ std::shared_ptr<Exp> Evaluation::SubstInternal(
       });
     } else {
       // Rename target lambda so that we can't have capture.
-      int_type new_var = int_type{next_var};
+      BigInt new_var = BigInt{next_var};
       next_var--;
       std::shared_ptr<Exp> new_var_exp =
           std::make_shared<Exp>(Var{.v = new_var});
@@ -289,7 +290,7 @@ Value Evaluation::Eval(const Exp *exp) {
               }
             }
 
-            if (std::optional<int_type> i = ConvertInt(enc)) {
+            if (std::optional<BigInt> i = ConvertInt(enc)) {
               return Value(Int{.i = i.value()});
             } else {
               return Value(Error{.msg =
@@ -309,7 +310,7 @@ Value Evaluation::Eval(const Exp *exp) {
             }
 
             std::string rev;
-            int_type i = arg.i;
+            BigInt i = arg.i;
             while (i > 0) {
               uint8_t digit = i % RADIX;
               rev.push_back(DECODE_STRING[digit]);
@@ -604,7 +605,7 @@ Value Evaluation::Eval(const Exp *exp) {
   } else if (const Var *v = std::get_if<Var>(exp)) {
     (void)v;
     return Value(Error{.msg = StringPrintf("unbound variable %s (%s)",
-                                           IntToString(v->v).c_str(),
+                                           v->v.ToString().c_str(),
                                            IntConstant(v->v).c_str()
                                            )});
 
@@ -650,7 +651,7 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   case 'I': {
     CHECK(!body.empty()) << "expected non-empty body for integer";
 
-    int_type val = ParseInt(body);
+    BigInt val = ParseInt(body);
     return std::make_shared<Exp>(Int{.i = val});
   }
 
@@ -699,7 +700,7 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   }
 
   case 'v': {
-    int_type i = ParseInt(body);
+    BigInt i = ParseInt(body);
     return std::make_shared<Exp>(Var{.v = i});
   }
 
@@ -708,18 +709,14 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   }
 }
 
-std::string IntConstant(const int_type &i) {
-#if NO_BIGNUM
-  LOG(FATAL) << "sorry, unsupported";
-  return "";
-#else
+std::string IntConstant(const BigInt &i) {
   CHECK(i >= 0) <<
     "only non-negative integers can be represented as constants";
 
   // Unclear whether it would accept just "I" for zero.
   if (i == 0) return "I!";
 
-  int_type val = i;
+  BigInt val = i;
   std::string rev;
   while (val > 0) {
     // We don't have quotrem with int64, so just do two operations.
@@ -736,7 +733,6 @@ std::string IntConstant(const int_type &i) {
     out.push_back(rev[i]);
 
   return out;
-#endif
 }
 
 std::string EncodeString(std::string_view s) {
@@ -754,7 +750,7 @@ uint8_t DecodeChar(uint8_t digit) {
   return DECODE_STRING[digit];
 }
 
-static std::string PrettyVar(const icfp::int_type &i) {
+static std::string PrettyVar(const BigInt &i) {
   // If you're using bignum and this fails, you could just call
   // i.ToString() here.
   int64_t ii = icfp::GetInt64(i);
