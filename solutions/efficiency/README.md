@@ -82,3 +82,11 @@ z 40
 so the 40th fibonacci function 165580141
 
 Note: this would be accessible to direct eval if we had caching call-by-need or something
+
+efficiency5
+-----------
+
+Raw program
+```
+((λ c ((λ d (((λ x ((λ y (x (y y))) (λ y (x (y y))))) (λ z (λ a (if (& (> a 1000000) (& (c a) (d (+ a 1)))) a (z (+ a 1)))))) 2)) ((λ x ((λ y (x (y y))) (λ y (x (y y))))) (λ z (λ a (if (= a 1) true (if (= (% a 2) 1) false (z (/ a 2))))))))) (λ b (((λ x ((λ y (x (y y))) (λ y (x (y y))))) (λ z (λ a (if (= a b) true (if (= (% b a) 0) false (z (+ a 1))))))) 2)))
+```
