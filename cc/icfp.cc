@@ -239,8 +239,9 @@ std::shared_ptr<Exp> ValueToExp(const Value &v) {
     return std::make_shared<Exp>(*l);
 
   } else if (const Error *err = std::get_if<Error>(&v)) {
-    LOG(FATAL) << "cannot make error values into expressions";
+    (void)err;
 
+    LOG(FATAL) << "cannot make error values into expressions";
   }
 
   LOG(FATAL) << "invalid value";
@@ -885,10 +886,14 @@ std::string ReadAllInput() {
 
   // Strip leading and trailing whitespace.
   while (!input_view.empty() &&
-         (input_view[0] == ' ' || input_view[0] == '\n'))
+         (input_view[0] == ' ' ||
+          input_view[0] == '\n' ||
+          input_view[0] == '\r'))
     input_view.remove_prefix(1);
   while (!input_view.empty() &&
-         (input_view.back() == ' ' || input_view.back() == '\n'))
+         (input_view.back() == ' ' ||
+          input_view.back() == '\n' ||
+          input_view.back() == '\r'))
     input_view.remove_suffix(1);
 
   return std::string(input_view);

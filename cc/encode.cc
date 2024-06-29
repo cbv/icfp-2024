@@ -191,7 +191,6 @@ int main(int argc, char **argv) {
     "prefix.";
 
   std::string_view input_view(input);
-  input_view.remove_prefix(prefix.size());
 
   int bytes_in = 0, bytes_out = 0;
 
