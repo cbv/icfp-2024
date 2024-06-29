@@ -27,6 +27,8 @@ export type AppModeState =
     curPuzzleName: string | undefined,
     executionTrace: EvalThreedResponse | undefined,
     currentFrame: number,
+    a: string,
+    b: string,
   }
   ;
 
@@ -39,7 +41,7 @@ export function mkModeState(mode: AppMode): AppModeState {
     case 'codec': return { t: 'codec', inputText: '', outputText: '' };
     case 'communicate': return { t: 'communicate', inputText: '', outputText: '' };
     case 'lambdaman': return { t: 'lambdaman', inputText: '', outputText: '' };
-    case 'threed': return { t: 'threed', curPuzzleName: undefined, executionTrace: undefined, currentFrame: 0 };
+    case 'threed': return { t: 'threed', curPuzzleName: undefined, executionTrace: undefined, currentFrame: 0, a: '1', b: '1' };
   }
 }
 export type AppState = {

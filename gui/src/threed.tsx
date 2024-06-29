@@ -78,10 +78,26 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
     renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(program)}</div>;
   }
 
-  // XXX hard-coded a and b
   const runProgram: React.MouseEventHandler = (e) => {
-    dispatch({ t: 'doEffect', effect: { t: 'evalThreed', text: program!, a: 1, b: 1 } })
+    let a = parseInt(modeState.a);
+    if (isNaN(a)) { alert(`bad value for a: ${modeState.a}`); return }
+    let b = parseInt(modeState.b);
+    if (isNaN(b)) { alert(`bad value for b: ${modeState.b}`); return }
+    dispatch({ t: 'doEffect', effect: { t: 'evalThreed', text: program!, a, b } })
   };
+
+  function runApparatus(): JSX.Element {
+    function onChange(which: 'a' | 'b') {
+      return (e: React.ChangeEvent<HTMLInputElement>) => {
+        dispatch({ t: 'setValue', which, v: e.currentTarget.value })
+      }
+    }
+    return <>
+      <b style={{ color: 'white' }}>A</b><input onChange={onChange('a')} className="entry" value={modeState.a} size={2}></input>
+      <b style={{ color: 'white' }}>B</b><input onChange={onChange('b')} className="entry" value={modeState.b} size={2}></input>
+      <button onClick={runProgram}>Run</button>
+    </>;
+  }
 
   return <div className="interface-container">
     <div className="textarea-container">
@@ -93,7 +109,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
       </div>
     </div>
     <div className="action-bar">
-      {program == undefined ? undefined : <button onClick={runProgram}>Run</button>}
+      {program == undefined ? undefined : runApparatus()}
     </div>
   </div>;
 }

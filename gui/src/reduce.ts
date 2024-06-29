@@ -58,6 +58,16 @@ function setCurrentFrame(state: AppState, frame: number): AppState {
   return produce(state, s => { s.modeState = newModeState; })
 }
 
+function setValue(state: AppState, which: 'a' | 'b', v: string): AppState {
+  if (!(state.modeState.t == 'threed')) {
+    throw new Error(`can't set a/b value in this mode`);
+  }
+  const newModeState = produce(state.modeState, s => {
+    s[which] = v;
+  });
+  return produce(state, s => { s.modeState = newModeState; })
+}
+
 export function reduce(state: AppState, action: Action): AppState {
   switch (action.t) {
     case 'setInputText': {
@@ -93,6 +103,11 @@ export function reduce(state: AppState, action: Action): AppState {
     case 'setCurrentFrame': {
       return produce(state, s => {
         return setCurrentFrame(state, action.frame);
+      });
+    }
+    case 'setValue': {
+      return produce(state, s => {
+        return setValue(state, action.which, action.v);
       });
     }
   }

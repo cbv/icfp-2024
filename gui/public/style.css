@@ -254,3 +254,7 @@ td {
   display: flex;
   flex-direction: column;
  }
+
+.entry {
+  margin: 0 1em;
+}

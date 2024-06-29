@@ -9,6 +9,7 @@ export type Action =
   | { t: 'setMode', mode: AppMode }
   | { t: 'setCurrentItem', item: string }
   | { t: 'setCurrentFrame', frame: number }
+  | { t: 'setValue', which: 'a' | 'b', v: string }
   | { t: 'compile' }
   ;
 
