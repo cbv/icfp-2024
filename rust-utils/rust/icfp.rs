@@ -195,6 +195,21 @@ pub mod expr {
                                                   litnum(1))]))))))
     }
 
+    pub fn repeatn(n: usize) -> Expr {
+        lam("s",
+            app(rec("r",
+                    lam("n",
+                        cond(
+                            equ(vuse("n"),
+                                litnum(1)),
+                            vuse("s"),
+                            concat(vuse("s"),
+                                   app_spine(vuse("r"),
+                                             vec![sub(vuse("n"),
+                                                      litnum(1))]))))),
+                litnum(n as BigInt)))
+    }
+
     pub fn repeat_of(s : Expr) -> Expr {
         rec("r",
             lam("n",
@@ -204,9 +219,9 @@ pub mod expr {
                     s.clone(),
                     concat(s.clone(),
                            app_spine(vuse("r"),
-                                     vec![s.clone(),
-                                          sub(vuse("n"),
-                                              litnum(1))])))))
+                                     vec![
+                                         sub(vuse("n"),
+                                             litnum(1))])))))
     }
 }
 

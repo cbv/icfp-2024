@@ -4,7 +4,7 @@ pub fn main() -> anyhow::Result<()> {
     // 50 x 50 grid with all empties. Start in upper left.
 
     let zag = let_bind(
-        vec![("R", repeat())],
+        vec![("R", repeatn(50))],
         rec("S",
             lam("n",
                 // have we finished?
@@ -15,10 +15,10 @@ pub fn main() -> anyhow::Result<()> {
                      concat(
                          concat(
                              concat(
-                                 app_spine(vuse("R"), vec![litstr("R"), litnum(50)]),
+                                 app_spine(vuse("R"), vec![litstr("R")]),
                                  litstr("D")),
                              concat(
-                                 app_spine(vuse("R"), vec![litstr("L"), litnum(50)]),
+                                 app_spine(vuse("R"), vec![litstr("L")]),
                                  litstr("D"))),
                          app(vuse("S"), add(vuse("n"), litnum(1))))))));
 
