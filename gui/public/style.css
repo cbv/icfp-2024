@@ -195,5 +195,57 @@ button, .pseudo-button {
 
 .rendered-puzzle {
   flex-grow: 1;
-  padding-left: 1em;
+  padding: 1em;
+}
+
+table { border-collapse: collapse; }
+td {
+  padding: 1px;
+}
+
+.threed-cell {
+  display: flex;
+  justify-content: center;
+
+  align-items: center;
+  margin: 0px;
+  white-space: nowrap;
+  overflow: hidden;
+  height: 2em; width: 2em;
+  background-color: #ddd;
+  text-align: center;
+}
+
+.threed-cell-empty {
+   display: flex;
+  justify-content: center;
+
+  align-items: center;
+  margin: 0px;
+  white-space: nowrap;
+  overflow: hidden;
+  height: 2em; width: 2em;
+  background-color: #eee;
+  text-align: center;
+}
+
+.S-chip {
+  color: white;
+  background-color: #33b;
+  padding: 0.1em 0.35em;
+  border-radius: 0.75em;
+}
+
+.A-chip {
+  color: white;
+  background-color: #d33;
+  padding: 0.1em 0.35em;
+  border-radius: 0.75em;
+}
+
+.B-chip {
+  color: white;
+  background-color: #3b3;
+  padding: 0.1em 0.35em;
+  border-radius: 0.75em;
 }
