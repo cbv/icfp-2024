@@ -15,7 +15,6 @@
 #include "base/logging.h"
 #include "base/stringprintf.h"
 #include "util.h"
-
 #include "bignum/big.h"
 #include "bignum/big-overloads.h"
 
@@ -30,11 +29,13 @@ static inline int64_t GetInt64(const BigInt &i) {
 
 // (size includes terminating \0, unused)
 static constexpr const char DECODE_STRING[RADIX + 1] =
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  "0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`|~ \n";
 
 static constexpr const char ENCODE_STRING[128] =
   "..........~.....................}_`abcdefghijklmUVWXYZ[\\]"
-  "^nopqrst;<=>?@ABCDEFGHIJKLMNOPQRSTuvwxyz!\"#$%&'()*+,-./0123456789:.{.|";
+  "^nopqrst;<=>?@ABCDEFGHIJKLMNOPQRSTuvwxyz!\"#$%&'()*+,-./"
+  "0123456789:.{.|";
 
 std::string ValueString(const Value &v) {
 
@@ -88,7 +89,7 @@ static BigInt ParseInt(std::string_view body) {
   }
 }
 
-static void PopulateFreeVars(const Exp *e, std::unordered_set<BigInt> *fvs) {
+static void PopulateFreeVars(const Exp *e, std::unordered_set<int64_t> *fvs) {
   for (;;) {
     if (const Bool *b = std::get_if<Bool>(e)) {
       (void)b;
@@ -116,7 +117,7 @@ static void PopulateFreeVars(const Exp *e, std::unordered_set<BigInt> *fvs) {
 
     } else if (const Lambda *lam = std::get_if<Lambda>(e)) {
 
-      std::unordered_set<BigInt> bfvs;
+      std::unordered_set<int64_t> bfvs;
       PopulateFreeVars(lam->body.get(), &bfvs);
       // But the lambda's argument is bound.
       bfvs.erase(lam->v);
@@ -135,21 +136,22 @@ static void PopulateFreeVars(const Exp *e, std::unordered_set<BigInt> *fvs) {
   }
 }
 
-std::unordered_set<BigInt> Evaluation::FreeVars(const Exp *e) {
-  std::unordered_set<BigInt> ret;
+std::unordered_set<int64_t> Evaluation::FreeVars(const Exp *e) {
+  std::unordered_set<int64_t> ret;
   PopulateFreeVars(e, &ret);
   return ret;
 }
 
 // [e1/v]e2. Avoids capture (unless simple=true).
-std::shared_ptr<Exp> Evaluation::Subst(std::shared_ptr<Exp> e1, const BigInt &v,
-                                       std::shared_ptr<Exp> e2, bool simple) {
+std::shared_ptr<Exp> Evaluation::Subst(
+    std::shared_ptr<Exp> e1, int64_t v,
+    std::shared_ptr<Exp> e2, bool simple) {
   return SubstInternal(FreeVars(e1.get()), e1, v, e2, simple);
 }
 
 std::shared_ptr<Exp> Evaluation::SubstInternal(
-    const std::unordered_set<BigInt> &fvs,
-    std::shared_ptr<Exp> e1, const BigInt &v,
+    const std::unordered_set<int64_t> &fvs,
+    std::shared_ptr<Exp> e1, int64_t v,
     std::shared_ptr<Exp> e2, bool simple) {
 
   if (const Bool *b = std::get_if<Bool>(e2.get())) {
@@ -198,7 +200,7 @@ std::shared_ptr<Exp> Evaluation::SubstInternal(
       });
     } else {
       // Rename target lambda so that we can't have capture.
-      BigInt new_var = BigInt{next_var};
+      const int64_t new_var = next_var;
       next_var--;
       std::shared_ptr<Exp> new_var_exp =
           std::make_shared<Exp>(Var{.v = new_var});
@@ -603,10 +605,12 @@ Value Evaluation::Eval(std::shared_ptr<Exp> exp) {
 
     } else if (const Var *v = std::get_if<Var>(exp.get())) {
       (void)v;
-      return Value(Error{.msg = StringPrintf("unbound variable %s (%s)",
-                                             v->v.ToString().c_str(),
-                                             IntConstant(v->v).c_str()
-                                             )});
+      return Value(Error{.msg = StringPrintf(
+              // TODO: Print the original variable name, but we
+              // need to pass the parser's variable map to do
+              // that.
+              "unbound variable %lld",
+              v->v)});
 
     } else {
       CHECK(exp != nullptr);
@@ -621,9 +625,24 @@ Value Evaluation::Eval(std::shared_ptr<Exp> exp) {
 
 }
 
+Parser::Parser() {
+
+}
+
+int64_t Parser::MapVar(const BigInt &b) {
+  if (const auto it = word_var.find(b); it != word_var.end()) {
+    return it->second;
+  } else {
+    int64_t wv = original_vars.size();
+    word_var[b] = wv;
+    original_vars.push_back(b);
+    return wv;
+  }
+}
+
 // Simple recursive-descent parser. Consumes an expression from the beginning
 // of the string view.
-std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
+std::shared_ptr<Exp> Parser::ParseLeadingExp(std::string_view *s) {
   while (!s->empty() && (*s)[0] == ' ') s->remove_prefix(1);
   CHECK(!s->empty()) << "expected expression but got eos";
 
@@ -698,13 +717,13 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
 
   case 'L': {
     Lambda lam;
-    lam.v = ParseInt(body);
+    lam.v = MapVar(ParseInt(body));
     lam.body = ParseLeadingExp(s);
     return std::make_shared<Exp>(std::move(lam));
   }
 
   case 'v': {
-    BigInt i = ParseInt(body);
+    int64_t i = MapVar(ParseInt(body));
     return std::make_shared<Exp>(Var{.v = i});
   }
 
@@ -754,13 +773,10 @@ uint8_t DecodeChar(uint8_t digit) {
   return DECODE_STRING[digit];
 }
 
-static std::string PrettyVar(const BigInt &i) {
-  // If you're using bignum and this fails, you could just call
-  // i.ToString() here.
-  int64_t ii = icfp::GetInt64(i);
-  CHECK(ii >= 0);
-  if (ii < 26) return StringPrintf("%c", 'a' + ii);
-  return StringPrintf("v%zu", (size_t)ii);
+static std::string PrettyVar(int64_t v) {
+  CHECK(v >= 0);
+  if (v < 26) return StringPrintf("%c", 'a' + v);
+  return StringPrintf("v%zu", (size_t)v);
 }
 
 // Flatten n-ary operator if it's 'op', or just e.

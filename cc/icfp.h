@@ -5,15 +5,18 @@
 #include <cassert>
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 #include <memory>
 #include <string_view>
 #include <unordered_set>
+#include <vector>
 
 // If you have problems with bignum, you'll have to get an older
 // revision. Many problems assume this.
 #include "bignum/big.h"
+#include "bignum/big-overloads.h"
 
 namespace icfp {
 
@@ -112,13 +115,15 @@ struct If {
 };
 
 struct Lambda {
-  // Variable converted to an integer.
-  BigInt v;
+  // In principle, variables can be bignums, but the number of distinct
+  // variables is bounded by the program size (and execution time, when
+  // we rename). So we rename these to machine-word sized integers.
+  int64_t v;
   std::shared_ptr<Exp> body;
 };
 
 struct Var {
-  BigInt v;
+  int64_t v;
 };
 
 std::string ValueString(const Value &v);
@@ -133,7 +138,7 @@ struct Evaluation {
 
   // [e1/v]e2. Avoids capture (unless simple=true).
   std::shared_ptr<Exp> Subst(std::shared_ptr<Exp> e1,
-                             const BigInt &v,
+                             int64_t,
                              std::shared_ptr<Exp> e2,
                              bool simple = false);
 
@@ -177,22 +182,34 @@ struct Evaluation {
   // Evaluate to a value.
   Value Eval(std::shared_ptr<Exp> exp);
 
-  static std::unordered_set<BigInt> FreeVars(const Exp *e);
+  static std::unordered_set<int64_t> FreeVars(const Exp *e);
 
  private:
   std::shared_ptr<Exp> SubstInternal(
-      const std::unordered_set<BigInt> &fvs,
+      const std::unordered_set<int64_t> &fvs,
       std::shared_ptr<Exp> e1,
-      const BigInt &v,
+      int64_t v,
       std::shared_ptr<Exp> e2,
       bool simple);
 };
 
 std::shared_ptr<Exp> ValueToExp(const Value &v);
 
-// Simple recursive-descent parser. Consumes an expression from the beginning
-// of the string view.
-std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s);
+struct Parser {
+  Parser();
+
+  // For error messages, we can map from (non-negative) word-sized
+  // variables to the original variable number (and then to the
+  // string, if we want).
+  std::vector<BigInt> original_vars;
+  std::unordered_map<BigInt, int> word_var;
+
+  // Simple recursive-descent parser. Consumes an expression from the beginning
+  // of the string view.
+  std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s);
+
+  int64_t MapVar(const BigInt &b);
+};
 
 // Read all the input from stdin; strip leading and trailing space.
 std::string ReadAllInput();

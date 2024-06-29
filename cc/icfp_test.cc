@@ -17,7 +17,8 @@
 using namespace icfp;
 
 static Value Evaluate(std::string_view s) {
-  std::shared_ptr<Exp> exp = ParseLeadingExp(&s);
+  Parser parser;
+  std::shared_ptr<Exp> exp = parser.ParseLeadingExp(&s);
   CHECK(s.empty());
   CHECK(exp.get());
 
@@ -51,7 +52,7 @@ static void LanguageTest() {
   CHECK(s != nullptr) << ValueString(v);
   CHECK(s->s ==
         "Self-check OK, send `solve language_test 4w3s0m3` "
-        "to claim points for it");
+        "to claim points for it") << "Got:\n" << s->s;
 }
 
 static void Bench() {
