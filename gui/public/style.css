@@ -231,6 +231,19 @@ td {
   text-align: center;
 }
 
+.threed-cell-hilite {
+   display: flex;
+  justify-content: center;
+
+  align-items: center;
+  margin: 0px;
+  white-space: nowrap;
+  overflow: hidden;
+  height: 2em; width: 2em;
+  background-color: #ddf;
+  text-align: center;
+}
+
 .S-chip {
   color: white;
   background-color: #33b;

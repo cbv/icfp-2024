@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Dispatch, ThreedAction, threedAction } from './action';
 import { AppModeState, AppState } from './state';
-import { PuzzleSolution, Rect } from './types';
+import { Point, PuzzleSolution, Rect } from './types';
 import { unparseThreedProgram } from './threed-util';
 
 function arrow(rotate: number): JSX.Element {
@@ -20,13 +20,26 @@ function arrow(rotate: number): JSX.Element {
 };
 
 type LocalDispatch = (action: ThreedAction) => void;
+type LocalModeState = AppModeState & { t: 'threed' };
 
-export function renderRow(row: string[], rowIndex: number, dispatch: LocalDispatch): JSX.Element {
-  function divwrap(x: JSX.Element | string, cname: string = "threed-cell"): JSX.Element {
-    return <div className={cname}>{x}</div>;
-  }
-  function renderCell(x: string) {
-    switch (x) {
+function isHighlighted(ms: LocalModeState, p: Point): boolean {
+  if (ms.hoverCell != undefined && p.x == ms.hoverCell.x && p.y == ms.hoverCell.y) return true;
+  return false;
+}
+
+export function renderRow(modeState: LocalModeState, row: string[], rowIndex: number, dispatch: LocalDispatch): JSX.Element {
+  const y = rowIndex;
+
+  function renderCell(tok: string, x: number) {
+
+    function divwrap(elt: JSX.Element | string, cname: string = "threed-cell"): JSX.Element {
+      if (isHighlighted(modeState, { x, y })) {
+        cname = "threed-cell-hilite";
+      }
+      return <div className={cname}>{elt}</div>;
+    }
+
+    switch (tok) {
       case '.': return divwrap('', "threed-cell-empty");
       case 'v': return divwrap(arrow(2));
       case '^': return divwrap(arrow(0));
@@ -35,27 +48,27 @@ export function renderRow(row: string[], rowIndex: number, dispatch: LocalDispat
       case 'S': return divwrap(<div className="S-chip">S</div>);
       case 'A': return divwrap(<div className="A-chip">A</div>);
       case 'B': return divwrap(<div className="B-chip">B</div>);
-      default: return divwrap(x);
+      default: return divwrap(tok);
     }
   }
-  return <tr>{row.map((rowData, x) => <td
-    onMouseEnter={() => dispatch({ t: 'setHover', p: { x, y: rowIndex } })}
-    onMouseLeave={() => dispatch({ t: 'clearHover', p: { x, y: rowIndex } })}
-    onMouseDown={() => { dispatch({ t: 'setProgramCell', x, y: rowIndex, v: '.' }) }}>{
-      renderCell(rowData)}</td>)
+  return <tr>{row.map((tok, x) => <td
+    onMouseEnter={() => dispatch({ t: 'setHover', p: { x, y } })}
+    onMouseLeave={() => dispatch({ t: 'clearHover', p: { x, y } })}
+    onMouseDown={() => { dispatch({ t: 'setProgramCell', x, y, v: '.' }) }}>{
+      renderCell(tok, x)}</td>)
   }</tr>;
 }
 
-export function renderThreedPuzzleArray(array: string[][], dispatch: LocalDispatch): JSX.Element {
-  return <table><tbody>{array.map((row, y) => renderRow(row, y, dispatch))}</tbody></table>;
+export function renderThreedPuzzleArray(ms: LocalModeState, array: string[][], dispatch: LocalDispatch): JSX.Element {
+  return <table><tbody>{array.map((row, y) => renderRow(ms, row, y, dispatch))}</tbody></table>;
 }
 
-export function renderThreedPuzzle(text: string, dispatch: LocalDispatch): JSX.Element {
+export function renderThreedPuzzle(ms: LocalModeState, text: string, dispatch: LocalDispatch): JSX.Element {
   const lines = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));;
-  return renderThreedPuzzleArray(lines, dispatch);
+  return renderThreedPuzzleArray(ms, lines, dispatch);
 }
 
-export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRect: Rect, dispatch: LocalDispatch): JSX.Element {
+export function renderThreedPuzzleInRect(ms: LocalModeState, text: string, globalRect: Rect, localRect: Rect, dispatch: LocalDispatch): JSX.Element {
   const localArray = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));
 
   const globalArray: string[][] = [];
@@ -73,11 +86,11 @@ export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRe
     }
   }
 
-  return renderThreedPuzzleArray(globalArray, dispatch);
+  return renderThreedPuzzleArray(ms, globalArray, dispatch);
 }
 
 // return true if we've handled the key
-function handleKey(state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: LocalDispatch, code: string): boolean {
+function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDispatch, code: string): boolean {
   switch (code) {
     case 'ArrowLeft': dispatch({ t: 'incFrame', dframe: -1 }); return true;
     case 'ArrowRight': dispatch({ t: 'incFrame', dframe: 1 }); return true;
@@ -85,7 +98,7 @@ function handleKey(state: AppState, modeState: AppModeState & { t: 'threed' }, d
   }
 }
 
-export function RenderThreed(props: { state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: Dispatch }): JSX.Element {
+export function RenderThreed(props: { state: AppState, modeState: LocalModeState, dispatch: Dispatch }): JSX.Element {
   const { state, modeState, dispatch } = props;
   const onKeyDown = (e: KeyboardEvent) => {
     if (handleKey(state, modeState, ldis, e.code)) {
@@ -127,14 +140,13 @@ export function RenderThreed(props: { state: AppState, modeState: AppModeState &
       min: { x: frame.min[0], y: frame.min[1] },
       max: { x: frame.max[0], y: frame.max[1] },
     };
-    renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzleInRect(frame.frame, globalRect, localRect, ldis)}</div>
-      <div>{modeState.hoverCell == undefined ? 'none' : JSON.stringify(modeState.hoverCell)}</div>
+    renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzleInRect(modeState, frame.frame, globalRect, localRect, ldis)}</div>
       <input style={{ width: '40em' }} type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
         ldis({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
       }}></input></div>;
   }
   else if (program != undefined) {
-    renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzleArray(program, ldis)}</div>;
+    renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzleArray(modeState, program, ldis)}</div>;
   }
 
   const runProgram: React.MouseEventHandler = (e) => {
