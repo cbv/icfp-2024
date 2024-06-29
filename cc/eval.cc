@@ -14,7 +14,8 @@ int main(int argc, char **argv) {
   std::string input = ReadAllInput();
   std::string_view input_view(input);
 
-  std::shared_ptr<Exp> exp = ParseLeadingExp(&input_view);
+  Parser parser;
+  std::shared_ptr<Exp> exp = parser.ParseLeadingExp(&input_view);
 
   CHECK(input_view.empty()) << "extra stuff after expression:\n"
                             << input_view
