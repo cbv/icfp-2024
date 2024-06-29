@@ -11,6 +11,8 @@ export type ThreedAction =
   | { t: 'setProgramCell', x: number, y: number, v: string }
   | { t: 'expandProgram' }
   | { t: 'incFrame', dframe: number }
+  | { t: 'setHover', p: Point }
+  | { t: 'clearHover', p: Point }
   ;
 
 export type Action =

@@ -11,3 +11,6 @@ export type ThreedItem =
   ;
 
 export type EvalThreedResponse = ThreedItem[];
+
+export type Point = { x: number, y: number };
+export type Rect = { min: Point, max: Point };

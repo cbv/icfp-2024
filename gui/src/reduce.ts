@@ -103,6 +103,16 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
         s.currentFrame = newFrame;
       });
     }
+    case 'setHover': {
+      return produceMs(state, ms, s => {
+        s.hoverCell = action.p;
+      });
+    }
+    case 'clearHover': {
+      return produceMs(state, ms, s => {
+        s.hoverCell = undefined;
+      });
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Dispatch, ThreedAction, threedAction } from './action';
 import { AppModeState, AppState } from './state';
-import { PuzzleSolution } from './types';
+import { PuzzleSolution, Rect } from './types';
 import { unparseThreedProgram } from './threed-util';
 
 function arrow(rotate: number): JSX.Element {
@@ -38,13 +38,13 @@ export function renderRow(row: string[], rowIndex: number, dispatch: LocalDispat
       default: return divwrap(x);
     }
   }
-  return <tr>{row.map((rowData, x) => <td onMouseDown={() => { dispatch({ t: 'setProgramCell', x, y: rowIndex, v: '.' }) }}>{
-    renderCell(rowData)}</td>)
+  return <tr>{row.map((rowData, x) => <td
+    onMouseEnter={() => dispatch({ t: 'setHover', p: { x, y: rowIndex } })}
+    onMouseLeave={() => dispatch({ t: 'clearHover', p: { x, y: rowIndex } })}
+    onMouseDown={() => { dispatch({ t: 'setProgramCell', x, y: rowIndex, v: '.' }) }}>{
+      renderCell(rowData)}</td>)
   }</tr>;
 }
-
-type Point = { x: number, y: number };
-type Rect = { min: Point, max: Point };
 
 export function renderThreedPuzzleArray(array: string[][], dispatch: LocalDispatch): JSX.Element {
   return <table><tbody>{array.map((row, y) => renderRow(row, y, dispatch))}</tbody></table>;
@@ -128,6 +128,7 @@ export function RenderThreed(props: { state: AppState, modeState: AppModeState &
       max: { x: frame.max[0], y: frame.max[1] },
     };
     renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzleInRect(frame.frame, globalRect, localRect, ldis)}</div>
+      <div>{modeState.hoverCell == undefined ? 'none' : JSON.stringify(modeState.hoverCell)}</div>
       <input style={{ width: '40em' }} type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
         ldis({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
       }}></input></div>;
