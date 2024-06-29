@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Dispatch } from './action';
+import { Dispatch, threedAction } from './action';
 import { AppModeState, AppState } from './state';
 import { PuzzleSolution } from './types';
 
@@ -78,7 +78,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
     if (puzzle.name == modeState.curPuzzleName) {
       klass.push('puzzle-item-selected');
     }
-    return <div className={klass.join(" ")} onMouseDown={(e) => { dispatch({ t: 'setCurrentItem', item: puzzle.name }) }}>{puzzle.name}</div>;
+    return <div className={klass.join(" ")} onMouseDown={(e) => { dispatch(threedAction({ t: 'setCurrentItem', item: puzzle.name })) }}>{puzzle.name}</div>;
   });
   let renderedPuzzle: JSX.Element | undefined;
   // Program is the current program text in case we need to send it to the evaluator
@@ -106,7 +106,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
     };
     renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzleInRect(frame.frame, globalRect, localRect)}</div>
       <input style={{ width: '40em' }} type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
-        dispatch({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
+        dispatch(threedAction({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) }))
       }}></input></div>;
   }
   else if (program != undefined) {
@@ -124,7 +124,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
   function runApparatus(): JSX.Element {
     function onChange(which: 'a' | 'b') {
       return (e: React.ChangeEvent<HTMLInputElement>) => {
-        dispatch({ t: 'setValue', which, v: e.currentTarget.value })
+        dispatch(threedAction({ t: 'setValue', which, v: e.currentTarget.value }))
       }
     }
     return <>

@@ -1,6 +1,6 @@
 import { produce } from 'immer';
 import { AppModeState, AppState, hashOfMode, mkModeState } from './state';
-import { Action } from './action';
+import { Action, ThreedAction } from './action';
 import { compileExample } from './compile';
 import { EvalThreedResponse } from './types';
 
@@ -37,35 +37,31 @@ function setOutputText(state: AppState, text: string): AppState {
   return produce(state, s => { s.modeState = newModeState; })
 }
 
-function setCurrentItem(state: AppState, item: string): AppState {
-  if (!(state.modeState.t == 'threed')) {
-    throw new Error(`can't set output text in this mode`);
-  }
-  const newModeState = produce(state.modeState, s => {
-    s.curPuzzleName = item;
-    s.executionTrace = undefined;
-  });
-  return produce(state, s => { s.modeState = newModeState; })
+function produceMs<T extends AppModeState>(state: AppState, ms: T, f: (ms: T) => void): AppState {
+  const newMs = produce(ms, f);
+  return produce(state, s => { s.modeState = newMs; });
 }
 
-function setCurrentFrame(state: AppState, frame: number): AppState {
-  if (!(state.modeState.t == 'threed')) {
-    throw new Error(`can't set output text in this mode`);
-  }
-  const newModeState = produce(state.modeState, s => {
-    s.currentFrame = frame;
-  });
-  return produce(state, s => { s.modeState = newModeState; })
-}
+function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, action: ThreedAction): AppState {
 
-function setValue(state: AppState, which: 'a' | 'b', v: string): AppState {
-  if (!(state.modeState.t == 'threed')) {
-    throw new Error(`can't set a/b value in this mode`);
+  switch (action.t) {
+    case 'setCurrentItem': {
+      return produceMs(state, ms, s => {
+        s.curPuzzleName = action.item;
+      });
+
+    }
+    case 'setCurrentFrame': {
+      return produceMs(state, ms, s => {
+        s.currentFrame = action.frame;
+      });
+    }
+    case 'setValue': {
+      return produceMs(state, ms, s => {
+        s[action.which] = action.v;
+      });
+    }
   }
-  const newModeState = produce(state.modeState, s => {
-    s[which] = v;
-  });
-  return produce(state, s => { s.modeState = newModeState; })
 }
 
 export function reduce(state: AppState, action: Action): AppState {
@@ -90,24 +86,15 @@ export function reduce(state: AppState, action: Action): AppState {
         s.effects.push(action.effect);
       });
     }
+    case 'threedAction': {
+      if (state.modeState.t != 'threed') {
+        throw new Error(`incompatible state`);
+      }
+      return reduceThreed(state, state.modeState, action.action);
+    }
     case 'compile': {
       return produce(state, s => {
         return setOutputText(state, compileExample());
-      });
-    }
-    case 'setCurrentItem': {
-      return produce(state, s => {
-        return setCurrentItem(state, action.item);
-      });
-    }
-    case 'setCurrentFrame': {
-      return produce(state, s => {
-        return setCurrentFrame(state, action.frame);
-      });
-    }
-    case 'setValue': {
-      return produce(state, s => {
-        return setValue(state, action.which, action.v);
       });
     }
   }
