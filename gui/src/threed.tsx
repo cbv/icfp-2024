@@ -36,7 +36,6 @@ export function renderRow(row: string[]): JSX.Element {
 }
 
 export function renderThreedPuzzle(text: string): JSX.Element {
-  text = text.replace(/solve .*\n/, '');
   const lines = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));;
   return <table><tbody>{lines.map(renderRow)}</tbody></table>;
 }

@@ -114,12 +114,19 @@ function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }
     return <div className={klass.join(" ")} onMouseDown={(e) => { dispatch({ t: 'setCurrentItem', item: puzzle.name }) }}>{puzzle.name}</div>;
   });
   let renderedPuzzle: JSX.Element | undefined;
+  let program: string | undefined;
   if (modeState.curPuzzleName != undefined) {
     const puzzle = puzzles.find(p => p.name == modeState.curPuzzleName);
     if (puzzle != undefined) {
-      renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(puzzle.body)}</div>;
+      const stripped = puzzle.body.replace(/solve .*\n/, '');
+      renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(stripped)}</div>;
+      program = stripped;
     }
   }
+
+  // XXX unimplemented
+  program = undefined;
+
   return <div className="interface-container">
     <div className="textarea-container">
       <div className="threed-container">
@@ -130,7 +137,7 @@ function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }
       </div>
     </div>
     <div className="action-bar">
-      {/*      <button onClick={(e) => { dispatch({ t: 'compile' }) }}>Compile</button>*/}
+      {program == undefined ? undefined : <button onClick={(e) => { dispatch({ t: 'doEffect', effect: { t: 'runThreed', program } }) }}>Run</button>}
     </div>
   </div>;
 }

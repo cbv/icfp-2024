@@ -7,6 +7,7 @@ export type Effect =
   | { t: 'sendText', text: string }
   | { t: 'evalText', text: string }
   | { t: 'setHash', hash: string }
+  | { t: 'runThreed', program: string }
   ;
 
 export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): void {
