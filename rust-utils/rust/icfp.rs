@@ -59,27 +59,6 @@ impl Expr {
     }
 }
 
-// helpers for constructing Expr
-pub mod expr {
-    use crate::{BigInt, Expr};
-
-    pub fn litbool(b: bool) -> Expr {
-        Expr::Bool(b)
-    }
-
-    pub fn litstr(s : &str) -> Expr {
-        Expr::Str(s.into())
-    }
-
-    pub fn litnum(n: BigInt) -> Expr {
-        Expr::Int(n)
-    }
-
-    pub fn add(a: Expr, b: Expr) -> Expr {
-        Expr::Binop('+', Box::new(a), Box::new(b))
-    }
-}
-
 pub fn parse_base94 (b : &[u8]) -> anyhow::Result<BigInt> {
     let mut result = 0;
     for idx in 0 .. b.len() {
@@ -113,6 +92,82 @@ pub fn encode_base94(mut n: BigInt) -> String {
     }
 
     result
+}
+
+// helpers for constructing Expr
+pub mod expr {
+    use crate::{BigInt, Expr};
+
+    pub fn litbool(b: bool) -> Expr {
+        Expr::Bool(b)
+    }
+
+    pub fn litstr(s : &str) -> Expr {
+        Expr::Str(s.into())
+    }
+
+    pub fn litnum(n: BigInt) -> Expr {
+        Expr::Int(n)
+    }
+
+    pub fn add(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('+', Box::new(a), Box::new(b))
+    }
+
+    pub fn mul(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('*', Box::new(a), Box::new(b))
+    }
+
+    pub fn sub(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('-', Box::new(a), Box::new(b))
+    }
+
+    pub fn div(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('/', Box::new(a), Box::new(b))
+    }
+
+    pub fn modulus(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('%', Box::new(a), Box::new(b))
+    }
+
+    pub fn concat(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('.', Box::new(a), Box::new(b))
+    }
+
+    pub fn app(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('$', Box::new(a), Box::new(b))
+    }
+
+    pub fn equ(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('=', Box::new(a), Box::new(b))
+    }
+
+    pub fn cond(cnd: Expr, a: Expr, b: Expr) -> Expr {
+        Expr::If(Box::new(cnd), Box::new(a), Box::new(b))
+    }
+
+    pub fn vuse(v: &str) -> Expr {
+        let n = crate::parse_base94(v.as_bytes()).unwrap();
+        Expr::Var(n)
+    }
+
+    pub fn lam(v: &str, body: Expr) -> Expr {
+        let n = crate::parse_base94(v.as_bytes()).unwrap();
+        Expr::Lam(n, Box::new(body))
+    }
+
+    pub fn app_spine(a: Expr, b: Vec<Expr>) -> Expr {
+        b.into_iter().fold(a, |acc, b1| { app(acc, b1) })
+    }
+
+    pub fn ycomb() -> Expr {
+        lam("f", app(lam("x", app(vuse("f"), app(vuse("x"), vuse("x")))),
+                     lam("x", app(vuse("f"), app(vuse("x"), vuse("x"))))))
+    }
+
+    pub fn rec(v : &str, body: Expr) -> Expr {
+        app(ycomb(), lam(v, body))
+    }
 }
 
 #[test]
