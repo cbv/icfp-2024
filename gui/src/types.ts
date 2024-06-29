@@ -6,7 +6,7 @@ export type AppProps = {
 export type EvalThreedRpc = { program: string, a: number, b: number };
 
 export type ThreedItem =
-  | { t: 'frame', frame: string }
+  | { t: 'frame', frame: string, min: [number, number], max: [number, number] }
   | { t: 'output', output: number, timetravel?: boolean }
   ;
 

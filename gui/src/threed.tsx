@@ -38,7 +38,15 @@ export function renderRow(row: string[]): JSX.Element {
   return <tr>{row.map(x => <td>{renderCell(x)}</td>)}</tr>;
 }
 
+type Point = { x: number, y: number };
+type Rect = { min: Point, max: Point };
+
 export function renderThreedPuzzle(text: string): JSX.Element {
+  const lines = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));;
+  return <table><tbody>{lines.map(renderRow)}</tbody></table>;
+}
+
+export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRect: Rect): JSX.Element {
   const lines = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));;
   return <table><tbody>{lines.map(renderRow)}</tbody></table>;
 }
@@ -66,13 +74,20 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
   }
 
   if (trace != undefined) {
-    const frames = trace.flatMap(x => x.t == 'frame' ? [x.frame] : []);
-    const frameProgram = frames[modeState.currentFrame];
-    renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzle(frameProgram)}</div>
+    const frames = trace.flatMap(x => x.t == 'frame' ? [x] : []);
+    const globalRect: Rect = {
+      min: { x: Math.min(...frames.map(frame => frame.min[0])), y: Math.min(...frames.map(frame => frame.min[1])) },
+      max: { x: Math.max(...frames.map(frame => frame.max[0])), y: Math.max(...frames.map(frame => frame.max[1])) },
+    };
+    const frame = frames[modeState.currentFrame];
+    const localRect: Rect = {
+      min: { x: frame.min[0], y: frame.min[1] },
+      max: { x: frame.max[0], y: frame.max[1] },
+    };
+    renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzleInRect(frame.frame, globalRect, localRect)}</div>
       <input style={{ width: '40em' }} type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
         dispatch({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
       }}></input></div>;
-
   }
   else if (program != undefined) {
     renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(program)}</div>;
