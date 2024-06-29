@@ -9,6 +9,8 @@ function go(name: string) {
     case 'lambdaman7': return compile.lambdaman7();
     case 'lambdaman8': return compile.lambdaman8();
     case 'lambdaman9': return compile.lambdaman9();
+    case 'lambdaman10': return compile.lambdaman10();
+    case 'lambdaman11': return compile.lambdaman11();
     default: throw new Error(`not found: ${name}`);
   }
 }
