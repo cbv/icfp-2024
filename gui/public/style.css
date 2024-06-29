@@ -245,29 +245,32 @@ td {
 }
 
 .S-chip {
+  font-family: helvetica;
   font-size: 0.9em;
   font-weight: bold;
   color: white;
   background-color: #808183;
-  padding: 0.1em 0.35em;
+  padding: 0.2em 0.35em 0.0em 0.35em;
   border-radius: 0.75em;
 }
 
 .A-chip {
+  font-family: helvetica;
   font-size: 0.9em;
   font-weight: bold;
   color: white;
   background-color: #0039a6;
-  padding: 0.1em 0.35em;
+  padding: 0.2em 0.35em 0.0em 0.35em;
   border-radius: 0.75em;
 }
 
 .B-chip {
+  font-family: helvetica;
   font-size: 0.9em;
   font-weight: bold;
   color: white;
   background-color: #ff6319;
-  padding: 0.1em 0.35em;
+  padding: 0.2em 0.35em 0.0em 0.35em;
   border-radius: 0.75em;
 }
 
