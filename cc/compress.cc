@@ -44,6 +44,7 @@ struct Compressor {
     std::vector<Part> new_parts;
     for (const Part &part : parts) {
       if (const int *i = std::get_if<int>(&part)) {
+        (void)i;
         new_parts.push_back(part);
       } else if (const std::string *s = std::get_if<std::string>(&part)) {
         // get any occurrences and replace them with the name
