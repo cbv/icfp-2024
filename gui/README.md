@@ -3,6 +3,22 @@ GUI
 
 Status: does a few things
 
+Threed Editor
+-------------
+
+```
+Left-click-drag selects
+
+C-x: cut (spreadsheet style --- the cut stuff doesn't go away until you paste)
+C-c: copy
+C-v: paste
+
+Hover and type digits or SAB or operators to put stuff in cells
+Delete or right-click or '.' to delete
+
+'Copy Program' button to put the text of the program in the clipboard
+'Expand' button to make the field bigger
+```
 Building
 --------
 
