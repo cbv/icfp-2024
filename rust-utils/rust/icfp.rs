@@ -172,6 +172,21 @@ pub mod expr {
     pub fn let1(x: &str, val: Expr, body: Expr) -> Expr {
         app(lam(x, body), val)
     }
+
+    pub fn repeat() -> Expr {
+        rec("r",
+            lam("s",
+                lam("n",
+                    cond(
+                        equ(vuse("n"),
+                            litnum(1)),
+                        vuse("s"),
+                        concat(vuse("s"),
+                               app_spine(vuse("r"),
+                                         vec![vuse("s"),
+                                              sub(vuse("n"),
+                                                  litnum(1))]))))))
+    }
 }
 
 #[test]
