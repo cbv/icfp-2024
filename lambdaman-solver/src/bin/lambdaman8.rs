@@ -23,7 +23,7 @@ pub fn main() -> anyhow::Result<()> {
 
     let e =
         concat(
-            litstr("solve lambdaman6 "),
+            litstr("solve lambdaman8 "),
             app(spiral, litnum(0)));
     println!("{e}");
 
