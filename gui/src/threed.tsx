@@ -90,10 +90,29 @@ export function renderThreedPuzzleInRect(ms: LocalModeState, text: string, globa
 }
 
 // return true if we've handled the key
-function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDispatch, code: string): boolean {
+function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDispatch, code: string, key: string): boolean {
+  let m;
+
+  if (key.match(/^[-<>^v+*\/%@=#sab0-9.]$/)) {
+    dispatch({ t: 'editChar', char: key });
+  }
+
   switch (code) {
-    case 'ArrowLeft': dispatch({ t: 'incFrame', dframe: -1 }); return true;
-    case 'ArrowRight': dispatch({ t: 'incFrame', dframe: 1 }); return true;
+    case 'Backspace': dispatch({ t: 'editChar', char: '.' }); return true;
+    case 'ArrowLeft':
+      if (modeState.executionTrace == undefined) {
+        dispatch({ t: 'editChar', char: '<' }); return true;
+      } else {
+        dispatch({ t: 'incFrame', dframe: -1 }); return true;
+      }
+    case 'ArrowRight':
+      if (modeState.executionTrace == undefined) {
+        dispatch({ t: 'editChar', char: '>' }); return true;
+      } else {
+        dispatch({ t: 'incFrame', dframe: 1 }); return true;
+      }
+    case 'ArrowUp': dispatch({ t: 'editChar', char: '^' }); return true;
+    case 'ArrowDown': dispatch({ t: 'editChar', char: 'v' }); return true;
     default: console.log(code); return false;
   }
 }
@@ -101,7 +120,7 @@ function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDi
 export function RenderThreed(props: { state: AppState, modeState: LocalModeState, dispatch: Dispatch }): JSX.Element {
   const { state, modeState, dispatch } = props;
   const onKeyDown = (e: KeyboardEvent) => {
-    if (handleKey(state, modeState, ldis, e.code)) {
+    if (handleKey(state, modeState, ldis, e.code, e.key)) {
       e.preventDefault();
       e.stopPropagation();
     }

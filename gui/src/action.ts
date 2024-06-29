@@ -13,6 +13,7 @@ export type ThreedAction =
   | { t: 'incFrame', dframe: number }
   | { t: 'setHover', p: Point }
   | { t: 'clearHover', p: Point }
+  | { t: 'editChar', char: string }
   ;
 
 export type Action =

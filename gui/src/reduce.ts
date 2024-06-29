@@ -43,8 +43,20 @@ function produceMs<T extends AppModeState>(state: AppState, ms: T, f: (ms: T) =>
   return produce(state, s => { s.modeState = newMs; });
 }
 
-function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, action: ThreedAction): AppState {
+function keyFold(oldVal: string, keycode: string): string {
+  if (keycode == 'a') return 'A';
+  if (keycode == 'b') return 'B';
+  if (keycode == 's') return 'S';
+  if (keycode == '.') return '.';
+  if (keycode.match(/[-<>^v+*/%@=#]/)) return keycode;
+  // at this point keycode match [0-9] I think
+  if (oldVal == '0') return keycode;
+  if (oldVal == '.') return keycode;
+  if (oldVal == '-' || oldVal.match(/-?[0-9]+/)) return oldVal + keycode;
+  return keycode;
+}
 
+function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, action: ThreedAction): AppState {
   switch (action.t) {
     case 'setCurrentItem': {
 
@@ -111,6 +123,21 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
     case 'clearHover': {
       return produceMs(state, ms, s => {
         s.hoverCell = undefined;
+      });
+    }
+    case 'editChar': {
+      if (ms.hoverCell == undefined)
+        return state;
+      if (ms.curProgram == undefined)
+        return state;
+      const { x, y } = ms.hoverCell;
+      const oldVal = ms.curProgram[y][x];
+      const newVal = keyFold(oldVal, action.char);
+      const newProgram = produce(ms.curProgram, s => {
+        s[y][x] = newVal;
+      });
+      return produceMs(state, ms, s => {
+        s.curProgram = newProgram;
       });
     }
   }
