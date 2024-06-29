@@ -1,4 +1,7 @@
 
+#ifndef ICFP_H_
+#define ICFP_H_
+
 #include <cassert>
 #include <cstdint>
 #include <string>
@@ -39,6 +42,8 @@ inline std::string IntToString(const int_type &i) {
 
 static constexpr int RADIX = 94;
 
+// Returns e.g. I! for 0.
+std::string IntConstant(const int_type &i);
 std::string EncodeString(std::string_view s);
 uint8_t DecodeChar(uint8_t c);
 
@@ -211,3 +216,5 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s);
 std::string ReadAllInput();
 
 }  // namespace icfp
+
+#endif

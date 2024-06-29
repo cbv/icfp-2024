@@ -51,6 +51,9 @@ pp.exe : pp.o icfp.o $(CC_LIB_OBJECTS)
 encode.exe : encode.o icfp.o $(CC_LIB_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
+icfp_test.exe : icfp_test.o icfp.o $(CC_LIB_OBJECTS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
 clean :
 	rm -f *.o *.exe $(CC_LIB_OBJECTS)
 

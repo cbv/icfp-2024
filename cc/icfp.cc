@@ -12,8 +12,11 @@
 #include <cassert>
 #include <string_view>
 
+#if NO_BIGNUM
+#else
 #include "bignum/big.h"
 #include "bignum/big-overloads.h"
+#endif
 
 namespace icfp {
 
@@ -53,8 +56,10 @@ std::string ValueString(const Value &v) {
 static std::optional<int_type> ConvertInt(std::string_view body) {
   int_type val{0};
   for (char c : body) {
-    // assert(val < std::numeric_limits<int64_t>::max() / 94);
-    val = val * 94;
+    #if NO_BIGNUM
+    assert(val < std::numeric_limits<int64_t>::max() / RADIX);
+    #endif
+    val = val * RADIX;
 
     static_assert('~' - '!' == 93, "Encoding space is the size we expect.");
     if (c >= '!' && c <= '~') {
@@ -690,6 +695,36 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   default:
     assert(!"invalid indicator");
   }
+}
+
+std::string IntConstant(const int_type &i) {
+#if NO_BIGNUM
+  assert(!"sorry, unsupported");
+#else
+  assert(i >= 0 &&
+         "only non-negative integers can be represented as constants");
+
+  // Unclear whether it would accept just "I" for zero.
+  if (i == 0) return "I!";
+
+  int_type val = i;
+  std::string rev;
+  while (val > 0) {
+    // We don't have quotrem with int64, so just do two operations.
+    int64_t digit = BigInt::CMod(val, RADIX);
+    val = BigInt::Div(val, RADIX);
+    assert(digit >= 0 && digit < RADIX);
+    rev.push_back('!' + digit);
+  }
+
+  std::string out;
+  out.reserve(1 + rev.size());
+  out.push_back('I');
+  for (int i = rev.size() - 1; i >= 0; i--)
+    out.push_back(rev[i]);
+
+  return out;
+#endif
 }
 
 std::string EncodeString(std::string_view s) {
