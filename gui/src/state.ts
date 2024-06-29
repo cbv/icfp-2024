@@ -1,8 +1,11 @@
 import { Effect } from "./effect";
-import { AppProps, EvalThreedResponse, Point, PuzzleSolution } from "./types";
+import { AppProps, EvalThreedResponse, Point, PuzzleSolution, Rect } from "./types";
 
 // list of list of tokens
 export type ThreedProgram = string[][];
+
+export type MouseState =
+  | { t: 'up' };
 
 export type AppModeState =
   | {
@@ -34,6 +37,8 @@ export type AppModeState =
     a: string,
     b: string,
     hoverCell: Point | undefined,
+    selection: Rect | undefined,
+    mouseState: MouseState,
   }
   ;
 
@@ -55,6 +60,8 @@ export function mkModeState(mode: AppMode): AppModeState {
       b: '1',
       curProgram: undefined,
       hoverCell: undefined,
+      selection: undefined,
+      mouseState: { t: 'up' },
     };
   }
 }
