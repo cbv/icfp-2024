@@ -259,8 +259,8 @@ int main(int argc, char **argv) {
 					if ((cell.op == '=') == (*a == *b)) {
 						consume(at + glm::ivec2(-1,0));
 						consume(at + glm::ivec2(0,-1));
-						write(at + glm::ivec2(1,0), *a);
-						write(at + glm::ivec2(0,1), *b);
+						write(at + glm::ivec2(0,1), *a);
+						write(at + glm::ivec2(1,0), *b);
 						reduced = true;
 					}
 				}
