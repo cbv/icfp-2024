@@ -74,6 +74,32 @@ export function lambdaman8() {
   return expToIcfp(concat(litstr("solve lambdaman8 "), appSpine(spiral, [litnum(0)])));
 }
 
+export function lambdaman9() {
+  // 50 x 50 grid with all empties. Start in upper left.
+  const R = rec(r => lam(s => lam(n => cond(equ(n, litnum(1)), s, concat(s, appSpine(r, [s, sub(n, litnum(1))]))))));
+  let repeat = vuse('R');
+  const zag = letbind(
+    [{ v: 'R', body: R }],
+    rec(S => lam(n =>
+      // have we finished?
+      cond(equ(n, litnum(25)),
+        // done
+        litstr(""),
+        // Otherwise do some moves and recurse
+        concat(
+          concat(
+            concat(
+              appSpine(repeat, [litstr("R"), litnum(50)]),
+              litstr("D")),
+            concat(
+              appSpine(repeat, [litstr("L"), litnum(50)]),
+              litstr("D"))),
+          app(S, add(n, litnum(1))))))));
+
+  return expToIcfp(concat(litstr("solve lambdaman9 "), appSpine(zag, [litnum(0)])));
+}
+
+
 export function compileExample() {
   return lambdaman8();
 }
