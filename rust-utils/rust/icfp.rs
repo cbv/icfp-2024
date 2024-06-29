@@ -182,8 +182,8 @@ pub mod expr {
     }
 
     pub fn repeat() -> Expr {
-        rec("r",
-            lam("s",
+        lam("s",
+            rec("r",
                 lam("n",
                     cond(
                         equ(vuse("n"),
@@ -191,9 +191,22 @@ pub mod expr {
                         vuse("s"),
                         concat(vuse("s"),
                                app_spine(vuse("r"),
-                                         vec![vuse("s"),
-                                              sub(vuse("n"),
+                                         vec![sub(vuse("n"),
                                                   litnum(1))]))))))
+    }
+
+    pub fn repeat_of(s : Expr) -> Expr {
+        rec("r",
+            lam("n",
+                cond(
+                    equ(vuse("n"),
+                        litnum(1)),
+                    s.clone(),
+                    concat(s.clone(),
+                           app_spine(vuse("r"),
+                                     vec![s.clone(),
+                                          sub(vuse("n"),
+                                              litnum(1))])))))
     }
 }
 
