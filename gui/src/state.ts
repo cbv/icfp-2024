@@ -41,6 +41,8 @@ export type AppModeState =
     hoverCell: Point | undefined,
     selection: Rect | undefined,
     mouseState: MouseState,
+    clipboard: string[][] | undefined,
+    cutRect: Rect | undefined,
   }
   ;
 
@@ -63,6 +65,8 @@ export function mkModeState(mode: AppMode): AppModeState {
       hoverCell: undefined,
       selection: undefined,
       mouseState: { t: 'up' },
+      clipboard: undefined,
+      cutRect: undefined,
     };
   }
 }

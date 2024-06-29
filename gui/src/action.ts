@@ -17,6 +17,9 @@ export type ThreedAction =
   | { t: 'mouseDown', x: number, y: number, buttons: number }
   | { t: 'mouseUp' }
   | { t: 'clearSelection' }
+  | { t: 'cut' }
+  | { t: 'copy' }
+  | { t: 'paste' }
   ;
 
 export type Action =

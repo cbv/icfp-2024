@@ -97,8 +97,23 @@ export function renderThreedPuzzleInRect(ms: LocalModeState, text: string, globa
 }
 
 // return true if we've handled the key
-function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDispatch, code: string, key: string): boolean {
+function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDispatch, code: string, key: string, mods: string): boolean {
   let m;
+
+  if (mods.match(/C/) && code == 'KeyC') {
+    dispatch({ t: 'copy' });
+    return true;
+  }
+
+  if (mods.match(/C/) && code == 'KeyV') {
+    dispatch({ t: 'paste' });
+    return true;
+  }
+
+  if (mods.match(/C/) && code == 'KeyX') {
+    dispatch({ t: 'cut' });
+    return true;
+  }
 
   if (key.match(/^[-<>^v+*\/%@=#sab0-9.]$/)) {
     dispatch({ t: 'editChar', char: key });
@@ -130,7 +145,7 @@ export function RenderThreed(props: { state: AppState, modeState: LocalModeState
     ldis({ t: 'mouseUp' });
   };
   const onKeyDown = (e: KeyboardEvent) => {
-    if (handleKey(state, modeState, ldis, e.code, e.key)) {
+    if (handleKey(state, modeState, ldis, e.code, e.key, (e.ctrlKey ? 'C' : ''))) {
       e.preventDefault();
       e.stopPropagation();
     }

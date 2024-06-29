@@ -63,6 +63,42 @@ function spanRect(p1: Point, p2: Point): Rect {
   }
 }
 
+function getContents(prog: string[][], rect: Rect): string[][] {
+  const rv: string[][] = [];
+  for (let y = rect.min.y; y <= rect.max.y; y++) {
+    const row: string[] = [];
+    for (let x = rect.min.x; x <= rect.max.x; x++) {
+      row.push(prog[y][x]);
+    }
+    rv.push(row);
+  }
+  return rv;
+}
+
+
+function eraseContents(prog: string[][], rect: Rect): string[][] {
+  return produce(prog, pp => {
+    for (let y = rect.min.y; y <= rect.max.y; y++) {
+      for (let x = rect.min.x; x <= rect.max.x; x++) {
+        pp[y][x] = '.';
+      }
+    }
+  });
+}
+
+function putContents(prog: string[][], p: Point, src: string[][]): string[][] {
+  const prog_xs = prog[0].length;
+  const prog_ys = prog.length;
+  return produce(prog, pp => {
+    for (let y = 0; y < src.length; y++) {
+      for (let x = 0; x < src[0].length; x++) {
+        if (p.y + y < prog_ys && p.x + x < prog_xs)
+          pp[p.y + y][p.x + x] = src[y][x];
+      }
+    }
+  });
+}
+
 function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, action: ThreedAction): AppState {
   switch (action.t) {
     case 'setCurrentItem': {
@@ -180,6 +216,59 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
     case 'clearSelection': {
       return produceMs(state, ms, s => {
         s.selection = undefined;
+      });
+    }
+    case 'cut': {
+      const selection = ms.selection;
+      if (selection == undefined)
+        return state;
+      const program = ms.curProgram;
+      if (program == undefined)
+        return state;
+
+      const clipboard = getContents(program, selection);
+      return produceMs(state, ms, s => {
+        s.cutRect = selection;
+        s.clipboard = clipboard;
+      });
+    }
+    case 'copy': {
+      const selection = ms.selection;
+      if (selection == undefined)
+        return state;
+      const program = ms.curProgram;
+      if (program == undefined)
+        return state;
+
+      const clipboard = getContents(program, selection);
+      return produceMs(state, ms, s => {
+        s.cutRect = undefined;
+        s.clipboard = clipboard;
+      });
+    }
+    case 'paste': {
+      const selection = ms.selection;
+      if (selection == undefined)
+        return state;
+      const program = ms.curProgram;
+      if (program == undefined)
+        return state;
+      const clipboard = ms.clipboard;
+      if (clipboard == undefined)
+        return state;
+      const cutRect = ms.cutRect;
+
+      let newProgram = program;
+      if (cutRect != undefined) {
+        newProgram = eraseContents(newProgram, cutRect);
+      }
+      newProgram = putContents(newProgram, selection.min, clipboard);
+      return produceMs(state, ms, s => {
+        s.curProgram = newProgram;
+        if (cutRect != undefined) {
+          s.selection = undefined;
+          s.cutRect = undefined;
+        }
       });
     }
   }
