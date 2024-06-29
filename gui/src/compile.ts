@@ -1,5 +1,5 @@
 import { repeat } from './lib/util';
-import { Expr, add, mod, app, concat, cond, equ, expToIcfp, expToToks, lam, litbool, litnum, litstr, mul, rawlam, rec, sub, vuse } from './expr';
+import { Expr, add, mod, app, concat, cond, equ, expToIcfp, expToToks, lam, litbool, litnum, litstr, mul, rawlam, rec, sub, div, vuse } from './expr';
 
 /*
 
@@ -39,18 +39,22 @@ export function lambdaman4() {
   const zag =
     rec(S => lam(n => lam(r =>
       // have we finished?
-      cond(equ(n, litnum(25)),
+      cond(equ(n, litnum(1000000)),
         // done
         litstr(""),
         // Otherwise do some moves and recurse
         concat(
-          cond(equ(litnum(0), mod(n, litnum(4))),
-            litstr("U"),
-            litstr("D")),
-          appSpine(S, [add(n, litnum(1)), r]))
-      )
-    )
-    ));
+          letbind([{ v: 'x', body: mod(div(r, litnum(0x3fffffff)), litnum(4)) }],
+            cond(equ(litnum(0), vuse('x')),
+              litstr("U"),
+              cond(equ(litnum(1), vuse('x')),
+                litstr("D"),
+                cond(equ(litnum(2), vuse('x')),
+                  litstr("L"),
+                  litstr("R"))))),
+          appSpine(S, [add(n, litnum(1)),
+          mod(add(mul(r, litnum(1664525)), litnum(1013904223)),
+            litnum(0xffffffff))]))))));
 
   return expToIcfp(concat(litstr("solve lambdaman4 "), appSpine(zag, [litnum(0), litnum(0)])));
 

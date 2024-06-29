@@ -47,8 +47,9 @@ function base94encode(n: number): string {
 }
 
 export function add(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '+' }; }
-export function mul(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '*' }; }
 export function sub(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '-' }; }
+export function mul(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '*' }; }
+export function div(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '/' }; }
 export function mod(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '%' }; }
 export function concat(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '.' }; }
 export function app(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '$' }; }
