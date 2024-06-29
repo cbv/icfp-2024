@@ -6,6 +6,7 @@ export type Effect =
   | { t: 'none' }
   | { t: 'sendText', text: string }
   | { t: 'evalText', text: string }
+  | { t: 'setHash', hash: string }
   ;
 
 export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): void {
@@ -29,8 +30,7 @@ export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): v
           console.log(`don't know how to handle ${ptext}`);
         }
       })();
-    }
-      break;
+    } break;
     case 'evalText': {
       (async () => {
         const preq = new Request("/api/eval", {
@@ -42,7 +42,9 @@ export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): v
         const ptext = await presp.text();
         dispatch({ t: 'setOutputText', text: ptext });
       })();
-    }
-      break;
+    } break;
+    case 'setHash': {
+      window.location.hash = effect.hash;
+    } break;
   }
 }

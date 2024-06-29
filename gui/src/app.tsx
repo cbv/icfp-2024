@@ -4,7 +4,7 @@ import { doEffect } from './effect';
 import { extractEffects } from './lib/extract-effects';
 import { useEffectfulReducer } from './lib/use-effectful-reducer';
 import { reduce } from './reduce';
-import { AppMode, AppModeState, AppState, mkState } from './state';
+import { AppMode, AppModeState, AppState, mkState, modeOfHash } from './state';
 import { Dispatch } from './action';
 import { toTitleCase } from './lib/util';
 import { decodeString, encodeString } from './codec';
@@ -144,9 +144,12 @@ function renderAppBody(props: AppProps, state: AppState, dispatch: Dispatch): JS
 }
 
 export function App(props: AppProps): JSX.Element {
-  const [state, dispatch] = useEffectfulReducer(mkState(), extractEffects(reduce), doEffect);
+  function onHashChange() {
+    dispatch({ t: 'setMode', mode: modeOfHash(document.location.hash) });
+  }
 
-
+  const mode = document.location.hash == undefined ? undefined : modeOfHash(document.location.hash);
+  const [state, dispatch] = useEffectfulReducer(mkState(mode), extractEffects(reduce), doEffect);
 
   const appBody = renderAppBody(props, state, dispatch);
   return <>

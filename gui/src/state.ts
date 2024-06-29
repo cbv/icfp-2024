@@ -45,6 +45,17 @@ export type AppState = {
   modeState: AppModeState,
 }
 
-export function mkState(): AppState {
-  return { effects: [], mode: 'codec', modeState: { t: 'codec', inputText: '', outputText: '' } };
+export function mkState(mode: AppMode | undefined): AppState {
+  if (mode == undefined)
+    mode = 'codec';
+  const modeState = mkModeState(mode);
+  return { effects: [], mode, modeState };
+}
+
+export function hashOfMode(mode: AppMode): string {
+  return '#' + mode;
+}
+
+export function modeOfHash(hash: string): AppMode {
+  return hash.substring(1) as AppMode;
 }

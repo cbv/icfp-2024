@@ -1,5 +1,5 @@
 import { produce } from 'immer';
-import { AppModeState, AppState, mkModeState } from './state';
+import { AppModeState, AppState, hashOfMode, mkModeState } from './state';
 import { Action } from './action';
 import { compileExample } from './compile';
 
@@ -41,6 +41,7 @@ export function reduce(state: AppState, action: Action): AppState {
       return produce(state, s => {
         s.mode = action.mode;
         s.modeState = mkModeState(action.mode);
+        s.effects.push({ t: 'setHash', hash: hashOfMode(action.mode) });
       });
     }
     case 'doEffect': {
