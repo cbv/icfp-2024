@@ -4,7 +4,7 @@ import express from 'express';
 import * as path from 'path';
 import { spawn } from 'node:child_process';
 import { glob } from 'glob';
-import { PuzzleSolution } from '../src/types';
+import { EvalThreedRpc, PuzzleSolution } from '../src/types';
 
 const token = fs.readFileSync(path.join(__dirname, '../../API_KEY'), 'utf8').replace(/\n/g, '');
 const app = express();
@@ -54,6 +54,28 @@ app.post('/api/eval', async (req, res) => {
 
   const child = spawn(path.join(__dirname, '../../cc/eval.exe'), []);
   child.stdin.write(body);
+  child.stdin.end();
+
+  let output = '';
+  child.stdout.on('data', (data) => {
+    output += data;
+  });
+
+  child.stderr.on('data', (data) => {
+    output += data;
+  });
+
+  child.on('close', (code) => {
+    res.end(output);
+  });
+
+});
+
+app.post('/api/eval-threed', async (req, res) => {
+  const body = req.body as EvalThreedRpc;
+
+  const child = spawn(path.join(__dirname, '../../seaplusplus/3v'), [body.a + '', body.b + '']);
+  child.stdin.write(body.program);
   child.stdin.end();
 
   let output = '';

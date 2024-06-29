@@ -16,6 +16,11 @@ function setInputText(state: AppState, text: string): AppState {
 }
 
 function setOutputText(state: AppState, text: string): AppState {
+  if (state.modeState.t == 'threed') {
+    console.log(text);
+    return state;
+  }
+
   if (!(state.modeState.t == 'evaluate' || state.modeState.t == 'codec' || state.modeState.t == 'communicate'
     || state.modeState.t == 'lambdaman')) {
     throw new Error(`can't set output text in this mode`);

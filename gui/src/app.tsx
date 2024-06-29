@@ -124,8 +124,10 @@ function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }
     }
   }
 
-  // XXX unimplemented
-  program = undefined;
+  // XXX hard-coded a and b
+  const runProgram: React.MouseEventHandler = (e) => {
+    dispatch({ t: 'doEffect', effect: { t: 'evalThreed', text: program!, a: 1, b: 1 } })
+  };
 
   return <div className="interface-container">
     <div className="textarea-container">
@@ -137,7 +139,7 @@ function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }
       </div>
     </div>
     <div className="action-bar">
-      {program == undefined ? undefined : <button onClick={(e) => { dispatch({ t: 'doEffect', effect: { t: 'runThreed', program } }) }}>Run</button>}
+      {program == undefined ? undefined : <button onClick={runProgram}>Run</button>}
     </div>
   </div>;
 }

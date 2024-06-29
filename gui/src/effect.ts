@@ -1,13 +1,14 @@
 import { Dispatch } from "./action";
 import { decodeString, encodeString } from "./codec";
 import { AppState } from "./state";
+import { EvalThreedRpc } from "./types";
 
 export type Effect =
   | { t: 'none' }
   | { t: 'sendText', text: string }
   | { t: 'evalText', text: string }
   | { t: 'setHash', hash: string }
-  | { t: 'runThreed', program: string }
+  | { t: 'evalThreed', a: number, b: number, text: string }
   ;
 
 export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): void {
@@ -37,6 +38,19 @@ export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): v
         const preq = new Request("/api/eval", {
           method: 'POST',
           body: JSON.stringify({ rawString: effect.text }),
+          headers: { "Content-type": "application/json" },
+        });
+        const presp = await fetch(preq);
+        const ptext = await presp.text();
+        dispatch({ t: 'setOutputText', text: ptext });
+      })();
+    } break;
+    case 'evalThreed': {
+      const rpc: EvalThreedRpc = { program: effect.text, a: effect.a, b: effect.b };
+      (async () => {
+        const preq = new Request("/api/eval-threed", {
+          method: 'POST',
+          body: JSON.stringify(rpc),
           headers: { "Content-type": "application/json" },
         });
         const presp = await fetch(preq);
