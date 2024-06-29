@@ -250,303 +250,303 @@ std::shared_ptr<Exp> ValueToExp(const Value &v) {
 }
 
 // Evaluate to a value.
-Value Evaluation::Eval(const Exp *exp) {
-  if (const Bool *b = std::get_if<Bool>(exp)) {
-    return Value(*b);
+Value Evaluation::Eval(std::shared_ptr<Exp> exp) {
+  for (;;) {
 
-  } else if (const Int *i = std::get_if<Int>(exp)) {
-    return Value(*i);
+    if (const Bool *b = std::get_if<Bool>(exp.get())) {
+      return Value(*b);
 
-  } else if (const String *s = std::get_if<String>(exp)) {
-    return Value(*s);
+    } else if (const Int *i = std::get_if<Int>(exp.get())) {
+      return Value(*i);
 
-  } else if (const Unop *u = std::get_if<Unop>(exp)) {
+    } else if (const String *s = std::get_if<String>(exp.get())) {
+      return Value(*s);
 
-    switch (u->op) {
-    case '-': {
-      // - Integer negation  U- I$ -> -3
-      return EvalToInt(u->arg.get(),
-                       [&](Int arg) { return Value(Int{.i = -arg.i}); });
-    }
-    case '!': {
-      // ! Boolean not U! T -> false
-      return EvalToBool(u->arg.get(),
-                        [&](Bool arg) { return Value(Bool{.b = !arg.b}); });
-    }
-    case '#': {
-      // # string-to-int: interpret a string as a base-94 number
-      // U# S4%34 -> 15818151
-      return EvalToString("#",
-          u->arg.get(), [&](String arg) {
-            // reencode
-            std::string enc;
-            enc.reserve(arg.s.size());
-            for (uint8_t c : arg.s) {
-              if (c >= 128) {
-                return Value(Error{.msg =
-                    "unconvertible string (bad char) in string-to-int"});
-              } else {
-                enc.push_back(ENCODE_STRING[c]);
+    } else if (const Unop *u = std::get_if<Unop>(exp.get())) {
+
+      switch (u->op) {
+      case '-': {
+        // - Integer negation  U- I$ -> -3
+        return EvalToInt(u->arg,
+                         [&](Int arg) { return Value(Int{.i = -arg.i}); });
+      }
+      case '!': {
+        // ! Boolean not U! T -> false
+        return EvalToBool(u->arg,
+                          [&](Bool arg) { return Value(Bool{.b = !arg.b}); });
+      }
+      case '#': {
+        // # string-to-int: interpret a string as a base-94 number
+        // U# S4%34 -> 15818151
+        return EvalToString("#",
+            u->arg, [&](String arg) {
+              // reencode
+              std::string enc;
+              enc.reserve(arg.s.size());
+              for (uint8_t c : arg.s) {
+                if (c >= 128) {
+                  return Value(Error{.msg =
+                      "unconvertible string (bad char) in string-to-int"});
+                } else {
+                  enc.push_back(ENCODE_STRING[c]);
+                }
               }
-            }
 
-            if (std::optional<BigInt> i = ConvertInt(enc)) {
-              return Value(Int{.i = i.value()});
-            } else {
-              return Value(Error{.msg =
-                  "unconvertible string (not int) in string-to-int"});
-            }
-          });
-    }
-
-    case '$': {
-      // $ int-to-string: inverse of the above U$ I4%34 -> test
-      return EvalToInt(
-          u->arg.get(), [&](Int arg) {
-            if (arg.i < 0) {
-              return Value(Error{.msg =
-                  "don't know how to convert negative integers to "
-                  "base-94?"});
-            }
-
-            std::string rev;
-            BigInt i = arg.i;
-            while (i > 0) {
-              uint8_t digit = i % RADIX;
-              rev.push_back(DECODE_STRING[digit]);
-              i /= RADIX;
-            }
-
-            std::string s;
-            s.resize(rev.size());
-            for (int i = 0; i < (int)rev.size(); i++) {
-              s[rev.size() - 1 - i] = rev[i];
-            }
-            return Value(String{.s = s});
-          });
-    }
-
-    default:
-      return Value(Error{.msg = "Invalid unop"});
-    }
-
-  } else if (const Binop *b = std::get_if<Binop>(exp)) {
-
-    switch (b->op) {
-    case '$': {
-      // $ Apply term x to y (see Lambda abstractions)
-
-      // This operator is lazy: We evaluate the LHS to get a lambda, but the RHS
-      // is just substituted without evaluating it first.
-
-      Value arg1 = Eval(b->arg1.get());
-      if (const Lambda *lam = std::get_if<Lambda>(&arg1)) {
-        betas++;
-        // TODO: Check limits
-        // TODO PERF: This can be tail recursive.
-        std::shared_ptr<Exp> e = Subst(b->arg2, lam->v, lam->body);
-        return Eval(e.get());
-
-      } else if (const Error *e = std::get_if<Error>(&arg1)) {
-        (void)e;
-        return arg1;
-      } else {
-        return Value(Error{.msg = "Expected lambda"});
+              if (std::optional<BigInt> i = ConvertInt(enc)) {
+                return Value(Int{.i = i.value()});
+              } else {
+                return Value(Error{.msg =
+                    "unconvertible string (not int) in string-to-int"});
+              }
+            });
       }
-    }
 
-    case '!': {
-      // Secret call-by-value version of application.
-      Value arg1 = Eval(b->arg1.get());
-      if (const Lambda *lam = std::get_if<Lambda>(&arg1)) {
+      case '$': {
+        // $ int-to-string: inverse of the above U$ I4%34 -> test
+        return EvalToInt(
+            u->arg, [&](Int arg) {
+              if (arg.i < 0) {
+                return Value(Error{.msg =
+                    "don't know how to convert negative integers to "
+                    "base-94?"});
+              }
 
-        Value arg2 = Eval(b->arg2.get());
-        if (const Error *e = std::get_if<Error>(&arg2)) {
+              std::string rev;
+              BigInt i = arg.i;
+              while (i > 0) {
+                uint8_t digit = i % RADIX;
+                rev.push_back(DECODE_STRING[digit]);
+                i /= RADIX;
+              }
+
+              std::string s;
+              s.resize(rev.size());
+              for (int i = 0; i < (int)rev.size(); i++) {
+                s[rev.size() - 1 - i] = rev[i];
+              }
+              return Value(String{.s = s});
+            });
+      }
+
+      default:
+        return Value(Error{.msg = "Invalid unop"});
+      }
+
+    } else if (const Binop *b = std::get_if<Binop>(exp.get())) {
+
+      switch (b->op) {
+      case '$': {
+        // $ Apply term x to y (see Lambda abstractions)
+
+        // This operator is lazy: We evaluate the LHS to get a lambda,
+        // but the RHS is just substituted without evaluating it
+        // first.
+
+        Value arg1 = Eval(b->arg1);
+        if (const Lambda *lam = std::get_if<Lambda>(&arg1)) {
+          betas++;
+          // TODO: Check limits
+          exp = Subst(b->arg2, lam->v, lam->body);
+          // Tail recursion.
+          continue;
+
+        } else if (const Error *e = std::get_if<Error>(&arg1)) {
           (void)e;
-          return arg2;
-        }
+          return arg1;
 
-        betas++;
-        // TODO: Check limits
-        // TODO PERF: This can be tail recursive.
-        std::shared_ptr<Exp> e = Subst(ValueToExp(arg2), lam->v, lam->body);
-        return Eval(e.get());
-
-      } else if (const Error *e = std::get_if<Error>(&arg1)) {
-        (void)e;
-        return arg1;
-      } else {
-        return Value(Error{.msg = "Expected lambda"});
-      }
-    }
-
-    case '+': {
-      // + Integer addition  B+ I# I$ -> 5
-
-      return EvalToInt(
-          b->arg1.get(), [&](Int arg1) {
-            return EvalToInt(b->arg2.get(), [&](Int arg2) {
-                return Value(Int{.i = arg1.i + arg2.i});
-              });
-          });
-    }
-
-    case '-': {
-      // - Integer subtraction B- I$ I# -> 1
-
-      return EvalToInt(
-          b->arg1.get(), [&](Int arg1) {
-            return EvalToInt(b->arg2.get(), [&](Int arg2) {
-                return Value(Int{.i = arg1.i - arg2.i});
-              });
-          });
-    }
-
-    case '*': {
-      // * Integer multiplication  B* I$ I# -> 6
-
-      return EvalToInt(
-          b->arg1.get(), [&](Int arg1) {
-            return EvalToInt(b->arg2.get(), [&](Int arg2) {
-                return Value(Int{.i = arg1.i * arg2.i});
-              });
-          });
-    }
-
-    case '/': {
-      // / Integer division (truncated towards zero) B/ U- I( I# -> -3
-
-      return EvalToInt(
-          b->arg1.get(), [&](Int arg1) {
-            return EvalToInt(b->arg2.get(), [&](Int arg2) {
-                if (arg2.i == 0) {
-                  return Value(Error{.msg = "division by zero"});
-                } else {
-                  // This should be what they want (c truncation), but
-                  // worth checking
-                  return Value(Int{.i = arg1.i / arg2.i});
-                }
-              });
-          });
-    }
-
-    case '%': {
-      // % Integer modulo  B% U- I( I# -> -1
-
-      return EvalToInt(
-          b->arg1.get(), [&](Int arg1) {
-            return EvalToInt(b->arg2.get(), [&](Int arg2) {
-                if (arg2.i == 0) {
-                  return Value(Error{.msg = "modulus by zero"});
-                } else {
-                  // This should be what they want (c truncation), but
-                  // worth checking
-                  return Value(Int{.i = arg1.i % arg2.i});
-                }
-              });
-          });
-    }
-
-    case '<': {
-      // < Integer comparison  B< I$ I# -> false
-
-      return EvalToInt(
-          b->arg1.get(), [&](Int arg1) {
-            return EvalToInt(b->arg2.get(), [&](Int arg2) {
-                return Value(Bool{.b = arg1.i < arg2.i});
-              });
-          });
-    }
-
-    case '>': {
-      // > Integer comparison  B> I$ I# -> true
-
-      return EvalToInt(
-          b->arg1.get(), [&](Int arg1) {
-            return EvalToInt(b->arg2.get(), [&](Int arg2) {
-                return Value(Bool{.b = arg1.i > arg2.i});
-              });
-          });
-    }
-
-    case '=': {
-      // = Equality comparison, works for int, bool and string B= I$ I# -> false
-
-      // Ugh, needs to be polymorphic.
-      // TODO: Corner case: What if we compare values of different type?
-      Value arg1 = Eval(b->arg1.get());
-      if (const Error *e1 = std::get_if<Error>(&arg1)) return *e1;
-      Value arg2 = Eval(b->arg2.get());
-      if (const Error *e2 = std::get_if<Error>(&arg2)) return *e2;
-
-      {
-        const Int *i1 = std::get_if<Int>(&arg1);
-        const Int *i2 = std::get_if<Int>(&arg2);
-        if (i1 != nullptr && i2 != nullptr) {
-          return Value(Bool{.b = i1->i == i2->i});
+        } else {
+          return Value(Error{.msg = "Expected lambda"});
         }
       }
 
-      {
-        const Bool *b1 = std::get_if<Bool>(&arg1);
-        const Bool *b2 = std::get_if<Bool>(&arg2);
-        if (b1 != nullptr && b2 != nullptr) {
-          return Value(Bool{.b = b1->b == b2->b});
+      case '!': {
+        // Secret call-by-value version of application.
+        Value arg1 = Eval(b->arg1);
+        if (const Lambda *lam = std::get_if<Lambda>(&arg1)) {
+
+          Value arg2 = Eval(b->arg2);
+          if (const Error *e = std::get_if<Error>(&arg2)) {
+            (void)e;
+            return arg2;
+          }
+
+          betas++;
+          // TODO: Check limits
+          exp = Subst(ValueToExp(arg2), lam->v, lam->body);
+          // Tail recursion.
+          continue;
+
+        } else if (const Error *e = std::get_if<Error>(&arg1)) {
+          (void)e;
+          return arg1;
+
+        } else {
+          return Value(Error{.msg = "Expected lambda"});
         }
       }
 
-      {
-        const String *s1 = std::get_if<String>(&arg1);
-        const String *s2 = std::get_if<String>(&arg2);
-        if (s1 != nullptr && s2 != nullptr) {
-          return Value(Bool{.b = s1->s == s2->s});
-        }
+      case '+': {
+        // + Integer addition  B+ I# I$ -> 5
+
+        return EvalToInt(
+            b->arg1, [&](Int arg1) {
+              return EvalToInt(b->arg2, [&](Int arg2) {
+                  return Value(Int{.i = arg1.i + arg2.i});
+                });
+            });
       }
 
-      return Value(
-          Error{.msg = "binop = needs two args of the same base type"});
-    }
+      case '-': {
+        // - Integer subtraction B- I$ I# -> 1
 
-    case '|': {
-      // | Boolean or  B| T F -> true
+        return EvalToInt(
+            b->arg1, [&](Int arg1) {
+              return EvalToInt(b->arg2, [&](Int arg2) {
+                  return Value(Int{.i = arg1.i - arg2.i});
+                });
+            });
+      }
 
-      return EvalToBool(
-          b->arg1.get(), [&](Bool arg1) {
-            return EvalToBool(b->arg2.get(), [&](Bool arg2) {
-                return Value(Bool{.b = arg1.b || arg2.b});
+      case '*': {
+        // * Integer multiplication  B* I$ I# -> 6
+
+        return EvalToInt(
+            b->arg1, [&](Int arg1) {
+              return EvalToInt(b->arg2, [&](Int arg2) {
+                  return Value(Int{.i = arg1.i * arg2.i});
+                });
+            });
+      }
+
+      case '/': {
+        // / Integer division (truncated towards zero) B/ U- I( I# -> -3
+
+        return EvalToInt(
+            b->arg1, [&](Int arg1) {
+              return EvalToInt(b->arg2, [&](Int arg2) {
+                  if (arg2.i == 0) {
+                    return Value(Error{.msg = "division by zero"});
+                  } else {
+                    // This should be what they want (c truncation), but
+                    // worth checking
+                    return Value(Int{.i = arg1.i / arg2.i});
+                  }
+                });
+            });
+      }
+
+      case '%': {
+        // % Integer modulo  B% U- I( I# -> -1
+
+        return EvalToInt(
+            b->arg1, [&](Int arg1) {
+              return EvalToInt(b->arg2, [&](Int arg2) {
+                  if (arg2.i == 0) {
+                    return Value(Error{.msg = "modulus by zero"});
+                  } else {
+                    // This should be what they want (c truncation), but
+                    // worth checking
+                    return Value(Int{.i = arg1.i % arg2.i});
+                  }
+                });
+            });
+      }
+
+      case '<': {
+        // < Integer comparison  B< I$ I# -> false
+
+        return EvalToInt(
+            b->arg1, [&](Int arg1) {
+              return EvalToInt(b->arg2, [&](Int arg2) {
+                  return Value(Bool{.b = arg1.i < arg2.i});
+                });
+            });
+      }
+
+      case '>': {
+        // > Integer comparison  B> I$ I# -> true
+
+        return EvalToInt(
+            b->arg1, [&](Int arg1) {
+              return EvalToInt(b->arg2, [&](Int arg2) {
+                  return Value(Bool{.b = arg1.i > arg2.i});
+                });
+            });
+      }
+
+      case '=': {
+        // = Equality comparison, works for int, bool and string.
+        // B= I$ I# -> false
+
+        // Ugh, needs to be polymorphic.
+        // TODO: Corner case: What if we compare values of different type?
+        Value arg1 = Eval(b->arg1);
+        if (const Error *e1 = std::get_if<Error>(&arg1)) return *e1;
+        Value arg2 = Eval(b->arg2);
+        if (const Error *e2 = std::get_if<Error>(&arg2)) return *e2;
+
+        {
+          const Int *i1 = std::get_if<Int>(&arg1);
+          const Int *i2 = std::get_if<Int>(&arg2);
+          if (i1 != nullptr && i2 != nullptr) {
+            return Value(Bool{.b = i1->i == i2->i});
+          }
+        }
+
+        {
+          const Bool *b1 = std::get_if<Bool>(&arg1);
+          const Bool *b2 = std::get_if<Bool>(&arg2);
+          if (b1 != nullptr && b2 != nullptr) {
+            return Value(Bool{.b = b1->b == b2->b});
+          }
+        }
+
+        {
+          const String *s1 = std::get_if<String>(&arg1);
+          const String *s2 = std::get_if<String>(&arg2);
+          if (s1 != nullptr && s2 != nullptr) {
+            return Value(Bool{.b = s1->s == s2->s});
+          }
+        }
+
+        return Value(
+            Error{.msg = "binop = needs two args of the same base type"});
+      }
+
+      case '|': {
+        // | Boolean or  B| T F -> true
+
+        return EvalToBool(
+            b->arg1, [&](Bool arg1) {
+              return EvalToBool(b->arg2, [&](Bool arg2) {
+                  return Value(Bool{.b = arg1.b || arg2.b});
+                });
+            });
+      }
+
+      case '&':
+        // & Boolean and B& T F -> false
+        return EvalToBool(
+            b->arg1, [&](Bool arg1) {
+              return EvalToBool(b->arg2, [&](Bool arg2) {
+                  return Value(Bool{.b = arg1.b && arg2.b});
+                });
+            });
+
+      case '.':
+        // . String concatenation  B. S4% S34 -> "test"
+        return EvalToString(
+            ".lhs", b->arg1, [&](String arg1) {
+                return EvalToString(
+                    ".rhs", b->arg2, [&](String arg2) {
+                        return Value(String{.s = arg1.s + arg2.s});
+                      });
               });
-          });
-    }
 
-    case '&': {
-      // & Boolean and B& T F -> false
-
-      return EvalToBool(
-          b->arg1.get(), [&](Bool arg1) {
-            return EvalToBool(b->arg2.get(), [&](Bool arg2) {
-                return Value(Bool{.b = arg1.b && arg2.b});
-              });
-          });
-    }
-
-    case '.': {
-      // . String concatenation  B. S4% S34 -> "test"
-
-      return EvalToString(".lhs",
-          b->arg1.get(), [&](String arg1) {
-              return EvalToString(".rhs",
-                                  b->arg2.get(), [&](String arg2) {
-                return Value(String{.s = arg1.s + arg2.s});
-              });
-          });
-    }
-
-    case 'T': {
-      // T Take first x chars of string y  BT I$ S4%34 -> "tes"
-
-      return EvalToInt(
-          b->arg1.get(), [&](Int arg1) {
-              return EvalToString("T", b->arg2.get(), [&](String arg2) {
+      case 'T':
+        // T Take first x chars of string y  BT I$ S4%34 -> "tes"
+        return EvalToInt(b->arg1, [&](Int arg1) {
+            return EvalToString("T", b->arg2, [&](String arg2) {
                 const int64_t len = GetInt64(arg1.i);
 
                 if (len < 0) {
@@ -554,67 +554,71 @@ Value Evaluation::Eval(const Exp *exp) {
                 } else {
                   // Corner case: length is bigger than string length
                   if (len > (int64_t)arg2.s.size()) {
-                    return Value(Error{.msg = "length exceeds string size in T"});
+                    return Value(Error{.msg =
+                        "length exceeds string size in T"});
                   } else {
                     return Value(String{.s = arg2.s.substr(0, len)});
                   }
                 }
               });
           });
-    }
 
-    case 'D': {
-      // D Drop first x chars of string y  BD I$ S4%34 -> "t"
-
-      return EvalToInt(
-          b->arg1.get(), [&](Int arg1) {
-              return EvalToString("D", b->arg2.get(), [&](String arg2) {
+      case 'D':
+        // D Drop first x chars of string y  BD I$ S4%34 -> "t"
+        return EvalToInt(b->arg1, [&](Int arg1) {
+            return EvalToString("D", b->arg2, [&](String arg2) {
                 const int64_t len = GetInt64(arg1.i);
                 if (len < 0) {
                   return Value(Error{.msg = "negative length in D"});
                 } else {
                   // Corner case: length is bigger than string length
                   if (len > (int64_t)arg2.s.size()) {
-                    return Value(Error{.msg = "length exceeds string size in D"});
+                    return Value(Error{.msg =
+                        "length exceeds string size in D"});
                   } else {
-                    return Value(String{.s = arg2.s.substr(len, std::string::npos)});
+                    return Value(String{.s =
+                        arg2.s.substr(len, std::string::npos)});
                   }
                 }
               });
           });
-    }
 
-    default:
-      return Value(Error{.msg = "Invalid binop"});
-    }
-
-  } else if (const If *i = std::get_if<If>(exp)) {
-
-    return EvalToBool(i->cond.get(), [&](Bool cond) {
-      if (cond.b) {
-        return Eval(i->t.get());
-      } else {
-        return Eval(i->f.get());
+      default:
+        return Value(Error{.msg = "Invalid binop"});
       }
-    });
 
-  } else if (const Lambda *l = std::get_if<Lambda>(exp)) {
+    } else if (const If *i = std::get_if<If>(exp.get())) {
 
-    return Value(*l);
+      return EvalToBool(i->cond, [&](Bool cond) {
+        if (cond.b) {
+          return Eval(i->t);
+        } else {
+          return Eval(i->f);
+        }
+      });
 
-  } else if (const Var *v = std::get_if<Var>(exp)) {
-    (void)v;
-    return Value(Error{.msg = StringPrintf("unbound variable %s (%s)",
-                                           v->v.ToString().c_str(),
-                                           IntConstant(v->v).c_str()
-                                           )});
+    } else if (const Lambda *l = std::get_if<Lambda>(exp.get())) {
 
+      return Value(*l);
+
+    } else if (const Var *v = std::get_if<Var>(exp.get())) {
+      (void)v;
+      return Value(Error{.msg = StringPrintf("unbound variable %s (%s)",
+                                             v->v.ToString().c_str(),
+                                             IntConstant(v->v).c_str()
+                                             )});
+
+    } else {
+      CHECK(exp != nullptr);
+
+      LOG(FATAL) << "bug: invalid exp variant in eval";
+      return Value(Error{.msg = "invalid exp variant"});
+    }
+
+    // Some constructs work by replacing the exp arg and looping,
+    // to ensure tail-recursion.
   }
 
-  CHECK(exp != nullptr);
-
-  LOG(FATAL) << "bug: invalid exp variant in eval";
-  return Value(Error{.msg = "invalid exp variant"});
 }
 
 // Simple recursive-descent parser. Consumes an expression from the beginning

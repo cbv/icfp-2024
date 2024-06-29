@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
                                 PrettyExp(exp.get()));
 
   Evaluation evaluation;
-  Value v = evaluation.Eval(exp.get());
+  Value v = evaluation.Eval(exp);
 
   printf("%s\n", ValueString(v).c_str());
   return 0;

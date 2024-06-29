@@ -138,7 +138,7 @@ struct Evaluation {
                              bool simple = false);
 
   template<class F>
-  Value EvalToInt(const Exp *exp,
+  Value EvalToInt(std::shared_ptr<Exp> exp,
                   const F &f) {
     Value v = Eval(exp);
     if (const Int *i = std::get_if<Int>(&v)) {
@@ -150,7 +150,7 @@ struct Evaluation {
   }
 
   template<class F>
-  Value EvalToBool(const Exp *exp,
+  Value EvalToBool(std::shared_ptr<Exp> exp,
                    const F &f) {
     Value v = Eval(exp);
     if (const Bool *b = std::get_if<Bool>(&v)) {
@@ -163,7 +163,7 @@ struct Evaluation {
 
   template<class F>
   Value EvalToString(const char *what,
-                     const Exp *exp,
+                     std::shared_ptr<Exp> exp,
                      const F &f) {
     Value v = Eval(exp);
     if (const String *s = std::get_if<String>(&v)) {
@@ -175,7 +175,7 @@ struct Evaluation {
   }
 
   // Evaluate to a value.
-  Value Eval(const Exp *exp);
+  Value Eval(std::shared_ptr<Exp> exp);
 
   static std::unordered_set<BigInt> FreeVars(const Exp *e);
 

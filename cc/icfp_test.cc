@@ -22,7 +22,7 @@ static Value Evaluate(std::string_view s) {
   CHECK(exp.get());
 
   Evaluation evaluation;
-  return evaluation.Eval(exp.get());
+  return evaluation.Eval(exp);
 }
 
 static void TestInt() {
