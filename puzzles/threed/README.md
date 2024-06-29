@@ -16,11 +16,7 @@ summary of puzzles
 11. lambdaman path
 12. sine
 
-# Input
-  `-1570796327 <= A <= 1570796327`
 
-# Output
-  `truncate(sin(A / 1_000_000_000) * 1_000_000_000)`,
 
 sine
 ----
