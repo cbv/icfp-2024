@@ -58,20 +58,20 @@ export function lambdaman8() {
     [{ v: 'R', body: R }, { v: 'M', body: Mbody }],
     rec(S => lam(n =>
       // have we finished?
-      cond(equ(n, litnum(98)),
-        // If so, do the last couple moves
-        appSpine(repeat, [litstr("DL"), M]),
+      cond(equ(n, litnum(25)),
+        // done
+        litstr(""),
         // Otherwise do some moves and recurse
         concat(
           concat(
             appSpine(repeat, [litstr("DL"), M]),
             appSpine(repeat, [litstr("UR"), M])
           ),
-          app(S, add(n, litnum(4)))
+          app(S, add(n, litnum(1)))
         ),
       ))));
 
-  return expToIcfp(concat(litstr("solve lambdaman8 "), appSpine(spiral, [litnum(2)])));
+  return expToIcfp(concat(litstr("solve lambdaman8 "), appSpine(spiral, [litnum(0)])));
 }
 
 export function compileExample() {
