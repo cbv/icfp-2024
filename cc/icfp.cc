@@ -37,8 +37,12 @@ std::string ValueString(const Value &v) {
     return "\"" + s->s + "\"";
 
   } else if (const Lambda *l = std::get_if<Lambda>(&v)) {
+    (void)l;
     return "(lambda)";
+
   } else if (const Error *err = std::get_if<Error>(&v)) {
+    (void)err;
+
     return "(ERROR:" + err->msg + ")";
   }
 
@@ -77,12 +81,15 @@ static int_type ParseInt(std::string_view body) {
 static void PopulateFreeVars(const Exp *e, std::unordered_set<int_type> *fvs) {
   for (;;) {
     if (const Bool *b = std::get_if<Bool>(e)) {
+      (void)b;
       return;
 
     } else if (const Int *i = std::get_if<Int>(e)) {
+      (void)i;
       return;
 
     } else if (const String *s = std::get_if<String>(e)) {
+      (void)s;
       return;
 
     } else if (const Unop *u = std::get_if<Unop>(e)) {
@@ -136,12 +143,15 @@ std::shared_ptr<Exp> Evaluation::SubstInternal(
     std::shared_ptr<Exp> e2, bool simple) {
 
   if (const Bool *b = std::get_if<Bool>(e2.get())) {
+    (void)b;
     return e2;
 
   } else if (const Int *i = std::get_if<Int>(e2.get())) {
+    (void)i;
     return e2;
 
   } else if (const String *s = std::get_if<String>(e2.get())) {
+    (void)s;
     return e2;
 
   } else if (const Unop *u = std::get_if<Unop>(e2.get())) {
@@ -302,6 +312,7 @@ Value Evaluation::Eval(const Exp *exp) {
         return Eval(e.get());
 
       } else if (const Error *e = std::get_if<Error>(&arg1)) {
+        (void)e;
         return arg1;
       } else {
         return Value(Error{.msg = "Expected lambda"});
@@ -533,8 +544,9 @@ Value Evaluation::Eval(const Exp *exp) {
     return Value(*l);
 
   } else if (const Var *v = std::get_if<Var>(exp)) {
-
+    (void)v;
     return Value(Error{.msg = "unbound variable"});
+
   }
 
   assert(exp != nullptr);

@@ -31,7 +31,7 @@
 /*
  *      bign.c : the kernel written in pure C (it uses no C library)
  *
- *      $Id: bign.c,v 1.75 2024/04/26 20:45:18 tom7 Exp $
+ *      $Id: bign.c,v 1.76 2024/06/29 09:17:15 tom7 Exp $
  */
 
 /*
@@ -62,6 +62,9 @@
 #include "bignum/bign.h"
 
 #include <bit>
+
+// Silence GCC complaints about bounds.
+#pragma GCC diagnostic ignored "-Warray-bounds"
 
 static void
 BnnDivideHelper(BigNum nn, BigNumLength nl, BigNum dd, BigNumLength dl);

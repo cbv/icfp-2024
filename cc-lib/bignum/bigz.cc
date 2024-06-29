@@ -56,6 +56,10 @@
 
 #include "bignum/bigz.h"
 
+// GCC complains a lot in this file. There may be an actual bug,
+// but at least suppress it for the programming contest.
+#pragma GCC diagnostic ignored "-Warray-bounds"
+
 #define MaxInt(a, b)            (((a) < (b)) ? (b) : (a))
 #define AbsInt(x)               (((x) >= 0) ? (x) : -(x))
 
