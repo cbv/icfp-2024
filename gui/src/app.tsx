@@ -12,7 +12,7 @@ import { decodeString, encodeString } from './codec';
 export type AppProps = {
 };
 
-const modes: AppMode[] = ['codec', 'communicate', 'evaluate', 'lambdaman'];
+const modes: AppMode[] = ['codec', 'communicate', 'evaluate', 'lambdaman', 'threed'];
 
 export function Navbar(props: { state: AppState, dispatch: Dispatch }): JSX.Element {
   const { state, dispatch } = props;
@@ -34,15 +34,15 @@ function renderEvaluate(state: AppState, modeState: AppModeState & { t: 'evaluat
     <div className="textarea-container">
       <div className="textarea-panel">
         <div className="title">Input</div>
-        <textarea spellCheck={false} value={state.modeState.inputText} onInput={onInput}></textarea>
+        <textarea spellCheck={false} value={modeState.inputText} onInput={onInput}></textarea>
       </div>
       <div className="textarea-panel">
         <div className="title">Output</div>
-        <textarea spellCheck={false} value={state.modeState.outputText}></textarea>
+        <textarea spellCheck={false} value={modeState.outputText}></textarea>
       </div>
     </div>
     <div className="action-bar">
-      <button onClick={(e) => { dispatch({ t: 'doEffect', effect: { t: 'evalText', text: state.modeState.inputText } }) }}>Evaluate</button>
+      <button onClick={(e) => { dispatch({ t: 'doEffect', effect: { t: 'evalText', text: modeState.inputText } }) }}>Evaluate</button>
     </div>
   </div>;
 }
@@ -73,15 +73,15 @@ function renderCommunicate(state: AppState, modeState: AppModeState & { t: 'comm
     <div className="textarea-container">
       <div className="textarea-panel">
         <div className="title">Input</div>
-        <textarea spellCheck={false} value={state.modeState.inputText} onInput={onInput}></textarea>
+        <textarea spellCheck={false} value={modeState.inputText} onInput={onInput}></textarea>
       </div>
       <div className="textarea-panel">
         <div className="title">Output</div>
-        <textarea spellCheck={false} value={state.modeState.outputText}></textarea>
+        <textarea spellCheck={false} value={modeState.outputText}></textarea>
       </div>
     </div>
     <div className="action-bar">
-      <button onClick={(e) => { dispatch({ t: 'doEffect', effect: { t: 'sendText', text: state.modeState.inputText } }) }}>Send</button>
+      <button onClick={(e) => { dispatch({ t: 'doEffect', effect: { t: 'sendText', text: modeState.inputText } }) }}>Send</button>
     </div>
   </div >;
 }
@@ -92,15 +92,27 @@ function renderLambda(state: AppState, modeState: AppModeState & { t: 'lambdaman
     <div className="textarea-container">
       <div className="textarea-panel">
         <div className="title">Input</div>
-        <textarea spellCheck={false} value={state.modeState.inputText} onInput={onInput}></textarea>
+        <textarea spellCheck={false} value={modeState.inputText} onInput={onInput}></textarea>
       </div>
       <div className="textarea-panel">
         <div className="title">Output</div>
-        <textarea spellCheck={false} value={state.modeState.outputText}></textarea>
+        <textarea spellCheck={false} value={modeState.outputText}></textarea>
       </div>
     </div>
     <div className="action-bar">
       <button onClick={(e) => { dispatch({ t: 'compile' }) }}>Compile</button>
+    </div>
+  </div>;
+}
+
+function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: Dispatch): JSX.Element {
+  const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
+  return <div className="interface-container">
+    <div className="textarea-container">
+      stub
+    </div>
+    <div className="action-bar">
+      {/*      <button onClick={(e) => { dispatch({ t: 'compile' }) }}>Compile</button>*/}
     </div>
   </div>;
 }
@@ -120,6 +132,9 @@ function renderAppBody(state: AppState, dispatch: Dispatch): JSX.Element {
     case 'lambdaman':
       if (state.modeState.t != state.mode) throw new Error(`mode state inconsistency`);
       return renderLambda(state, state.modeState, dispatch);
+    case 'threed':
+      if (state.modeState.t != state.mode) throw new Error(`mode state inconsistency`);
+      return renderThreed(state, state.modeState, dispatch);
   }
 }
 

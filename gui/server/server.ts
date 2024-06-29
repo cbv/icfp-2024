@@ -20,7 +20,9 @@ app.post('/export', (req, res) => {
     res.end('ok');
   });
 });
+
 app.use('/', express.static(path.join(__dirname, '../public')));
+app.use('/puzzles', express.static(path.join(__dirname, '../../puzzles')));
 
 app.post('/api/space', async (req, res) => {
   const body = req.body.rawString;
