@@ -21,9 +21,18 @@ efficiency2
 -----------
 The raw program is
 ```
-(+ 2134 (* (((λ y ((λ z (y (z z))) (λ z (y (z z))))) (λ w (λ a (if (= a 0) 1 (+ 1 (w (- a 1))))))) 9345873499) 0))
+(+ 2134 (* (((λ x ((λ y (x (y y))) (λ y (x (y y))))) (λ z (λ a (if (= a 0) 1 (+ 1 (z (- a 1))))))) 9345873499) 0))
 ```
 which is
 ```
-(+ 2134 (* ((fix w (λ a (if (= a 0) 1 (+ 1 (w (- a 1)))))) 9345873499) 0))
+(+ 2134 (* ((fix z (λ a (if (= a 0) 1 (+ 1 (z (- a 1)))))) 9345873499) 0))
 ```
+
+```
+fun z 0 = 1
+  | z a = 1 + z (a-1)
+
+2134 + (0 * z 9345873499)
+```
+
+So the function $z$ is just a ticking clock. The solution is $2134$.
