@@ -8,7 +8,7 @@ UNAME := $(shell uname -o)
 ifeq ($(UNAME),Msys)
   # for 64 bits on windows (msys2).
   # CXXFLAGS=-fsanitize=address -march=native -Wall -Wextra -Wno-unused-parameter -I. -I$(CC_LIB) --std=c++20 -g -O $(FLTO)
-  CXXFLAGS=-march=native -mtune=native -Wall -Wextra -Wno-unused-parameter -I. -I$(CC_LIB) --std=c++20 -O3
+  CXXFLAGS=-fsanitize=address -O -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter -I. -I$(CC_LIB) --std=c++20
 #  LDFLAGS += -lws2_32
   LDFLAGS += -lgmp
   CXXFLAGS += -DBIG_USE_GMP
@@ -43,6 +43,9 @@ compress.exe : compress.o icfp.o $(CC_LIB_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 spaceship.exe : spaceship.o $(CC_LIB_OBJECTS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
+pp.exe : pp.o icfp.o $(CC_LIB_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 ppz3.exe : ppz3.o icfp.o $(CC_LIB_OBJECTS)
