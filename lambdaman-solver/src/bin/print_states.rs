@@ -53,11 +53,15 @@ pub fn main() -> anyhow::Result<()> {
 
     let problem = fs::read_to_string(&args[1])?;
     let mut state = lambdaman::parse_lambda_puzzle(problem);
-    let mut idx = 0;
-    while !state.is_done() {
+    for m in moves {
+        if state.is_done() {
+            break
+        }
         println!("{state}");
-        state.do_move(moves[idx]);
-        idx += 1;
+        state.do_move(m);
+    }
+    if !state.is_done() {
+        eprintln!("did not complete the puzzle!");
     }
 
     Ok(())
