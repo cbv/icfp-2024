@@ -9,7 +9,7 @@ import { Dispatch } from './action';
 import { toTitleCase } from './lib/util';
 import { decodeString, encodeString } from './codec';
 import { AppProps, PuzzleSolution } from './types';
-import { renderThreedPuzzle } from './threed';
+import { renderThreed, renderThreedPuzzle } from './threed';
 
 const modes: AppMode[] = ['codec', 'communicate', 'evaluate', 'lambdaman', 'threed'];
 
@@ -100,46 +100,6 @@ function renderLambda(state: AppState, modeState: AppModeState & { t: 'lambdaman
     </div>
     <div className="action-bar">
       <button onClick={(e) => { dispatch({ t: 'compile' }) }}>Compile</button>
-    </div>
-  </div>;
-}
-
-function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, puzzles: PuzzleSolution[], dispatch: Dispatch): JSX.Element {
-  const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
-  const renderedPuzzleItems = puzzles.map(puzzle => {
-    const klass: string[] = ["puzzle-item"];
-    if (puzzle.name == modeState.curPuzzleName) {
-      klass.push('puzzle-item-selected');
-    }
-    return <div className={klass.join(" ")} onMouseDown={(e) => { dispatch({ t: 'setCurrentItem', item: puzzle.name }) }}>{puzzle.name}</div>;
-  });
-  let renderedPuzzle: JSX.Element | undefined;
-  let program: string | undefined;
-  if (modeState.curPuzzleName != undefined) {
-    const puzzle = puzzles.find(p => p.name == modeState.curPuzzleName);
-    if (puzzle != undefined) {
-      const stripped = puzzle.body.replace(/solve .*\n/, '');
-      renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(stripped)}</div>;
-      program = stripped;
-    }
-  }
-
-  // XXX hard-coded a and b
-  const runProgram: React.MouseEventHandler = (e) => {
-    dispatch({ t: 'doEffect', effect: { t: 'evalThreed', text: program!, a: 1, b: 1 } })
-  };
-
-  return <div className="interface-container">
-    <div className="textarea-container">
-      <div className="threed-container">
-        <div className="threed-puzzlist">
-          {renderedPuzzleItems}
-        </div>
-        {renderedPuzzle}
-      </div>
-    </div>
-    <div className="action-bar">
-      {program == undefined ? undefined : <button onClick={runProgram}>Run</button>}
     </div>
   </div>;
 }

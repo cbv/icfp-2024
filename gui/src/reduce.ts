@@ -2,6 +2,7 @@ import { produce } from 'immer';
 import { AppModeState, AppState, hashOfMode, mkModeState } from './state';
 import { Action } from './action';
 import { compileExample } from './compile';
+import { EvalThreedResponse } from './types';
 
 function setInputText(state: AppState, text: string): AppState {
   if (!(state.modeState.t == 'evaluate' || state.modeState.t == 'codec' || state.modeState.t == 'communicate'
@@ -17,8 +18,11 @@ function setInputText(state: AppState, text: string): AppState {
 
 function setOutputText(state: AppState, text: string): AppState {
   if (state.modeState.t == 'threed') {
-    console.log(text);
-    return state;
+    const executionTrace = JSON.parse(text) as EvalThreedResponse;
+    const newModeState = produce(state.modeState, s => {
+      s.executionTrace = executionTrace;
+    });
+    return produce(state, s => { s.modeState = newModeState; })
   }
 
   if (!(state.modeState.t == 'evaluate' || state.modeState.t == 'codec' || state.modeState.t == 'communicate'
@@ -38,6 +42,17 @@ function setCurrentItem(state: AppState, item: string): AppState {
   }
   const newModeState = produce(state.modeState, s => {
     s.curPuzzleName = item;
+    s.executionTrace = undefined;
+  });
+  return produce(state, s => { s.modeState = newModeState; })
+}
+
+function setCurrentFrame(state: AppState, frame: number): AppState {
+  if (!(state.modeState.t == 'threed')) {
+    throw new Error(`can't set output text in this mode`);
+  }
+  const newModeState = produce(state.modeState, s => {
+    s.currentFrame = frame;
   });
   return produce(state, s => { s.modeState = newModeState; })
 }
@@ -72,6 +87,11 @@ export function reduce(state: AppState, action: Action): AppState {
     case 'setCurrentItem': {
       return produce(state, s => {
         return setCurrentItem(state, action.item);
+      });
+    }
+    case 'setCurrentFrame': {
+      return produce(state, s => {
+        return setCurrentFrame(state, action.frame);
       });
     }
   }

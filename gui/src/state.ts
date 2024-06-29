@@ -1,4 +1,5 @@
 import { Effect } from "./effect";
+import { EvalThreedResponse } from "./types";
 
 export type AppModeState =
   | {
@@ -24,6 +25,8 @@ export type AppModeState =
   | {
     t: 'threed',
     curPuzzleName: string | undefined,
+    executionTrace: EvalThreedResponse | undefined,
+    currentFrame: number,
   }
   ;
 
@@ -36,7 +39,7 @@ export function mkModeState(mode: AppMode): AppModeState {
     case 'codec': return { t: 'codec', inputText: '', outputText: '' };
     case 'communicate': return { t: 'communicate', inputText: '', outputText: '' };
     case 'lambdaman': return { t: 'lambdaman', inputText: '', outputText: '' };
-    case 'threed': return { t: 'threed', curPuzzleName: undefined };
+    case 'threed': return { t: 'threed', curPuzzleName: undefined, executionTrace: undefined, currentFrame: 0 };
   }
 }
 export type AppState = {

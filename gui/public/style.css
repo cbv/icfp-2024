@@ -249,3 +249,8 @@ td {
   padding: 0.1em 0.35em;
   border-radius: 0.75em;
 }
+
+.vert-stack {
+  display: flex;
+  flex-direction: column;
+}

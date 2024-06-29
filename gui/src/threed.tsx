@@ -1,4 +1,7 @@
 import * as React from 'react';
+import { Dispatch } from './action';
+import { AppModeState, AppState } from './state';
+import { PuzzleSolution } from './types';
 
 function arrow(rotate: number): JSX.Element {
   const transform = `
@@ -38,4 +41,57 @@ export function renderRow(row: string[]): JSX.Element {
 export function renderThreedPuzzle(text: string): JSX.Element {
   const lines = text.split('\n').filter(x => x.length).map(line => line.split(/\s+/).filter(x => x.length));;
   return <table><tbody>{lines.map(renderRow)}</tbody></table>;
+}
+
+export function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, puzzles: PuzzleSolution[], dispatch: Dispatch): JSX.Element {
+  const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
+  const renderedPuzzleItems = puzzles.map(puzzle => {
+    const klass: string[] = ["puzzle-item"];
+    if (puzzle.name == modeState.curPuzzleName) {
+      klass.push('puzzle-item-selected');
+    }
+    return <div className={klass.join(" ")} onMouseDown={(e) => { dispatch({ t: 'setCurrentItem', item: puzzle.name }) }}>{puzzle.name}</div>;
+  });
+  let renderedPuzzle: JSX.Element | undefined;
+  let program: string | undefined;
+  const trace = modeState.executionTrace;
+  if (trace != undefined) {
+
+    const frames = trace.flatMap(x => x.t == 'frame' ? [x.frame] : []);
+
+    program = frames[modeState.currentFrame];
+    console.log(modeState.currentFrame, frames.length - 1);
+    renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzle(program)}</div>
+      <input type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
+        dispatch({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
+      }}></input></div>;
+
+  }
+  else if (modeState.curPuzzleName != undefined) {
+    const puzzle = puzzles.find(p => p.name == modeState.curPuzzleName);
+    if (puzzle != undefined) {
+      const stripped = puzzle.body.replace(/solve .*\n/, '');
+      renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(stripped)}</div>;
+      program = stripped;
+    }
+  }
+
+  // XXX hard-coded a and b
+  const runProgram: React.MouseEventHandler = (e) => {
+    dispatch({ t: 'doEffect', effect: { t: 'evalThreed', text: program!, a: 1, b: 1 } })
+  };
+
+  return <div className="interface-container">
+    <div className="textarea-container">
+      <div className="threed-container">
+        <div className="threed-puzzlist">
+          {renderedPuzzleItems}
+        </div>
+        {renderedPuzzle}
+      </div>
+    </div>
+    <div className="action-bar">
+      {program == undefined ? undefined : <button onClick={runProgram}>Run</button>}
+    </div>
+  </div>;
 }

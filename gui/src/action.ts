@@ -8,6 +8,7 @@ export type Action =
   | { t: 'doEffect', effect: Effect }
   | { t: 'setMode', mode: AppMode }
   | { t: 'setCurrentItem', item: string }
+  | { t: 'setCurrentFrame', frame: number }
   | { t: 'compile' }
   ;
 

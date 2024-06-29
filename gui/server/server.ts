@@ -38,7 +38,6 @@ app.use('/solutions', express.static(path.join(__dirname, '../../solutions')));
 
 app.post('/api/space', async (req, res) => {
   const body = req.body.rawString;
-  console.log('body:', body);
   const preq = new Request("https://boundvariable.space/communicate", {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` },
@@ -74,7 +73,7 @@ app.post('/api/eval', async (req, res) => {
 app.post('/api/eval-threed', async (req, res) => {
   const body = req.body as EvalThreedRpc;
 
-  const child = spawn(path.join(__dirname, '../../seaplusplus/3v'), [body.a + '', body.b + '']);
+  const child = spawn(path.join(__dirname, '../../seaplusplus/3v'), ['--json', body.a + '', body.b + '']);
   child.stdin.write(body.program);
   child.stdin.end();
 
@@ -88,7 +87,7 @@ app.post('/api/eval-threed', async (req, res) => {
   });
 
   child.on('close', (code) => {
-    res.end(output);
+    res.end(output); // this is sending json text of type EvalThreedResponse
   });
 
 });
