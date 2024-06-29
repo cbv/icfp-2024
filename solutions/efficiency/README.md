@@ -166,7 +166,21 @@ fun z a =
 z 1234567
 ```
 
-not clear what it's doing.
+In javascript this is
+```
+function loop(a) {
+  function aux (c, d) {
+    if (c == a) {
+      return d;
+    }
+    const newd = ((loop(c) <= c-1) || (a % c) != 0) ? d : (k => (Math.floor(d/k) * (k-1))) (loop(c));
+    return aux(c+1, newd);
+  }
+  return Math.min(a, (a > 2 ? aux(2, a) : a) + 1);
+}
+console.log(loop(parseInt(process.argv[2])));
+```
+and I confirmed up to n=7 that it's doing the same thing as our evaluator.
 
 efficiency13
 ------------
