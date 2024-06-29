@@ -23,7 +23,7 @@ export type AppModeState =
   }
   | {
     t: 'threed',
-    curPuzzle: number | undefined,
+    curPuzzleName: string | undefined,
   }
   ;
 
@@ -36,7 +36,7 @@ export function mkModeState(mode: AppMode): AppModeState {
     case 'codec': return { t: 'codec', inputText: '', outputText: '' };
     case 'communicate': return { t: 'communicate', inputText: '', outputText: '' };
     case 'lambdaman': return { t: 'lambdaman', inputText: '', outputText: '' };
-    case 'threed': return { t: 'threed', curPuzzle: undefined };
+    case 'threed': return { t: 'threed', curPuzzleName: undefined };
   }
 }
 export type AppState = {

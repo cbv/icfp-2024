@@ -9,6 +9,7 @@ import { Dispatch } from './action';
 import { toTitleCase } from './lib/util';
 import { decodeString, encodeString } from './codec';
 import { AppProps, PuzzleSolution } from './types';
+import { renderThreedPuzzle } from './threed';
 
 const modes: AppMode[] = ['codec', 'communicate', 'evaluate', 'lambdaman', 'threed'];
 
@@ -106,14 +107,26 @@ function renderLambda(state: AppState, modeState: AppModeState & { t: 'lambdaman
 function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, puzzles: PuzzleSolution[], dispatch: Dispatch): JSX.Element {
   const onInput: React.FormEventHandler<HTMLTextAreaElement> = (e) => { dispatch({ t: 'setInputText', text: e.currentTarget.value }); };
   const renderedPuzzleItems = puzzles.map(puzzle => {
-    return <div className="puzzle-item">{puzzle.name}</div>;
+    const klass: string[] = ["puzzle-item"];
+    if (puzzle.name == modeState.curPuzzleName) {
+      klass.push('puzzle-item-selected');
+    }
+    return <div className={klass.join(" ")} onMouseDown={(e) => { dispatch({ t: 'setCurrentItem', item: puzzle.name }) }}>{puzzle.name}</div>;
   });
+  let renderedPuzzle: JSX.Element | undefined;
+  if (modeState.curPuzzleName != undefined) {
+    const puzzle = puzzles.find(p => p.name == modeState.curPuzzleName);
+    if (puzzle != undefined) {
+      renderedPuzzle = <div className="rendered-puzzle">{renderThreedPuzzle(puzzle.body)}</div>;
+    }
+  }
   return <div className="interface-container">
     <div className="textarea-container">
       <div className="threed-container">
         <div className="threed-puzzlist">
           {renderedPuzzleItems}
         </div>
+        {renderedPuzzle}
       </div>
     </div>
     <div className="action-bar">

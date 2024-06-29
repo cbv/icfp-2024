@@ -7,6 +7,7 @@ export type Action =
   | { t: 'setOutputText', text: string }
   | { t: 'doEffect', effect: Effect }
   | { t: 'setMode', mode: AppMode }
+  | { t: 'setCurrentItem', item: string }
   | { t: 'compile' }
   ;
 

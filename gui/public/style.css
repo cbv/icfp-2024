@@ -55,6 +55,8 @@ h1, .header {
   justify-content: center;
   padding: 0.5em 1em;
   font-size: 1.25em;
+  cursor: pointer;
+  user-select: none;
 }
 
 .topnav div.pigeon-container {
@@ -179,4 +181,19 @@ button, .pseudo-button {
 .threed-puzzlist {
   border-right: 1px solid black;
   background-color: white;
+}
+
+.puzzle-item {
+  padding: 0.5em 1em ;
+  cursor: pointer;
+  user-select: none;
+}
+
+.puzzle-item-selected {
+  background-color: #acf;
+}
+
+.rendered-puzzle {
+  flex-grow: 1;
+  padding-left: 1em;
 }

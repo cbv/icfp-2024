@@ -27,6 +27,16 @@ function setOutputText(state: AppState, text: string): AppState {
   return produce(state, s => { s.modeState = newModeState; })
 }
 
+function setCurrentItem(state: AppState, item: string): AppState {
+  if (!(state.modeState.t == 'threed')) {
+    throw new Error(`can't set output text in this mode`);
+  }
+  const newModeState = produce(state.modeState, s => {
+    s.curPuzzleName = item;
+  });
+  return produce(state, s => { s.modeState = newModeState; })
+}
+
 export function reduce(state: AppState, action: Action): AppState {
   switch (action.t) {
     case 'setInputText': {
@@ -54,6 +64,10 @@ export function reduce(state: AppState, action: Action): AppState {
         return setOutputText(state, compileExample());
       });
     }
-
+    case 'setCurrentItem': {
+      return produce(state, s => {
+        return setCurrentItem(state, action.item);
+      });
+    }
   }
 }
