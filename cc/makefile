@@ -45,7 +45,7 @@ compress.exe : compress.o icfp.o $(CC_LIB_OBJECTS)
 spaceship.exe : spaceship.o $(CC_LIB_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
-pp.exe : pp.o icfp.o $(CC_LIB_OBJECTS)
+ppz3.exe : ppz3.o icfp.o $(CC_LIB_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 encode.exe : encode.o icfp.o $(CC_LIB_OBJECTS)

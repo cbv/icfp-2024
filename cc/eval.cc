@@ -3,9 +3,10 @@
 
 #include <string>
 #include <string_view>
-#include <cassert>
 #include <cstdio>
 #include <memory>
+
+#include "base/logging.h"
 
 using namespace icfp;
 
@@ -15,7 +16,11 @@ int main(int argc, char **argv) {
 
   std::shared_ptr<Exp> exp = ParseLeadingExp(&input_view);
 
-  assert(input_view.empty() && "extra stuff after expression?");
+  CHECK(input_view.empty()) << "extra stuff after expression:\n"
+                            << input_view
+                            << "\nI parsed:\n"
+                            << (exp.get() == nullptr ? "nullptr" :
+                                PrettyExp(exp.get()));
 
   Evaluation evaluation;
   Value v = evaluation.Eval(exp.get());

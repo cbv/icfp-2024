@@ -7,7 +7,6 @@
 
 #include "icfp.h"
 
-#include "util.h"
 #include "ansi.h"
 #include "base/logging.h"
 

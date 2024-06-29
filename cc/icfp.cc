@@ -9,8 +9,12 @@
 #include <variant>
 #include <memory>
 #include <cstdio>
-#include <cassert>
 #include <string_view>
+#include <vector>
+
+#include "base/logging.h"
+#include "base/stringprintf.h"
+#include "util.h"
 
 #if NO_BIGNUM
 #else
@@ -57,7 +61,7 @@ static std::optional<int_type> ConvertInt(std::string_view body) {
   int_type val{0};
   for (char c : body) {
     #if NO_BIGNUM
-    assert(val < std::numeric_limits<int64_t>::max() / RADIX);
+    CHECK(val < std::numeric_limits<int64_t>::max() / RADIX);
     #endif
     val = val * RADIX;
 
@@ -78,7 +82,7 @@ static int_type ParseInt(std::string_view body) {
   if (std::optional<int_type> i = ConvertInt(body)) {
     return i.value();
   } else {
-    assert(!"Unparseable integer literal (or lambda/var arg)");
+    LOG(FATAL) << "Unparseable integer literal (or lambda/var arg)";
     return int_type{0};
   }
 }
@@ -125,7 +129,7 @@ static void PopulateFreeVars(const Exp *e, std::unordered_set<int_type> *fvs) {
       fvs->insert(var->v);
       return;
     } else {
-      assert(!"illegal exp");
+      LOG(FATAL) << "illegal exp";
     }
   }
 }
@@ -217,7 +221,7 @@ std::shared_ptr<Exp> Evaluation::SubstInternal(
     }
   }
 
-  assert(!"bug: invalid exp variant");
+  LOG(FATAL) << "bug: invalid exp variant";
   return nullptr;
 }
 
@@ -235,11 +239,11 @@ std::shared_ptr<Exp> ValueToExp(const Value &v) {
     return std::make_shared<Exp>(*l);
 
   } else if (const Error *err = std::get_if<Error>(&v)) {
-    assert(!"cannot make error values into expressions");
+    LOG(FATAL) << "cannot make error values into expressions";
 
   }
 
-  assert(!"invalid value");
+  LOG(FATAL) << "invalid value";
   return nullptr;
 }
 
@@ -270,14 +274,15 @@ Value Evaluation::Eval(const Exp *exp) {
     case '#': {
       // # string-to-int: interpret a string as a base-94 number
       // U# S4%34 -> 15818151
-      return EvalToString(
+      return EvalToString("#",
           u->arg.get(), [&](String arg) {
             // reencode
             std::string enc;
             enc.reserve(arg.s.size());
             for (uint8_t c : arg.s) {
               if (c >= 128) {
-                return Value(Error{.msg = "unconvertible string (bad char) in string-to-int"});
+                return Value(Error{.msg =
+                    "unconvertible string (bad char) in string-to-int"});
               } else {
                 enc.push_back(ENCODE_STRING[c]);
               }
@@ -286,7 +291,8 @@ Value Evaluation::Eval(const Exp *exp) {
             if (std::optional<int_type> i = ConvertInt(enc)) {
               return Value(Int{.i = i.value()});
             } else {
-              return Value(Error{.msg = "unconvertible string (not int) in string-to-int"});
+              return Value(Error{.msg =
+                  "unconvertible string (not int) in string-to-int"});
             }
           });
     }
@@ -296,7 +302,8 @@ Value Evaluation::Eval(const Exp *exp) {
       return EvalToInt(
           u->arg.get(), [&](Int arg) {
             if (arg.i < 0) {
-              return Value(Error{.msg = "don't know how to convert negative integers to "
+              return Value(Error{.msg =
+                  "don't know how to convert negative integers to "
                   "base-94?"});
             }
 
@@ -526,9 +533,10 @@ Value Evaluation::Eval(const Exp *exp) {
     case '.': {
       // . String concatenation  B. S4% S34 -> "test"
 
-      return EvalToString(
+      return EvalToString(".lhs",
           b->arg1.get(), [&](String arg1) {
-            return EvalToString(b->arg2.get(), [&](String arg2) {
+              return EvalToString(".rhs",
+                                  b->arg2.get(), [&](String arg2) {
                 return Value(String{.s = arg1.s + arg2.s});
               });
           });
@@ -539,7 +547,7 @@ Value Evaluation::Eval(const Exp *exp) {
 
       return EvalToInt(
           b->arg1.get(), [&](Int arg1) {
-            return EvalToString(b->arg2.get(), [&](String arg2) {
+              return EvalToString("T", b->arg2.get(), [&](String arg2) {
                 const int64_t len = GetInt64(arg1.i);
 
                 if (len < 0) {
@@ -561,7 +569,7 @@ Value Evaluation::Eval(const Exp *exp) {
 
       return EvalToInt(
           b->arg1.get(), [&](Int arg1) {
-            return EvalToString(b->arg2.get(), [&](String arg2) {
+              return EvalToString("D", b->arg2.get(), [&](String arg2) {
                 const int64_t len = GetInt64(arg1.i);
                 if (len < 0) {
                   return Value(Error{.msg = "negative length in D"});
@@ -597,13 +605,16 @@ Value Evaluation::Eval(const Exp *exp) {
 
   } else if (const Var *v = std::get_if<Var>(exp)) {
     (void)v;
-    return Value(Error{.msg = "unbound variable"});
+    return Value(Error{.msg = StringPrintf("unbound variable %s (%s)",
+                                           IntToString(v->v).c_str(),
+                                           IntConstant(v->v).c_str()
+                                           )});
 
   }
 
-  assert(exp != nullptr);
+  CHECK(exp != nullptr);
 
-  assert(!"bug: invalid exp variant in eval");
+  LOG(FATAL) << "bug: invalid exp variant in eval";
   return Value(Error{.msg = "invalid exp variant"});
 }
 
@@ -611,7 +622,7 @@ Value Evaluation::Eval(const Exp *exp) {
 // of the string view.
 std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   while (!s->empty() && (*s)[0] == ' ') s->remove_prefix(1);
-  assert(!s->empty() && "expected expression but got eos");
+  CHECK(!s->empty()) << "expected expression but got eos";
 
   // Always one indicator char.
   char ind = (*s)[0];
@@ -632,14 +643,14 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
 
   switch (ind) {
   case 'T':
-    assert(body.empty() && "expected empty body for boolean");
+    CHECK(body.empty()) << "expected empty body for boolean";
     return std::make_shared<Exp>(Bool{.b = true});
   case 'F':
-    assert(body.empty() && "expected empty body for boolean");
+    CHECK(body.empty()) << "expected empty body for boolean";
     return std::make_shared<Exp>(Bool{.b = false});
 
   case 'I': {
-    assert(!body.empty() && "expected non-empty body for integer");
+    CHECK(!body.empty()) << "expected non-empty body for integer";
 
     int_type val = ParseInt(body);
     return std::make_shared<Exp>(Int{.i = val});
@@ -648,14 +659,15 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   case 'S': {
     std::string translated;
     for (char c : body) {
-      assert(c >= 33 && c <= 126 && "Bad char in string body");
+      CHECK(c >= 33 && c <= 126) << "Bad char in string body";
       translated.push_back(DECODE_STRING[c - 33]);
     }
     return std::make_shared<Exp>(String{.s = std::move(translated)});
   }
 
   case 'U': {
-    assert(body.size() == 1 && "unop body should be one char");
+    CHECK(body.size() == 1) << "unop body should be one char. got: [" <<
+      body << "]";
     Unop unop;
     unop.op = body[0];
     unop.arg = ParseLeadingExp(s);
@@ -663,7 +675,8 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   }
 
   case 'B': {
-    assert(body.size() == 1 && "binop body should be one char");
+    CHECK(body.size() == 1) << "binop body should be one char. got: [" <<
+      body << "]";
     Binop binop;
     binop.op = body[0];
     binop.arg1 = ParseLeadingExp(s);
@@ -672,7 +685,7 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   }
 
   case '?': {
-    assert(body.empty() && "if should have empty body");
+    CHECK(body.empty()) << "if should have empty body";
     If iff;
     iff.cond = ParseLeadingExp(s);
     iff.t = ParseLeadingExp(s);
@@ -693,16 +706,17 @@ std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s) {
   }
 
   default:
-    assert(!"invalid indicator");
+    LOG(FATAL) << StringPrintf("invalid indicator '%c'", ind);
   }
 }
 
 std::string IntConstant(const int_type &i) {
 #if NO_BIGNUM
-  assert(!"sorry, unsupported");
+  LOG(FATAL) << "sorry, unsupported";
+  return "";
 #else
-  assert(i >= 0 &&
-         "only non-negative integers can be represented as constants");
+  CHECK(i >= 0) <<
+    "only non-negative integers can be represented as constants";
 
   // Unclear whether it would accept just "I" for zero.
   if (i == 0) return "I!";
@@ -713,7 +727,7 @@ std::string IntConstant(const int_type &i) {
     // We don't have quotrem with int64, so just do two operations.
     int64_t digit = BigInt::CMod(val, RADIX);
     val = BigInt::Div(val, RADIX);
-    assert(digit >= 0 && digit < RADIX);
+    CHECK(digit >= 0 && digit < RADIX);
     rev.push_back('!' + digit);
   }
 
@@ -731,16 +745,134 @@ std::string EncodeString(std::string_view s) {
   std::string enc;
   enc.reserve(s.size());
   for (uint8_t c : s) {
-    assert(c <= 128 && "character out of range in EncodeString");
+    CHECK(c <= 128) << "character out of range in EncodeString";
     enc.push_back(ENCODE_STRING[c]);
   }
   return enc;
 }
 
 uint8_t DecodeChar(uint8_t digit) {
-  assert(digit < RADIX);
+  CHECK(digit < RADIX);
   return DECODE_STRING[digit];
 }
+
+static std::string PrettyVar(const icfp::int_type &i) {
+  // If you're using bignum and this fails, you could just call
+  // i.ToString() here.
+  int64_t ii = icfp::GetInt64(i);
+  CHECK(ii >= 0);
+  if (ii < 26) return StringPrintf("%c", 'a' + ii);
+  return StringPrintf("v%zu", (size_t)ii);
+}
+
+// Flatten n-ary operator if it's 'op', or just e.
+static void PrettyFlat(uint8_t op, const Exp *exp,
+                       std::vector<std::string> *out) {
+  if (const Binop *b = std::get_if<Binop>(exp)) {
+    if (b->op == op) {
+      PrettyFlat(op, b->arg1.get(), out);
+      PrettyFlat(op, b->arg2.get(), out);
+      return;
+    }
+  }
+  // Otherwise...
+  out->push_back(PrettyExp(exp));
+}
+
+std::string PrettyExp(const Exp *exp) {
+  if (const Bool *b = std::get_if<Bool>(exp)) {
+    return b->b ? "true" : "false";
+
+  } else if (const Int *i = std::get_if<Int>(exp)) {
+    return i->i.ToString();
+
+  } else if (const String *s = std::get_if<String>(exp)) {
+    return "\"" + s->s + "\"";
+
+  } else if (const Unop *u = std::get_if<Unop>(exp)) {
+
+    switch (u->op) {
+    case '-':
+      return StringPrintf("(- %s)",
+                          PrettyExp(u->arg.get()).c_str());
+
+    case '!':
+      return StringPrintf("(not %s)",
+                          PrettyExp(u->arg.get()).c_str());
+    case '#':
+    case '$':
+    default:
+      return StringPrintf("(%c %s)",
+                          u->op,
+                          PrettyExp(u->arg.get()).c_str());
+    }
+
+  } else if (const Binop *b = std::get_if<Binop>(exp)) {
+
+    switch (b->op) {
+    case '$':
+      // If it's ($ (\x. body) rhs) then rewrite this
+      // to "let"
+      if (const Lambda *lam = std::get_if<Lambda>(b->arg1.get())) {
+        return StringPrintf("let %s = %s\n"
+                            "in %s\n"
+                            "end",
+                            PrettyVar(lam->v).c_str(),
+                            PrettyExp(b->arg2.get()).c_str(),
+                            PrettyExp(lam->body.get()).c_str());
+      } else {
+        return StringPrintf("%s %s",
+                            PrettyExp(b->arg1.get()).c_str(),
+                            PrettyExp(b->arg2.get()).c_str());
+      }
+
+    case '|': {
+      std::vector<std::string> args;
+      PrettyFlat('|', b->arg1.get(), &args);
+      PrettyFlat('|', b->arg2.get(), &args);
+
+      return StringPrintf("(or %s)",
+                          Util::Join(args, " ").c_str());
+    }
+
+    case '&': {
+      std::vector<std::string> args;
+      PrettyFlat('&', b->arg1.get(), &args);
+      PrettyFlat('&', b->arg2.get(), &args);
+
+      return StringPrintf("(and %s)",
+                          Util::Join(args, " ").c_str());
+    }
+
+    default:
+      return StringPrintf("(%c %s %s)",
+                          b->op,
+                          PrettyExp(b->arg1.get()).c_str(),
+                          PrettyExp(b->arg2.get()).c_str());
+
+    }
+
+  } else if (const If *i = std::get_if<If>(exp)) {
+
+    return StringPrintf("(if %s then %s else %s)",
+                        PrettyExp(i->cond.get()).c_str(),
+                        PrettyExp(i->t.get()).c_str(),
+                        PrettyExp(i->f.get()).c_str());
+
+  } else if (const Lambda *l = std::get_if<Lambda>(exp)) {
+
+    return StringPrintf("(λ %s. %s)",
+                        PrettyVar(l->v).c_str(),
+                        PrettyExp(l->body.get()).c_str());
+
+  } else if (const Var *v = std::get_if<Var>(exp)) {
+    return PrettyVar(v->v);
+
+  }
+
+  return "???INVALID???";
+}
+
 
 // Secret ops?
 // ~: might be alias for B$, or maybe it is memoizing?

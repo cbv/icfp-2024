@@ -44,6 +44,7 @@ static constexpr int RADIX = 94;
 
 // Returns e.g. I! for 0.
 std::string IntConstant(const int_type &i);
+// Without leading S.
 std::string EncodeString(std::string_view s);
 uint8_t DecodeChar(uint8_t c);
 
@@ -144,6 +145,7 @@ struct Var {
 };
 
 std::string ValueString(const Value &v);
+std::string PrettyExp(const Exp *e);
 
 struct Evaluation {
   // Number of beta redices performed.
@@ -183,13 +185,16 @@ struct Evaluation {
   }
 
   template<class F>
-  Value EvalToString(const Exp *exp,
-                   const F &f) {
+  Value EvalToString(const char *what,
+                     const Exp *exp,
+                     const F &f) {
     Value v = Eval(exp);
-     if (const String *s = std::get_if<String>(&v)) {
+    if (const String *s = std::get_if<String>(&v)) {
       return f(std::move(*s));
+    } else if (const Error *e = std::get_if<Error>(&v)) {
+      return v;
     }
-    return Value(Error{.msg = "Expected string"});
+    return Value(Error{.msg = std::string("Expected string in ") + what});
   }
 
   // Evaluate to a value.
