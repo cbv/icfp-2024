@@ -3,7 +3,7 @@ import { AppModeState, AppState, ThreedProgram, hashOfMode, mkModeState } from '
 import { Action, ThreedAction } from './action';
 import { compileExample } from './compile';
 import { EvalThreedResponse } from './types';
-import { parseThreedProgram } from './threed-util';
+import { framesOfTrace, parseThreedProgram } from './threed-util';
 
 function setInputText(state: AppState, text: string): AppState {
   if (!(state.modeState.t == 'evaluate' || state.modeState.t == 'codec' || state.modeState.t == 'communicate'
@@ -89,6 +89,18 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
       const newProgram = [blankLine(), ...prog.map(line => ['.', ...line, '.']), blankLine()];
       return produceMs(state, ms, s => {
         s.curProgram = newProgram;
+      });
+    }
+    case 'incFrame': {
+      const trace = ms.executionTrace;
+      if (trace == undefined)
+        return state;
+      const frame = ms.currentFrame;
+      const minFrame = 0;
+      const maxFrame = framesOfTrace(trace).length - 1;
+      const newFrame = Math.min(maxFrame, Math.max(minFrame, ms.currentFrame + action.dframe));
+      return produceMs(state, ms, s => {
+        s.currentFrame = newFrame;
       });
     }
   }

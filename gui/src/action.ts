@@ -10,6 +10,7 @@ export type ThreedAction =
   | { t: 'setValue', which: 'a' | 'b', v: string }
   | { t: 'setProgramCell', x: number, y: number, v: string }
   | { t: 'expandProgram' }
+  | { t: 'incFrame', dframe: number }
   ;
 
 export type Action =

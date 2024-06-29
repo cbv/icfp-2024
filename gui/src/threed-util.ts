@@ -1,4 +1,5 @@
 import { ThreedProgram } from "./state";
+import { EvalThreedResponse, ThreedItem } from "./types";
 
 // This is able to strip the solve line
 export function parseThreedProgram(puzzle: string): ThreedProgram {
@@ -9,4 +10,8 @@ export function parseThreedProgram(puzzle: string): ThreedProgram {
 // This doesn't include the solve line
 export function unparseThreedProgram(prog: ThreedProgram): string {
   return prog.map(line => line.join(' ') + '\n').join('');
+}
+
+export function framesOfTrace(trace: EvalThreedResponse): (ThreedItem & { t: 'frame' })[] {
+  return trace.flatMap(x => x.t == 'frame' ? [x] : []);
 }

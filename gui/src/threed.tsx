@@ -76,9 +76,29 @@ export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRe
   return renderThreedPuzzleArray(globalArray, dispatch);
 }
 
+// return true if we've handled the key
+function handleKey(state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: LocalDispatch, code: string): boolean {
+  switch (code) {
+    case 'ArrowLeft': dispatch({ t: 'incFrame', dframe: -1 }); return true;
+    case 'ArrowRight': dispatch({ t: 'incFrame', dframe: 1 }); return true;
+    default: console.log(code); return false;
+  }
+}
+
 export function RenderThreed(props: { state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: Dispatch }): JSX.Element {
   const { state, modeState, dispatch } = props;
-
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (handleKey(state, modeState, ldis, e.code)) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  React.useEffect(() => {
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [state]);
   function ldis(action: ThreedAction): void {
     dispatch(threedAction(action));
   }
