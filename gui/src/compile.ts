@@ -47,7 +47,7 @@ export function lambdaman4() {
           cond(equ(litnum(0), mod(n, litnum(4))),
             litstr("U"),
             litstr("D")),
-          appSpine(S, [r, add(n, litnum(1))]))
+          appSpine(S, [add(n, litnum(1)), r]))
       )
     )
     ));
