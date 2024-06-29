@@ -182,6 +182,8 @@ console.log(loop(parseInt(process.argv[2])));
 ```
 and I confirmed up to n=7 that it's doing the same thing as our evaluator.
 
+This seems to be [A039649](https://oeis.org/A039649).
+
 efficiency13
 ------------
 
