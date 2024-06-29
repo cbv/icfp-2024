@@ -1,4 +1,4 @@
-import { encodeIntLit, encodeString } from './codec';
+import { encodeBigIntLit, encodeIntLit, encodeString } from './codec';
 
 export type Binop =
   | '+'
@@ -30,7 +30,7 @@ export type Expr =
   | { t: 'cond', cond: Expr, tt: Expr, ff: Expr }
   | { t: 'lam', v: string, body: Expr }
   | { t: 'str', x: string }
-  | { t: 'int', x: number }
+  | { t: 'int', x: bigint }
   | { t: 'bool', x: boolean }
   | { t: 'var', v: string }
   ;
@@ -43,7 +43,7 @@ export function div(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '/
 export function mod(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '%' }; }
 export function concat(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '.' }; }
 export function app(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '$' }; }
-export function litnum(x: number): Expr { return { t: 'int', x }; }
+export function litnum(x: number): Expr { return { t: 'int', x: BigInt(x) }; }
 export function litstr(x: string): Expr { return { t: 'str', x }; }
 export function litbool(x: boolean): Expr { return { t: 'bool', x }; }
 export function cond(cond: Expr, tt: Expr, ff: Expr): Expr { return { t: 'cond', cond, tt, ff }; }
@@ -95,7 +95,7 @@ export function expToToks(e: Expr): string[] {
     case 'var': return [`v${e.v}`];
     case 'str': return [`S${encodeString(e.x)}`];
     case 'bool': return [e.x ? 'T' : 'F'];
-    case 'int': return ['I' + encodeIntLit(e.x)];
+    case 'int': return ['I' + encodeBigIntLit(e.x)];
   }
 }
 

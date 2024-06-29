@@ -55,7 +55,7 @@ export function parseIcfp(icfp: string): Expr {
 export function unparseSexp(e: Expr): string {
   function prettyVar(x: string) {
     const nicevars = 'xyzwabcd'.split('');
-    const n = decodeIntLit(x);
+    const n = Number(decodeIntLit(x));
     if (n < nicevars.length) return nicevars[n];
     return x;
   }
