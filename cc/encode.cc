@@ -1,6 +1,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -16,7 +17,9 @@
 
 #include "icfp.h"
 
-static std::string BaseXEncode(std::string_view input) {
+// force_pow2 may be necessary for large inputs, since their decoder
+// will time out doing the mods I guess?
+static std::string BaseXEncode(std::string_view input, bool force_pow2) {
   // Count each char in the input. For now, we just have a
   // flat base. But I think it would be doable to perform
   // Huffman encoding.
@@ -35,9 +38,19 @@ static std::string BaseXEncode(std::string_view input) {
     }
   }
 
-  const int radix = counts.size();
+  const int orig_radix = counts.size();
 
-  fprintf(stderr, "%d distinct chars\n\n", radix);
+  // We can use any larger radix. Powers of 2 should give faster
+  // division and mod during decoding, I think/hope. The symbol
+  // table will be shorter than the radix, but we just won't index
+  // outside it.
+  int radix = orig_radix;
+  while (force_pow2 && (radix & (radix - 1)) != 0) {
+    radix++;
+  }
+
+  fprintf(stderr, "%d distinct chars. use radix %d.\n\n",
+          orig_radix, radix);
   for (const auto &[c, count] : counts) {
     if (count > 0) {
       fprintf(stderr, "'%c' x %d\n", c, count);
@@ -151,16 +164,22 @@ static std::string BaseXEncode(std::string_view input) {
 int main(int argc, char **argv) {
   std::string prefix;
   bool force_pow2 = false;
+  int chunk_size = 65536;
   for (int i = 1; i < argc; i++) {
     if (std::string(argv[i]) == "-prefix") {
       CHECK(i + 1 < argc);
       i++;
-      prefix = argv[i++];
+      prefix = argv[i];
     } else if (std::string(argv[i]) == "-pow2") {
       force_pow2 = true;
+    } else if (std::string(argv[i]) == "-chunk-size") {
+      CHECK(i + 1 < argc);
+      i++;
+      chunk_size = atoi(argv[i]);
+      CHECK(chunk_size > 0);
     } else {
       fprintf(stderr,
-              "./encode.exe [-prefix \"message\"] [-pow2] "
+              "./encode.exe [-prefix \"message\"] [-pow2] [-chunk-size n] "
               "< file.txt > file.icfp\n");
       return -1;
     }
@@ -174,14 +193,45 @@ int main(int argc, char **argv) {
   std::string_view input_view(input);
   input_view.remove_prefix(prefix.size());
 
-  std::string output = BaseXEncode(input_view);
+  int bytes_in = 0, bytes_out = 0;
 
-  if (prefix.empty()) {
-    printf("%s\n", output.c_str());
+  std::vector<std::string> parts;
+  if (!prefix.empty()) {
+    parts.push_back(StringPrintf("S%s", icfp::EncodeString(prefix).c_str()));
+    input_view.remove_prefix(prefix.size());
+    bytes_in += prefix.size();
+    bytes_out += parts.back().size();
+  }
+
+  const int num_chunks = 1 + (input_view.size() / chunk_size);
+
+  int chunk_idx = 0;
+  while ((int)input_view.size() > chunk_size) {
+    std::string_view chunk = input_view.substr(0, chunk_size);
+    input_view.remove_prefix(chunk_size);
+    parts.push_back(BaseXEncode(chunk, force_pow2));
+
+    bytes_in += chunk.size();
+    bytes_out += parts.back().size();
+
+    chunk_idx++;
+    fprintf(stderr, "[Chunk %d/%d] %d -> %d bytes\n\n",
+            chunk_idx, num_chunks, bytes_in, bytes_out);
+  }
+
+  if (!input_view.empty()) {
+    parts.push_back(BaseXEncode(input_view, force_pow2));
+  }
+
+  CHECK(!parts.empty());
+  if (parts.size() == 1) {
+    printf("%s\n", parts[0].c_str());
   } else {
-    printf("B. S%s %s\n",
-           icfp::EncodeString(prefix).c_str(),
-           output.c_str());
+    std::string out = parts[0];
+    for (int i = 1; i < (int)parts.size(); i++) {
+      out = StringPrintf("B. %s %s", out.c_str(), parts[i].c_str());
+    }
+    printf("%s\n", out.c_str());
   }
 
   return 0;
