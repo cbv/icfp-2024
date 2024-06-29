@@ -170,7 +170,7 @@ pub mod expr {
     }
 
     pub fn let1(x: &str, val: Expr, body: Expr) -> Expr {
-        app(lam(x, val), body)
+        app(lam(x, body), val)
     }
 }
 
@@ -192,6 +192,8 @@ pub fn parse_str (b : &[u8]) -> anyhow::Result<String> {
 #[test]
 fn test_parse_str() {
     assert_eq!(parse_str(b"B%,,/}Q/2,$_").unwrap(), "Hello World!".to_string());
+
+    assert_eq!(parse_str(b"3/,6%},!-\"$!-!.[}").unwrap(), "solve lambdaman6 ".to_string());
 }
 
 // does not include the leading S
@@ -211,7 +213,8 @@ pub fn encode_str (b : &str) -> String {
 
 #[test]
 fn test_encode_str() {
-    assert_eq!(encode_str("Hello World!"), "B%,,/}Q/2,$_".to_string())
+    assert_eq!(encode_str("Hello World!"), "B%,,/}Q/2,$_".to_string());
+    assert_eq!(encode_str("solve lambdaman6 "), "3/,6%},!-\"$!-!.[}".to_string());
 }
 
 impl std::fmt::Display for Tok {
@@ -310,4 +313,10 @@ pub fn get_expr_from_toks (toks : &[Tok], pos: usize) -> anyhow::Result<(Expr, u
         }
         Tok::Var(v) => Ok((Expr::Var(*v), pos + 1)),
     }
+}
+
+pub fn parse_expr(s: &str) -> anyhow::Result<Expr> {
+    let toks = parse_toks(s)?;
+    let (expr, _) = get_expr_from_toks(&toks[..], 0)?;
+    Ok(expr)
 }

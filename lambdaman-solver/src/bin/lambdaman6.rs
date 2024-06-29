@@ -1,6 +1,6 @@
 use icfp::expr::*;
 
-pub fn main() {
+pub fn main() -> anyhow::Result<()> {
     let e =
         concat(
             litstr("solve lambdaman6 "),
@@ -9,5 +9,6 @@ pub fn main() {
                 lam("a", concat(concat(vuse("a"), vuse("a")),
                                 concat(vuse("a"), vuse("a")))),
                 app(vuse("q"), app(vuse("q"), app(vuse("q"), litstr("RRRR"))))));
-    println!("{e}")
+    println!("{e}");
+    Ok(())
 }
