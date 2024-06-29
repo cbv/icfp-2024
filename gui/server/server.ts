@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import express from 'express';
 import * as path from 'path';
 import { spawn } from 'node:child_process';
+import { glob } from 'glob';
 
 const token = fs.readFileSync(path.join(__dirname, '../../API_KEY'), 'utf8').replace(/\n/g, '');
 const app = express();
@@ -22,7 +23,14 @@ app.post('/export', (req, res) => {
 });
 
 app.use('/', express.static(path.join(__dirname, '../public')));
-app.use('/puzzles', express.static(path.join(__dirname, '../../puzzles')));
+
+app.get('/solutions/threed', async (req, res) => {
+  const files = await glob(path.join(__dirname, '../../solutions/threed/threed*.txt'))
+  res.json(files.filter(file => file.match(/\/threed[0-9]+.txt$/)).sort());
+});
+
+app.use('/solutions', express.static(path.join(__dirname, '../../solutions')));
+
 
 app.post('/api/space', async (req, res) => {
   const body = req.body.rawString;
