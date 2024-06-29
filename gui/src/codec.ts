@@ -21,3 +21,24 @@ export function encodeString(text: string): string {
   }
   return rv;
 }
+
+export function decodeIntLit(text: string): number {
+  let rv: number = 0;
+  for (const x of text.split('')) {
+    const ix = x.charCodeAt(0) - 33;
+    if (ix < 0 || ix >= 94) throw new Error('outside base-94 encoding');
+    rv = 94 * rv + ix
+  }
+  return rv;
+}
+
+export function encodeIntLit(n: number): string {
+  let rv = '';
+  if (n < 0) throw Error(`unimplemented`);
+  if (n == 0) return '!';
+  while (n > 0) {
+    rv = String.fromCharCode(33 + (n % 94)) + rv;
+    n = Math.floor(n / 94)
+  }
+  return rv;
+}

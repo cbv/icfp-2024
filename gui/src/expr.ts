@@ -1,4 +1,4 @@
-import { encodeString } from './codec';
+import { encodeIntLit, encodeString } from './codec';
 
 export type Binop =
   | '+'
@@ -35,16 +35,6 @@ export type Expr =
   | { t: 'var', v: string }
   ;
 
-function base94encode(n: number): string {
-  let rv = '';
-  if (n < 0) throw Error(`unimplemented`);
-  if (n == 0) return '!';
-  while (n > 0) {
-    rv = String.fromCharCode(33 + (n % 94)) + rv;
-    n = Math.floor(n / 94)
-  }
-  return rv;
-}
 
 export function add(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '+' }; }
 export function sub(a: Expr, b: Expr): Expr { return { t: 'binop', a, b, opr: '-' }; }
@@ -105,7 +95,7 @@ export function expToToks(e: Expr): string[] {
     case 'var': return [`v${e.v}`];
     case 'str': return [`S${encodeString(e.x)}`];
     case 'bool': return [e.x ? 'T' : 'F'];
-    case 'int': return ['I' + base94encode(e.x)];
+    case 'int': return ['I' + encodeIntLit(e.x)];
   }
 }
 
