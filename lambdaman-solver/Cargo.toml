@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.86"
+icfp = { path = "../rust-utils/", version = "*" }
+
+[[bin]]
+name = "lambdaman6"

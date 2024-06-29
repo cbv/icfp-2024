@@ -168,6 +168,10 @@ pub mod expr {
     pub fn rec(v : &str, body: Expr) -> Expr {
         app(ycomb(), lam(v, body))
     }
+
+    pub fn let1(x: &str, val: Expr, body: Expr) -> Expr {
+        app(lam(x, val), body)
+    }
 }
 
 #[test]
