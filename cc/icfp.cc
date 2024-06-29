@@ -130,6 +130,25 @@ static void PopulateFreeVars(const Exp *e, std::unordered_set<int64_t> *fvs) {
 
       fvs->insert(var->v);
       return;
+
+    } else if (const Memo *m = std::get_if<Memo>(e)) {
+
+      if (m->done.get() != nullptr) {
+        // Values have no free variables.
+      } else {
+        CHECK(m->todo.get() != nullptr);
+
+        if (m->fvs.get() != nullptr) {
+          for (int64_t v : *m->fvs) fvs->insert(v);
+          return;
+        } else {
+          e = m->todo.get();
+          // We could memoize them here, but we have
+          // a const pointer.
+        }
+      }
+      return;
+
     } else {
       LOG(FATAL) << "illegal exp";
     }
@@ -222,6 +241,39 @@ std::shared_ptr<Exp> Evaluation::SubstInternal(
     } else {
       return e2;
     }
+
+  } else if (Memo *m = std::get_if<Memo>(e2.get())) {
+
+    if (m->done.get() != nullptr) {
+      // Values have no free variables.
+      return e2;
+
+    } else {
+      CHECK(m->todo.get() != nullptr);
+
+      // Ensure we have free vars.
+      if (m->fvs.get() == nullptr) {
+        m->fvs = std::make_shared<std::unordered_set<int64_t>>(
+            FreeVars(m->todo.get()));
+      }
+
+      CHECK(m->fvs.get() != nullptr);
+
+      if (m->fvs->contains(v)) {
+        // Have to create a new memo cell, then.
+        std::shared_ptr<Exp> s = Subst(e1, v, m->todo, false);
+        return std::make_shared<Exp>(Memo{
+            .fvs = nullptr,
+            .todo = std::move(s),
+            .done = nullptr,
+          });
+
+      } else {
+        // The variable is not present, so substitution has no effect.
+        return e2;
+      }
+    }
+
   }
 
   LOG(FATAL) << "bug: invalid exp variant";
@@ -611,6 +663,20 @@ Value Evaluation::Eval(std::shared_ptr<Exp> exp) {
               // that.
               "unbound variable %lld",
               v->v)});
+
+    } else if (Memo *m = std::get_if<Memo>(exp.get())) {
+
+      if (m->done.get() == nullptr) {
+        CHECK(m->todo.get() != nullptr);
+
+        m->done = std::make_shared<Value>(Eval(m->todo));
+        m->todo = nullptr;
+        m->fvs = nullptr;
+      }
+
+      CHECK(m->done.get() != nullptr);
+
+      return *m->done;
 
     } else {
       CHECK(exp != nullptr);

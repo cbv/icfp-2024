@@ -38,6 +38,7 @@ struct If;
 struct Lambda;
 struct Var;
 struct Error;
+struct Memo;
 
 using Exp = std::variant<
   Bool,
@@ -47,7 +48,8 @@ using Exp = std::variant<
   Binop,
   If,
   Lambda,
-  Var>;
+  Var,
+  Memo>;
 
 using Value = std::variant<
   Bool,
@@ -70,6 +72,16 @@ struct Int {
 
 struct String {
   std::string s;
+};
+
+struct Memo {
+  // If Exp is present, null means not computed.
+  // If Value is present, value is meaningless.
+  std::shared_ptr<std::unordered_set<int64_t>> fvs;
+
+  // Exactly one of the following is set.
+  std::shared_ptr<Exp> todo;
+  std::shared_ptr<Value> done;
 };
 
 /*
@@ -185,6 +197,8 @@ struct Evaluation {
   static std::unordered_set<int64_t> FreeVars(const Exp *e);
 
  private:
+  void EnsureFreeVars(Memo *m);
+
   std::shared_ptr<Exp> SubstInternal(
       const std::unordered_set<int64_t> &fvs,
       std::shared_ptr<Exp> e1,
