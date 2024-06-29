@@ -9,6 +9,7 @@
 
 #include "ansi.h"
 #include "base/logging.h"
+#include "timer.h"
 
 #include "bignum/big.h"
 #include "bignum/big-overloads.h"
@@ -53,11 +54,25 @@ static void LanguageTest() {
         "to claim points for it");
 }
 
+static void Bench() {
+  constexpr const char *david = R"(B. S3/,6%},!-"$!-!.Y} B$ B$ B$ Lf B$ Lx B$ vf B$ vx vx Lx B$ vf B$ vx vx LS Ln Lr ? B= vn I'E S B. B$ Lx ? B= I! vx SO ? B= I" vx S> ? B= I# vx SF SL B% B/ vr I.gg~B I% B$ B$ vS B+ vn I" B% B+ B* vr I#!Dd I-}c|. IX""|J I! I!)";
+
+  Timer timer;
+  Value v = Evaluate(david);
+  const String *s = std::get_if<String>(&v);
+  CHECK(s != nullptr) << ValueString(v);
+  CHECK(s->s ==
+        "solve lambdaman4 UUDULDLDUDUULURRDRDDRLDLLLDLLLURULLLLUULDLLLLURRRLRUDDDDURRDRRULDURUUULURURDRRLLURLDLDULDUUDUDDDDDRDUUURDLDRDLULDLULLRRDRLUURDLLDLLDURRDLLLRLLLRDLDRLULUDRLUUURURRRLDDDULLDDRRDUDRDDUDLLLRRURRUURURDURRDDLRDLDDURDRULULDLDDDDLLDDRDUUDDUULRRRDDDDRULUDLDRRRDRRLUULURDRLUURDRLRUULDDURULRRLRLDDRLDDLDUDLRDUULURLURUDLULURDUULULRRLUUULLURRDUDULDDLLLDUURRDRURLUDDUURDDURLDUULRRRLLDRLUDULUUDDULRULLLLDURDULRDURUDLDDURLDLLDRUDURUDURDULLDRLLRLRRDUULDRLUUUDLLDLLRRURDRLUDRULUUDDDLLDURRUDRDLUDLUDRRUURLLLURDUDLDLLLLDRLDUDULLULRRRLDRLRDDDLLDRLDULLUDRRULULRRDDUDRDULUURDLUULDLRDUULLDRDURLURDRURUURRRRDDLLURRLLLURLUUUUL") << s->s;
+  printf("Benchmark ran in %s\n", ANSI::Time(timer.Seconds()).c_str());
+}
+
 int main(int argc, char **argv) {
   ANSI::Init();
 
   TestInt();
   LanguageTest();
+
+  Bench();
 
   printf("OK");
   return 0;
