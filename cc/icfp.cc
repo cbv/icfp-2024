@@ -399,8 +399,24 @@ Value Evaluation::Eval(std::shared_ptr<Exp> exp) {
         Value arg1 = Eval(b->arg1);
         if (const Lambda *lam = std::get_if<Lambda>(&arg1)) {
           betas++;
+
+          // Memoize arg2, so that if it is evaluated multiple
+          // times, we only pay once.
+          std::shared_ptr<Exp> arg;
+
+          if (std::holds_alternative<Memo>(*b->arg2)) {
+            // Oh, it's already a memo cell. Don't add indirection.
+            arg = b->arg2;
+
+          } else {
+            arg = std::make_shared<Exp>(Memo{
+                .fvs = nullptr,
+                .todo = b->arg2,
+                .done = nullptr});
+          }
+
           // TODO: Check limits
-          exp = Subst(b->arg2, lam->v, lam->body);
+          exp = Subst(std::move(arg), lam->v, lam->body);
           // Tail recursion.
           continue;
 
@@ -947,6 +963,9 @@ std::string PrettyExp(const Exp *exp) {
 
   } else if (const Var *v = std::get_if<Var>(exp)) {
     return PrettyVar(v->v);
+
+  } else if (const Memo *m = std::get_if<Memo>(exp)) {
+    return "(memo cell)";
 
   }
 
