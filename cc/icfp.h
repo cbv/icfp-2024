@@ -205,5 +205,7 @@ struct Evaluation {
 // of the string view.
 std::shared_ptr<Exp> ParseLeadingExp(std::string_view *s);
 
+// Read all the input from stdin; strip leading and trailing space.
+std::string ReadAllInput();
 
 }  // namespace icfp

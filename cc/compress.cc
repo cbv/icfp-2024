@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <utility>
 #include <vector>
 #include <variant>
@@ -28,7 +29,7 @@
 using Part = std::variant<std::string, int>;
 
 // Each occurrence needs at least "B. vn "
-static constexpr int MIN_LEN = 6;
+static constexpr int MIN_LEN = 8;
 
 struct Compressor {
   // strings that have been factored
@@ -176,7 +177,7 @@ struct Compressor {
     return body;
   }
 
-  std::string Compress(std::string_view in) {
+  std::string Compress(std::string_view in, int max_len) {
     const int start_size = (int)in.size();
     Periodically status_per(1.0);
     Timer timer;
@@ -184,19 +185,30 @@ struct Compressor {
     parts = {std::string(in)};
 
     int passes = 0;
-    int max_len = in.size() / 2;
+    int length = in.size() / 2;
+    if (max_len > 0 && max_len < length) length = max_len;
 
     fprintf(stderr, "START\n");
 
-    while (max_len > MIN_LEN) {
-      if (!CompressPass(max_len)) {
-        max_len--;
+
+    int lengths_checked = 0;
+    int lengths_to_check = length - MIN_LEN;
+    while (length > MIN_LEN) {
+      if (!CompressPass(length)) {
+        length--;
+        lengths_checked++;
       }
 
       if (status_per.ShouldRun()) {
-        fprintf(stderr, "%d passes; max_len %d; %d parts; %d names\n",
-                passes, max_len,
-                (int)parts.size(), (int)named.size());
+        fprintf(stderr,
+                ANSI_UP "%s\n",
+                ANSI::ProgressBar(
+                    lengths_checked, lengths_to_check,
+                    StringPrintf(
+                        "%d passes; length %d; %d parts; %d names\n",
+                        passes, length,
+                        (int)parts.size(), (int)named.size()),
+                    timer.Seconds()).c_str());
       }
       passes++;
     }
@@ -214,22 +226,25 @@ struct Compressor {
 
 
 int main(int argc, char **argv) {
-  std::string input;
-  char c;
-  while (EOF != (c = fgetc(stdin))) {
-    input.push_back(c);
+  int max_len = -1;
+  for (int i = 1; i < argc; i++) {
+    if (std::string(argv[i]) == "-max-len") {
+      CHECK(i + 1 < argc);
+      i++;
+      max_len = atoi(argv[i++]);
+    } else {
+      printf("./compress.exe [-max-len n] < file.txt > file.icfp\n"
+             "\n"
+             "max-len gives the maximum string length to try\n"
+             "factoring out. For big files, setting this much\n"
+             "smaller will make it much faster!\n");
+    }
   }
 
-  std::string_view input_view(input);
-
-  // Strip leading and trailing whitespace.
-  while (!input_view.empty() && (input_view[0] == ' ' || input_view[0] == '\n'))
-    input_view.remove_prefix(1);
-  while (!input_view.empty() && (input_view.back() == ' ' || input_view.back() == '\n'))
-    input_view.remove_suffix(1);
+  std::string input = icfp::ReadAllInput();
 
   Compressor compressor;
-  std::string out = compressor.Compress(input_view);
+  std::string out = compressor.Compress(input, max_len);
   printf("%s\n", out.c_str());
 
   return 0;

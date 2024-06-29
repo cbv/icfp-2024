@@ -111,7 +111,7 @@ struct Solver {
     Periodically status_per(1.0);
     Timer timer;
 
-    const int total = (int)unique.Size();
+    const int total = (int)unique.size();
     int done = 0;
     while (!unique.empty()) {
       auto star_pos = GetTarget();
