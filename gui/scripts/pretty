@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cd "$(dirname "$0")"/..
+npx ts-node src/pretty-print.ts
