@@ -155,7 +155,7 @@ impl State {
     }
 
     /// Returns the man's coordinates after making a move, or None
-    /// if the move is illegal (out of bounds or into wall).
+    /// if the move is a no-op.
     pub fn coords_after_move(&self, mv: Move) -> Option<Coords> {
         if ! self.move_is_in_bounds(mv) {
             None
@@ -180,7 +180,8 @@ impl State {
         let man1 = self.man;
         match self.coords_after_move(mv) {
             None => {
-                panic!("illegal move {mv:?}")
+                //panic!("illegal move {mv:?}")
+                // do nothing
             }
             Some(man2) => {
                 self.cells[man1.row][man1.col] = Item::Empty;
