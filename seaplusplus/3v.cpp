@@ -68,17 +68,23 @@ void dump(Grid const &grid, bool json) {
 		min = glm::min(min, kv.first);
 		max = glm::max(max, kv.first);
 	}
-   if (!json) {
+
+   if (json) {
+     std::cout << "{\"t\":\"frame\",\"min\":[" << min.x << "," << min.y << "],\"max\":[" << max.x << "," << max.y << "],";
+   }
+   else {
      std::cout << "[" << min.x << ", " << max.x << "]x[" << min.y << ", " << max.y << "]:\n";
    }
+
 	std::vector< uint32_t > widths(max.x - min.x + 1, 2);
 	for (auto const &[at, cell] : grid) {
 		widths[at.x - min.x] = std::max< uint32_t >(widths[at.x - min.x], to_string(cell).size());
 	}
 
    if (json) {
-     std::cout << "{\"t\":\"frame\",\"frame\":\"";
+     std::cout << "\"frame\":\"";
    }
+
 
 	for (int32_t y = min.y; y <= max.y; ++y) {
 		for (int32_t x = min.x; x <= max.x; ++x) {
