@@ -180,7 +180,7 @@ impl State {
         let man1 = self.man;
         match self.coords_after_move(mv) {
             None => {
-                panic!("illegal move")
+                panic!("illegal move {mv:?}")
             }
             Some(man2) => {
                 self.cells[man1.row][man1.col] = Item::Empty;
