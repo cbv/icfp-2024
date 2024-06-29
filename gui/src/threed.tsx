@@ -200,7 +200,10 @@ export function RenderThreed(props: { state: AppState, modeState: LocalModeState
       }
     }
     return <>
-      <button onClick={() => { navigator.clipboard.writeText(unparseThreedProgram(modeState.curProgram!)) }}>Copy</button>
+      <button onClick={() => {
+        navigator.clipboard.writeText(unparseThreedProgram(modeState.curProgram!));
+        alert("copied whole program to clipboard");
+      }}>Copy Program</button>
       <button onClick={() => ldis({ t: 'expandProgram' })}>Expand</button>
       <b style={{ color: 'white' }}>A</b><input onChange={onChange('a')} className="entry" value={modeState.a} size={2}></input>
       <b style={{ color: 'white' }}>B</b><input onChange={onChange('b')} className="entry" value={modeState.b} size={2}></input>
