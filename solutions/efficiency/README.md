@@ -86,7 +86,25 @@ Note: this would be accessible to direct eval if we had caching call-by-need or 
 efficiency5
 -----------
 
-Raw program
+Raw program is
 ```
 ((λ c ((λ d (((λ x ((λ y (x (y y))) (λ y (x (y y))))) (λ z (λ a (if (& (> a 1000000) (& (c a) (d (+ a 1)))) a (z (+ a 1)))))) 2)) ((λ x ((λ y (x (y y))) (λ y (x (y y))))) (λ z (λ a (if (= a 1) true (if (= (% a 2) 1) false (z (/ a 2))))))))) (λ b (((λ x ((λ y (x (y y))) (λ y (x (y y))))) (λ z (λ a (if (= a b) true (if (= (% b a) 0) false (z (+ a 1))))))) 2)))
 ```
+so that's
+```
+let c = (λ b ((fix  z (λ a (if (= a b) true (if (= (% b a) 0) false (z (+ a 1)))))) 2))
+let d = (fix  z (λ a (if (= a 1) true (if (= (% a 2) 1) false (z (/ a 2))))))
+(fix z (λ a (if (& (> a 1000000) (& (c a) (d (+ a 1)))) a (z (+ a 1))))) 2
+```
+
+Which is morally:
+```
+fun prime b =
+   let fun z1 = (λ a (if (= a b) true (if (= (% b a) 0) false (z1 (+ a 1)))))
+   in z1 2
+
+let ispow2 = (fix z2 (λ a (if (= a 1) true (if (= (% a 2) 1) false (z2 (/ a 2))))))
+
+((fix first_big_pow2_prime (λ a (if (& (> a 1000000) (& (prime a) (ispow2 (+ a 1)))) a (first_big_pow2_prime (+ a 1))))) 2)
+```
+so the answer is $2^{31} - 1$.
