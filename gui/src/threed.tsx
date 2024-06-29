@@ -76,7 +76,8 @@ export function renderThreedPuzzleInRect(text: string, globalRect: Rect, localRe
   return renderThreedPuzzleArray(globalArray, dispatch);
 }
 
-export function renderThreed(state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: Dispatch): JSX.Element {
+export function RenderThreed(props: { state: AppState, modeState: AppModeState & { t: 'threed' }, dispatch: Dispatch }): JSX.Element {
+  const { state, modeState, dispatch } = props;
 
   function ldis(action: ThreedAction): void {
     dispatch(threedAction(action));

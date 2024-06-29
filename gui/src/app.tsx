@@ -9,7 +9,7 @@ import { Dispatch } from './action';
 import { toTitleCase } from './lib/util';
 import { decodeString, encodeString } from './codec';
 import { AppProps, PuzzleSolution } from './types';
-import { renderThreed, renderThreedPuzzle } from './threed';
+import { RenderThreed, renderThreedPuzzle } from './threed';
 
 const modes: AppMode[] = ['codec', 'communicate', 'evaluate', 'lambdaman', 'threed'];
 
@@ -121,7 +121,7 @@ function renderAppBody(state: AppState, dispatch: Dispatch): JSX.Element {
       return renderLambda(state, state.modeState, dispatch);
     case 'threed':
       if (state.modeState.t != state.mode) throw new Error(`mode state inconsistency`);
-      return renderThreed(state, state.modeState, dispatch);
+      return <RenderThreed state={state} modeState={state.modeState} dispatch={dispatch} />;
   }
 }
 
