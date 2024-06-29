@@ -275,6 +275,20 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
         }
       });
     }
+    case 'clear': {
+      const selection = ms.selection;
+      if (selection == undefined)
+        return state;
+      const program = ms.curProgram;
+      if (program == undefined)
+        return state;
+      let newProgram = program;
+      newProgram = eraseContents(newProgram, selection);
+      return produceMs(state, ms, s => {
+        s.curProgram = newProgram;
+        s.selection = undefined;
+      });
+    }
   }
 }
 

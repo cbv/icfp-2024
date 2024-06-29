@@ -120,7 +120,14 @@ function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDi
   }
 
   switch (code) {
-    case 'Backspace': dispatch({ t: 'editChar', char: '.' }); return true;
+    case 'Backspace': // fallthrough intentional
+    case 'Delete':
+      if (modeState.selection == undefined) {
+        dispatch({ t: 'editChar', char: '.' }); return true;
+      } else {
+        dispatch({ t: 'clear' }); return true;
+      }
+
     case 'ArrowLeft':
       if (modeState.executionTrace == undefined) {
         dispatch({ t: 'editChar', char: '<' }); return true;

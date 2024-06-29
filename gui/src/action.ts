@@ -20,6 +20,7 @@ export type ThreedAction =
   | { t: 'cut' }
   | { t: 'copy' }
   | { t: 'paste' }
+  | { t: 'clear' }
   ;
 
 export type Action =
