@@ -9,6 +9,7 @@ export type ThreedAction =
   | { t: 'setExecutionTrace', trace: EvalThreedResponse | undefined }
   | { t: 'setValue', which: 'a' | 'b', v: string }
   | { t: 'setProgramCell', x: number, y: number, v: string }
+  | { t: 'expandProgram' }
   ;
 
 export type Action =

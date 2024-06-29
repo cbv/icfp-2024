@@ -81,6 +81,16 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
         s.executionTrace = action.trace;
       });
     }
+    case 'expandProgram': {
+      const prog = ms.curProgram;
+      if (prog == undefined)
+        return state;
+      const blankLine: () => string[] = () => ['.', ...prog[0].map(x => '.'), '.'];
+      const newProgram = [blankLine(), ...prog.map(line => ['.', ...line, '.']), blankLine()];
+      return produceMs(state, ms, s => {
+        s.curProgram = newProgram;
+      });
+    }
   }
 }
 

@@ -135,6 +135,7 @@ export function renderThreed(state: AppState, modeState: AppModeState & { t: 'th
       }
     }
     return <>
+      <button onClick={() => ldis({ t: 'expandProgram' })}>Expand</button>
       <b style={{ color: 'white' }}>A</b><input onChange={onChange('a')} className="entry" value={modeState.a} size={2}></input>
       <b style={{ color: 'white' }}>B</b><input onChange={onChange('b')} className="entry" value={modeState.b} size={2}></input>
       <button onClick={runProgram}>Run</button>
