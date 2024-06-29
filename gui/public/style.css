@@ -245,22 +245,28 @@ td {
 }
 
 .S-chip {
+  font-size: 0.9em;
+  font-weight: bold;
   color: white;
-  background-color: #33b;
+  background-color: #808183;
   padding: 0.1em 0.35em;
   border-radius: 0.75em;
 }
 
 .A-chip {
+  font-size: 0.9em;
+  font-weight: bold;
   color: white;
-  background-color: #d33;
+  background-color: #0039a6;
   padding: 0.1em 0.35em;
   border-radius: 0.75em;
 }
 
 .B-chip {
+  font-size: 0.9em;
+  font-weight: bold;
   color: white;
-  background-color: #3b3;
+  background-color: #ff6319;
   padding: 0.1em 0.35em;
   border-radius: 0.75em;
 }
