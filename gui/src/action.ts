@@ -21,6 +21,7 @@ export type ThreedAction =
   | { t: 'copy' }
   | { t: 'paste' }
   | { t: 'clear' }
+  | { t: 'crop' }
   ;
 
 export type Action =

@@ -223,6 +223,9 @@ export function RenderThreed(props: { state: AppState, modeState: LocalModeState
     }
     return <>
       <button onClick={() => {
+        ldis({ t: 'crop' });
+      }}>Crop</button>
+      <button onClick={() => {
         navigator.clipboard.writeText(unparseThreedProgram(modeState.curProgram!));
         alert("copied whole program to clipboard");
       }}>Copy Program</button>
