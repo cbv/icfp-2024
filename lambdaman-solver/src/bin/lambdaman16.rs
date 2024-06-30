@@ -6,7 +6,6 @@ pub fn main() -> anyhow::Result<()> {
 
     /* (wikipedia)
     The Hilbert Curve can be expressed by a rewrite system (L-system).
-    Hilbert curve at its sixth iteration
 
     Alphabet : A, B
     Constants : F + −
