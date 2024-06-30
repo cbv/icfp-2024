@@ -1,10 +1,10 @@
 use icfp::expr::*;
 
 pub fn main() -> anyhow::Result<()> {
-    // Hilbert curve
-    // man starts in upper left.
+    // tunnels
 
     // use a linear congruential RNG and do a random walk
+    // (this doesn't actually work on this problem)
     let walk =
         rec("S",
             lam("n",
@@ -31,9 +31,9 @@ pub fn main() -> anyhow::Result<()> {
                                                   litnum(1013904223)),
                                               litnum(0x100000000))]))))));
 
-    let e = concat(litstr("solve lambdaman16 "),
+    let e = concat(litstr("solve lambdaman17 "),
                    app_spine(walk,
-                             vec![litnum(0), litnum(42)]));
+                             vec![litnum(0), litnum(37)]));
     println!("{e}");
 
     Ok(())

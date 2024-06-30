@@ -30,4 +30,11 @@ name = "lambdaman11"
 name = "lambdaman16"
 
 [[bin]]
+name = "lambdaman17"
+
+
+[[bin]]
+name = "lambdaman21"
+
+[[bin]]
 name = "print_states"
