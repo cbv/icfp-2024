@@ -14,6 +14,7 @@ export type ThreedItem =
     max: [number, number], // max spatial extent in (x,y)
   }
   | { t: 'output', output: number, timetravel?: boolean }
+  | { t: 'error', msg?: string }
   ;
 
 export type EvalThreedResponse = ThreedItem[];

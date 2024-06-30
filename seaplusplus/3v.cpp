@@ -214,6 +214,7 @@ int main(int argc, char **argv) {
 	dump(ticks[0], json, 1);
 
    int sim_steps = 0;
+   try {
 	for (;;) {
 		Grid const &prev = ticks.back();
 		Grid next = prev;
@@ -305,8 +306,16 @@ int main(int argc, char **argv) {
 			else if (cell.op == '+') imath([](Integer const &a, Integer const &b) { return a + b; });
 			else if (cell.op == '-') imath([](Integer const &a, Integer const &b) { return a - b; });
 			else if (cell.op == '*') imath([](Integer const &a, Integer const &b) { return a * b; });
-			else if (cell.op == '/') imath([](Integer const &a, Integer const &b) { return a / b; });
-			else if (cell.op == '%') imath([](Integer const &a, Integer const &b) { return a % b; });
+			else if (cell.op == '/') imath([](Integer const &a, Integer const &b) {
+           if (b == 0)
+             throw std::runtime_error("divide by zero");
+           return a / b;
+         });
+			else if (cell.op == '%') imath([](Integer const &a, Integer const &b) {
+           if (b == 0)
+             throw std::runtime_error("divide by zero");
+           return a % b;
+         });
 			else if (cell.op == '=' || cell.op == '#') {
 				//equality and nonequality work for ints and operators:
 				std::optional< Cell > a = read(at + glm::ivec2(-1,0));
@@ -410,6 +419,15 @@ int main(int argc, char **argv) {
         break;
       }
 	}
+   }
+   catch (const std::runtime_error& e) {
+     if (json) {
+       std::cout << ",{\"t\": \"error\", \"msg\": \"" << e.what() << "\"}" << std::endl;
+     }
+     else {
+       throw e;
+     }
+   }
 
    if (json) {
      std::cout << "]";
