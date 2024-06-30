@@ -216,6 +216,7 @@ export function RenderThreed(props: { state: AppState, modeState: LocalModeState
       max: { x: frame.max[0], y: frame.max[1] },
     };
     renderedPuzzle = <div className="vert-stack"><div className="rendered-puzzle">{renderThreedPuzzleInRect(modeState, frame.frame, globalRect, localRect, ldis)}</div>
+      <div><b>time</b>: {frame.time}</div>
       <input style={{ width: '40em' }} type="range" min={0} max={frames.length - 1} value={modeState.currentFrame} onInput={(e) => {
         ldis({ t: 'setCurrentFrame', frame: parseInt(e.currentTarget.value) })
       }}></input></div>;

@@ -6,7 +6,13 @@ export type AppProps = {
 export type EvalThreedRpc = { program: string, a: number, b: number };
 
 export type ThreedItem =
-  | { t: 'frame', frame: string, min: [number, number], max: [number, number] }
+  | {
+    t: 'frame',
+    time: number, // this is the nonmonotonically evolving clock
+    frame: string,
+    min: [number, number], // min spatial extent in (x,y)
+    max: [number, number], // max spatial extent in (x,y)
+  }
   | { t: 'output', output: number, timetravel?: boolean }
   ;
 

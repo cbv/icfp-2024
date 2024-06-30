@@ -60,7 +60,7 @@ std::string to_string(Cell const &cell) {
 
 typedef std::unordered_map< glm::ivec2, Cell > Grid;
 
-void dump(Grid const &grid, bool json) {
+void dump(Grid const &grid, bool json, int num_ticks) {
 	if (grid.empty() && !json) {
 		std::cout << "Empty grid." << std::endl;
 	}
@@ -72,7 +72,9 @@ void dump(Grid const &grid, bool json) {
 	}
 
    if (json) {
-     std::cout << "{\"t\":\"frame\",\"min\":[" << min.x << "," << min.y << "],\"max\":[" << max.x << "," << max.y << "],";
+     std::cout << "{\"t\":\"frame\",";
+     std::cout << "\"time\":" << num_ticks << ",";
+     std::cout << "\"min\":[" << min.x << "," << min.y << "],\"max\":[" << max.x << "," << max.y << "],";
    }
    else {
      std::cout << "[" << min.x << ", " << max.x << "]x[" << min.y << ", " << max.y << "]:\n";
@@ -188,7 +190,7 @@ int main(int argc, char **argv) {
    else {
      std::cout << "------ as loaded ------" << std::endl;
    }
-	dump(grid, json);
+	dump(grid, json, 0);
 
 	std::vector< Grid > ticks;
 	ticks.emplace_back(grid);
@@ -209,7 +211,7 @@ int main(int argc, char **argv) {
    else {
      std::cout << "------ ticks[0] ------" << std::endl;
    }
-	dump(ticks[0], json);
+	dump(ticks[0], json, 1);
 
    int sim_steps = 0;
 	for (;;) {
@@ -397,7 +399,7 @@ int main(int argc, char **argv) {
       else {
         std::cout << "------ ticks[" << ticks.size() - 1 << "] ------" << std::endl;
       }
-		dump(ticks.back(), json);
+		dump(ticks.back(), json, ticks.size());
 
 		if (!reduced && !json) {
 			std::cout << "No operator can reduce." << std::endl;
