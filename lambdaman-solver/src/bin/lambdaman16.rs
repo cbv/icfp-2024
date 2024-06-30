@@ -1,6 +1,36 @@
 use icfp::expr::*;
 
+// The hilbert curve rewrite function written in rust,
+// to help debug the icfp version below.
+fn rewrite(s : &str) -> String {
+    let mut result = String::new();
+    for c in s.chars() {
+        match c {
+            'A' => {
+                result.push_str("+BF−AFA−FB+");
+            }
+            'B' => {
+                result.push_str("−AF+BFB+FA−");
+            }
+            c => {
+                result.push(c)
+            }
+        }
+    }
+    result
+}
+
+fn rewriten(s : &str, n : usize) -> String {
+    if n == 0 {
+        s.to_string()
+    } else {
+        rewriten(&rewrite(s), n - 1)
+    }
+}
+
 pub fn main() -> anyhow::Result<()> {
+    //eprintln!("after 2: {}", rewriten("A", 2));
+
     // Hilbert curve
     // man starts in upper left.
 
@@ -29,7 +59,7 @@ pub fn main() -> anyhow::Result<()> {
                                  equ(vuse("0"), litstr("A")),
                                  litstr("+BF-AFA-FB+"),
                                  cond(equ(vuse("0"), litstr("B")),
-                                      litstr("-FA+BFB+FA-"),
+                                      litstr("-AF+BFB+FA-"),
                                       vuse("0")))),
                          app(vuse("R"), drop(litnum(1), vuse("s")))))));
 
@@ -70,6 +100,12 @@ pub fn main() -> anyhow::Result<()> {
                                     app_spine(vuse("c"),
                                               vec![drop(litnum(1), vuse("L")),
                                                    fst(vuse("b"))])))))));
+/*
+    let e = concat(litstr("solve lambdaman16 "),
+                   app_spine(
+                       iter(),
+                       vec![rewrite, litnum(2), litstr("A")]));
+*/
 
 
     let e = concat(litstr("solve lambdaman16 "),
