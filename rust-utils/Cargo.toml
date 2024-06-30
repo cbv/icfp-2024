@@ -16,6 +16,12 @@ path = "rust/communicate.rs"
 
 [[bin]]
 
+name = "trim-quotes"
+path = "rust/trim-quotes.rs"
+
+
+[[bin]]
+
 name = "decode"
 path = "rust/decode.rs"
 

@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use icfp::expr::*;
 
 // The hilbert curve rewrite function written in rust,
@@ -46,7 +48,7 @@ pub fn main() -> anyhow::Result<()> {
         B → −AF+BFB+FA−
      */
 
-    // let's write a function that does one step of this rewriting.
+    // a function that does one step of the rewriting.
     let rewrite =
         rec("R",
             lam("s",
