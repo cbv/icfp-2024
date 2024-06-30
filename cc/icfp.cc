@@ -659,19 +659,13 @@ Value Evaluation::Eval(std::shared_ptr<Exp> exp) {
 
     } else if (const If *i = std::get_if<If>(exp.get())) {
 
-      Value v = Eval(exp);
-      if (const Bool *b = std::get_if<Bool>(&v)) {
-        // Tail recursive.
-        if (b->b) {
-          exp = i->t;
+      return EvalToBool(i->cond, [&](Bool cond) {
+        if (cond.b) {
+          return Eval(i->t);
         } else {
-          exp = i->f;
+          return Eval(i->f);
         }
-      } else if (const Error *e = std::get_if<Error>(&v)) {
-        return v;
-      } else {
-        return Value(Error{.msg = "Expected bool"});
-      }
+      });
 
     } else if (const Lambda *l = std::get_if<Lambda>(exp.get())) {
 
