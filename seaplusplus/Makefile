@@ -12,4 +12,4 @@ evel : evel.cpp icfp.hpp
 	$(CPP) -o '$@' '$<'
 
 3v : 3v.cpp
-	$(CPP) -I../cc-lib -o '$@' '$<'  ../cc-lib/bignum/big.cc ../cc-lib/bignum/bigz.cc ../cc-lib/bignum/bign.cc
+	$(CPP) -I../cc-lib -o '$@' '$<' -lgmp

@@ -7,10 +7,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
 
-#include <bignum/big.h>
-#include <bignum/big-overloads.h>
+#include <gmpxx.h>
 
-typedef BigInt Integer;
+typedef mpz_class Integer;
 
 struct Cell {
 	Integer value = Integer(0);
@@ -52,7 +51,7 @@ struct Cell {
 
 std::string to_string(Cell const &cell) {
 	if (cell.op == '\0') {
-		return to_string(cell.value);
+		return cell.value.get_str();
 	} else {
 		assert(cell.value == 0);
 		return std::string(&cell.op, 1);
@@ -326,7 +325,7 @@ int main(int argc, char **argv) {
 				std::optional< Cell > dy = read(at + glm::ivec2(1,0));
 				std::optional< Cell > dt = read(at + glm::ivec2(0,1));
 				if (v && dx && dx->op == '\0' && dy && dy->op == '\0' && dt && dt->op == '\0') {
-					tt_write(dt->value.ToInt().value(), at + glm::ivec2(-dx->value.ToInt().value(), -dy->value.ToInt().value()), *v);
+					tt_write(dt->value.get_si(), at + glm::ivec2(-dx->value.get_si(), -dy->value.get_si()), *v);
 					reduced = true;
 				}
 			} else if (cell.op == 'S') /* pass */;
