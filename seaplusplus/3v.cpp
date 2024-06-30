@@ -141,8 +141,8 @@ int main(int argc, char **argv) {
      return 1;
    }
 
-	Integer A = Integer(std::stoi(argv[cur_arg]));
-	Integer B = Integer(std::stoi(argv[cur_arg+1]));
+	Integer A = Integer(std::string(argv[cur_arg]));
+	Integer B = Integer(std::string(argv[cur_arg+1]));
 
 	//----------------------------------
 	//load initial grid:
