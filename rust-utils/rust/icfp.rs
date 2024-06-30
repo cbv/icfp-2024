@@ -173,6 +173,10 @@ pub mod expr {
         b.into_iter().fold(a, |acc, b1| { app(acc, b1) })
     }
 
+    pub fn sapp_spine(a: Expr, b: Vec<Expr>) -> Expr {
+        b.into_iter().fold(a, |acc, b1| { sapp(acc, b1) })
+    }
+
     pub fn ycomb() -> Expr {
         lam("f", app(lam("x", app(vuse("f"), app(vuse("x"), vuse("x")))),
                      lam("x", app(vuse("f"), app(vuse("x"), vuse("x"))))))
@@ -203,23 +207,23 @@ pub mod expr {
                             litnum(1)),
                         vuse("s"),
                         concat(vuse("s"),
-                               app_spine(vuse("r"),
-                                         vec![sub(vuse("n"),
-                                                  litnum(1))]))))))
+                               sapp_spine(vuse("r"),
+                                          vec![sub(vuse("n"),
+                                                   litnum(1))]))))))
     }
 
     pub fn repeatn(n: usize) -> Expr {
         lam("s",
-            app(rec("r",
-                    lam("n",
-                        cond(
-                            equ(vuse("n"),
-                                litnum(1)),
-                            vuse("s"),
-                            concat(vuse("s"),
-                                   app_spine(vuse("r"),
-                                             vec![sub(vuse("n"),
-                                                      litnum(1))]))))),
+            sapp(rec("r",
+                     lam("n",
+                         cond(
+                             equ(vuse("n"),
+                                 litnum(1)),
+                             vuse("s"),
+                             concat(vuse("s"),
+                                    sapp_spine(vuse("r"),
+                                               vec![sub(vuse("n"),
+                                                        litnum(1))]))))),
                 litnum(n as BigInt)))
     }
 
@@ -233,9 +237,9 @@ pub mod expr {
                                     litnum(1)),
                             vuse("s"),
                                 concat(vuse("s"),
-                                       app_spine(vuse("r"),
-                                                 vec![sub(vuse("n"),
-                                                          litnum(1))]))))),
+                                       sapp_spine(vuse("r"),
+                                                  vec![sub(vuse("n"),
+                                                           litnum(1))]))))),
                     litnum(n as BigInt))),
             e)
     }
@@ -248,10 +252,10 @@ pub mod expr {
                         litnum(1)),
                     s.clone(),
                     concat(s.clone(),
-                           app_spine(vuse("r"),
-                                     vec![
-                                         sub(vuse("n"),
-                                             litnum(1))])))))
+                           sapp_spine(vuse("r"),
+                                      vec![
+                                          sub(vuse("n"),
+                                              litnum(1))])))))
     }
 
     pub fn iter() -> Expr {
@@ -263,11 +267,11 @@ pub mod expr {
                             equ(vuse("n"),
                                 litnum(0)),
                             vuse("e"),
-                            app(vuse("f"),
-                                app_spine(vuse("i"),
-                                          vec![sub(vuse("n"),
-                                                   litnum(1)),
-                                               vuse("e")])))))))
+                            sapp(vuse("f"),
+                                sapp_spine(vuse("i"),
+                                           vec![sub(vuse("n"),
+                                                    litnum(1)),
+                                                vuse("e")])))))))
     }
 
     pub fn pair(x1: Expr, x2: Expr) -> Expr {
@@ -277,11 +281,11 @@ pub mod expr {
     }
 
     pub fn fst(x: Expr) -> Expr {
-        app(x, litbool(true))
+        sapp(x, litbool(true))
     }
 
     pub fn snd(x: Expr) -> Expr {
-        app(x, litbool(false))
+        sapp(x, litbool(false))
     }
 }
 

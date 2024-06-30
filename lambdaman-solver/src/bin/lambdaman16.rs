@@ -97,9 +97,9 @@ pub fn main() -> anyhow::Result<()> {
                                                    pair(vuse("d"),
                                                         litstr(""))))))],
                              concat(snd(vuse("b")),
-                                    app_spine(vuse("c"),
-                                              vec![drop(litnum(1), vuse("L")),
-                                                   fst(vuse("b"))])))))));
+                                    sapp_spine(vuse("c"),
+                                               vec![drop(litnum(1), vuse("L")),
+                                                    fst(vuse("b"))])))))));
 /*
     let e = concat(litstr("solve lambdaman16 "),
                    app_spine(
@@ -109,12 +109,12 @@ pub fn main() -> anyhow::Result<()> {
 
 
     let e = concat(litstr("solve lambdaman16 "),
-                   app_spine(
+                   sapp_spine(
                        consume,
                        vec![
-                           app_spine(
+                           sapp_spine(
                                iter(),
-                               vec![rewrite, litnum(5), litstr("A")]),
+                               vec![rewrite, litnum(6), litstr("A")]),
                            litnum(0)]));
 
     println!("{e}");
