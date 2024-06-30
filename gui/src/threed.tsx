@@ -116,12 +116,16 @@ function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDi
   }
 
   if (key.match(/^[-<>^v+*\/%@=#sab0-9.]$/)) {
-    dispatch({ t: 'editChar', char: key }); return true;
+    if (modeState.hoverCell != undefined) {
+      dispatch({ t: 'editChar', char: key }); return true;
+    }
   }
 
   switch (code) {
     case 'Space':
-      dispatch({ t: 'editChar', char: ' ' }); return true;
+      if (modeState.hoverCell != undefined) {
+        dispatch({ t: 'editChar', char: ' ' }); return true;
+      }
 
     case 'Backspace': // fallthrough intentional
     case 'Delete':
