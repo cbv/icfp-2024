@@ -134,6 +134,14 @@ pub mod expr {
         Expr::Binop('.', Box::new(a), Box::new(b))
     }
 
+    pub fn take(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('T', Box::new(a), Box::new(b))
+    }
+
+    pub fn drop(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('D', Box::new(a), Box::new(b))
+    }
+
     pub fn app(a: Expr, b: Expr) -> Expr {
         Expr::Binop('$', Box::new(a), Box::new(b))
     }
