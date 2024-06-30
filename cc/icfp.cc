@@ -659,6 +659,7 @@ Value Evaluation::Eval(std::shared_ptr<Exp> exp) {
 
     } else if (const If *i = std::get_if<If>(exp.get())) {
 
+      #if 0
       return EvalToBool(i->cond, [&](Bool cond) {
         if (cond.b) {
           return Eval(i->t);
@@ -666,6 +667,21 @@ Value Evaluation::Eval(std::shared_ptr<Exp> exp) {
           return Eval(i->f);
         }
       });
+      #else
+
+      Value cond = Eval(i->cond);
+      if (const Bool *b = std::get_if<Bool>(&cond)) {
+        if (b->b) {
+          exp = i->t;
+        } else {
+          exp = i->f;
+        }
+      } else if (const Error *e = std::get_if<Error>(&cond)) {
+        return cond;
+      } else {
+        return Value(Error{.msg = "Expected bool"});
+      }
+      #endif
 
     } else if (const Lambda *l = std::get_if<Lambda>(exp.get())) {
 
