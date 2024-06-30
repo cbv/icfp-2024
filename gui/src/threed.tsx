@@ -54,7 +54,34 @@ export function renderRow(modeState: LocalModeState, row: string[], rowIndex: nu
       return <div className={cname}>{elt}</div>;
     }
 
+    function renderAt() {
+      const program = modeState.curProgram;
+      if (program == undefined) {
+        return divwrap('@');
+      }
+      const sx = program[y][x - 1];
+      const sy = program[y][x + 1];
+      if (sx == '.' || sy == '.') { return divwrap('@'); }
+      const dx = x - parseInt(sx);
+      const dy = y - parseInt(sy);
+      if (isNaN(dx) || isNaN(dy)) { return divwrap('@'); }
+      const canvas_sx = 34 * x + 1 + 16;
+      const canvas_sy = 34 * y + 1 + 16;
+
+      const canvas_dx = 34 * dx + 1 + 16;
+      const canvas_dy = 34 * dy + 1 + 16;
+      return <>
+        {divwrap('@')}
+        <svg style={{ pointerEvents: "none", position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}>
+          <line x1={canvas_sx} y1={canvas_sy} x2={canvas_dx} y2={canvas_dy}
+            stroke="rgba(0,124,240,0.2)" strokeLinecap="round"
+            fill="none" stroke-width="15" />
+        </svg>
+      </>;
+    }
+
     switch (tok) {
+      case '@': return renderAt();
       case '.': return divwrap('', "threed-cell-empty");
       case 'v': return divwrap(arrow(2));
       case '^': return divwrap(arrow(0));

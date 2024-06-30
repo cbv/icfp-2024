@@ -198,9 +198,8 @@ button, .pseudo-button {
   padding: 1em;
 }
 
-table { border-collapse: collapse; }
+table { border-collapse: collapse; position: relative; }
 td {
-  position: relative;
   padding: 1px;
   cursor: pointer;
   user-select: none;
