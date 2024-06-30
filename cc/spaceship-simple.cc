@@ -1,12 +1,8 @@
 
 #include "util.h"
 
-#include <cstdint>
 #include <cstdio>
-#include <optional>
-#include <ostream>
 #include <string>
-#include <string_view>
 #include <unordered_set>
 #include <cstdlib>
 #include <utility>
@@ -20,8 +16,6 @@
 #include "hashing.h"
 #include "periodically.h"
 #include "timer.h"
-#include "image.h"
-#include "color-util.h"
 
 struct Problem {
   static Problem FromFile(const std::string &filename) {
@@ -40,8 +34,7 @@ struct Problem {
   std::vector<std::pair<int, int>> stars;
 
   void PrintInfo() {
-    std::unordered_set<std::pair<int, int>,
-                       Hashing<std::pair<int, int>>>
+    std::unordered_set<std::pair<int, int>, Hashing<std::pair<int, int>>>
       unique;
     IntBounds bounds;
     for (const auto &star : stars) {
@@ -49,111 +42,11 @@ struct Problem {
       bounds.Bound(star);
     }
     fprintf(stderr,
-            AYELLOW("%d") " stars; " ACYAN("%d")
-            " distinct. %d x %d\n",
+            AYELLOW("%d") " stars; " ACYAN("%d") " distinct. %d x %d\n",
             (int)stars.size(), (int)unique.size(),
             (int)bounds.Width(), (int)bounds.Height());
   }
 
-};
-
-static void Draw(const Problem &p,
-                 std::string_view steps,
-                 const std::string &filename) {
-  Bounds bounds;
-  for (const auto &[x, y] : p.stars) {
-    bounds.Bound(x, y);
-  }
-
-  bounds.AddMarginFrac(0.1);
-
-  static constexpr int TARGET_SCALE = 2048;
-
-  int SCALE = 8;
-
-  while (SCALE < TARGET_SCALE &&
-         SCALE < bounds.Width() &&
-         SCALE < bounds.Height()) {
-    SCALE <<= 1;
-  }
-
-  const int WIDTH = SCALE;
-  const int HEIGHT = SCALE;
-
-  ImageRGBA img(WIDTH, HEIGHT);
-  img.Clear32(0x000000FF);
-
-  Bounds::Scaler scaler = bounds.ScaleToFit(WIDTH, HEIGHT, true);
-
-  // Draw the path first.
-  int sx = 0, sy = 0;
-  int dx = 0, dy = 0;
-  int prevx = 0, prevy = 0;
-  for (uint8_t c : steps) {
-    int ax = 0, ay = 0;
-    switch (c) {
-    case '7': case '8': case '9': ay = +1; break;
-    case '4': case '5': case '6': ay = 0; break;
-    case '1': case '2': case '3': ay = -1; break;
-    default:
-      LOG(FATAL) << "bad char " << c;
-    }
-
-    switch (c) {
-    case '7':
-    case '4':
-    case '1':
-      ax = -1;
-      break;
-
-    case '8':
-    case '5':
-    case '2':
-      ax = 0;
-      break;
-
-    case '9':
-    case '6':
-    case '3':
-      ax = +1;
-      break;
-
-    default:
-      LOG(FATAL) << "bad char " << c;
-    }
-
-    uint8_t r = "\x22\x77\xCC"[ax + 1];
-    uint8_t g = "\x22\x77\xCC"[ay + 1];
-    uint8_t b = 0x22;
-
-    dx += ax; dy += ay;
-    sx += dx; sy += dy;
-
-    {
-      const auto &[sprevx, sprevy] = scaler.Scale(prevx, prevy);
-      const auto &[screenx, screeny] = scaler.Scale(sx, sy);
-      img.BlendLine(sprevx, sprevy, screenx, screeny, r, g, b, 0xAA);
-      img.BlendPixel(screenx, screeny, r, g, b, 0xFF);
-    }
-
-    prevx = sx;
-    prevy = sy;
-  }
-
-  // Draw stars on top of the path, so you can see 'em.
-  for (const auto &[x, y] : p.stars) {
-    const auto &[screenx, screeny] = scaler.Scale(x, y);
-    img.BlendFilledCircle32(screenx, screeny, 2, 0xAAAAFFCC);
-  }
-
-  // Scale if small
-  int scaleup = TARGET_SCALE / SCALE;
-  if (scaleup > 1) {
-    img = img.ScaleBy(scaleup);
-  }
-
-  img.Save(filename);
-  fprintf(stderr, "Wrote %s\n", filename.c_str());
 };
 
 struct Unit { };
@@ -167,8 +60,8 @@ struct Solver {
   using Tree = Tree2D<int, Unit>;
   Tree tree;
 
-  std::unordered_set<std::pair<int, int>,
-                     Hashing<std::pair<int, int>>> unique;
+  std::unordered_set<std::pair<int, int>, Hashing<std::pair<int, int>>>
+  unique;
 
   int sx = 0, sy = 0;
   int dx = 0, dy = 0;
@@ -358,12 +251,12 @@ int main(int argc, char **argv) {
 
   int n = argc == 2 ? atoi(argv[1]) : 0;
   CHECK(n > 0 && n < 100) <<
-    "spaceship.exe n\n"
+    "cc/spaceship.exe n\n"
     "... where n is the problem number.\n"
-    "(Run from the cc dir)\n";
+    "(Run from the icfp-2024 dir)\n";
 
   std::string file =
-    StringPrintf("../puzzles/spaceship/spaceship%d.txt", n);
+    StringPrintf("puzzles/spaceship/spaceship%d.txt", n);
 
   Problem p = Problem::FromFile(file);
   CHECK(!p.stars.empty()) << file;
@@ -374,8 +267,6 @@ int main(int argc, char **argv) {
   fprintf(stderr,
           "\nSolved " AYELLOW("%d") " in " AGREEN("%d") " moves.\n",
           n, (int)solver.solution.size());
-
-  Draw(p, solver.solution, StringPrintf("spaceship%d.png", n));
 
   printf("solve spaceship%d %s\n",
          n,

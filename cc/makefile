@@ -8,7 +8,7 @@ UNAME := $(shell uname -o)
 ifeq ($(UNAME),Msys)
   # for 64 bits on windows (msys2).
   # CXXFLAGS=-fsanitize=address -march=native -Wall -Wextra -Wno-unused-parameter -I. -I$(CC_LIB) --std=c++20 -g -O $(FLTO)
-  CXXFLAGS=-fsanitize=address -O -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter -I. -I$(CC_LIB) --std=c++20
+  CXXFLAGS=-O3 -march=native -mtune=native -Wall -Wextra -Wno-unused-parameter -I. -I$(CC_LIB) --std=c++20
 #  LDFLAGS += -lws2_32
   LDFLAGS += -lgmp
   CXXFLAGS += -DBIG_USE_GMP
@@ -30,6 +30,7 @@ else
 endif
 
 CC_LIB_OBJECTS=$(CC_LIB)/util.o $(CC_LIB)/base/logging.o $(CC_LIB)/base/stringprintf.o $(CC_LIB)/ansi.o $(CC_LIB)/bignum/big.o $(CC_LIB)/bignum/bign.o $(CC_LIB)/bignum/bigz.o $(CC_LIB)/bounds.o
+CC_LIB_IMAGE_OBJECTS=$(CC_LIB)/image.o $(CC_LIB)/color-util.o $(CC_LIB)/stb_image.o $(CC_LIB)/stb_image_write.o
 
 %.o : %.cc *.h makefile
 	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
@@ -42,7 +43,7 @@ eval.exe : eval.o icfp.o $(CC_LIB_OBJECTS)
 compress.exe : compress.o icfp.o $(CC_LIB_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
-spaceship.exe : spaceship.o $(CC_LIB_OBJECTS)
+spaceship.exe : spaceship.o $(CC_LIB_OBJECTS) $(CC_LIB_IMAGE_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
 pp.exe : pp.o icfp.o $(CC_LIB_OBJECTS)
@@ -57,7 +58,9 @@ encode.exe : encode.o icfp.o $(CC_LIB_OBJECTS)
 icfp_test.exe : icfp_test.o icfp.o $(CC_LIB_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
-clean :
-	rm -f *.o *.exe $(CC_LIB_OBJECTS)
+lambdaman.exe : lambdaman.o $(CC_LIB_OBJECTS) $(CC_LIB_IMAGE_OBJECTS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
+clean :
+	rm -f *.o *.exe $(CC_LIB_OBJECTS) $(CC_LIB_IMAGE_OBJECTS)
 
