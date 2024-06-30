@@ -24,6 +24,7 @@
 #include "timer.h"
 #include "image.h"
 #include "color-util.h"
+#include "auto-histo.h"
 
 struct Spaceship {
   int x = 0, y = 0;
@@ -179,6 +180,8 @@ struct Solver {
 
   Spaceship ship;
 
+  AutoHisto histo;
+
   int maxdx = 0, maxdy = 0;
 
   // For nonnegative v, d.
@@ -224,10 +227,9 @@ struct Solver {
   }
 
   // Various distances, just used for picking the "closest".
-  static int64_t DistSqEuclidean(int dx, int dy,
-                                 int x0, int y0, int x1, int y1) {
-    int64_t dxx = x1 - x0;
-    int64_t dyy = y1 - y0;
+  static int64_t DistSqEuclidean(const Spaceship &ship, int x1, int y1) {
+    int64_t dxx = x1 - ship.x;
+    int64_t dyy = y1 - ship.y;
     return dxx * dxx + dyy * dyy;
   }
 
@@ -235,12 +237,10 @@ struct Solver {
   // (milliticks) to reach the point by constantly accelerating
   // towards it. This is optimistic because we aren't moving
   // continuously.
-  static int64_t DistConstantAccelSeparate(int dx, int dy,
-                                           int x0, int y0, int x1, int y1) {
-    return std::max(TimeToDist1D(dx, x1 - x0),
-                    TimeToDist1D(dy, y1 - y0)) * 1000.0;
+  static int64_t DistConstantAccelSeparate(const Spaceship &ship, int x1, int y1) {
+    return std::max(TimeToDist1D(ship.dx, x1 - ship.x),
+                    TimeToDist1D(ship.dy, y1 - ship.y)) * 1000.0;
   }
-
 
   // Pick a target node (removing it from the tree).
   std::pair<int, int> GetTarget() {
@@ -251,19 +251,41 @@ struct Solver {
 
     CHECK(!unique.empty());
 
-    std::pair<int, int> star_pos = {0, 0};
-    std::optional<int64_t> best_dist;
+    // Sort everything by the quick metric.
+    std::vector<std::pair<std::pair<int, int>, int64_t>> scored;
+    scored.reserve(unique.size());
+
     for (const auto &star : unique) {
       int64_t dist =
         // DistSqEuclidean
         DistConstantAccelSeparate
-        (ship.dx, ship.dy, ship.x, ship.y, star.first, star.second);
+        (ship, star.first, star.second);
 
+      scored.emplace_back(star, dist);
+    }
+
+    std::sort(scored.begin(), scored.end(),
+              [](const auto &a, const auto &b) {
+                return a.second < b.second;
+              });
+
+    // Now compute the actual path (for the best scoring ones) using
+    // the online planner.
+    static constexpr int MAX_TO_SCORE = 16;
+    if ((int)scored.size() > MAX_TO_SCORE) scored.resize(MAX_TO_SCORE);
+
+    std::pair<int, int> star_pos = {0, 0};
+    std::optional<int64_t> best_dist;
+    for (const auto &[star, quick_dist] : scored) {
+      int64_t dist = DistTo(ship, star);
       if (!best_dist.has_value() || dist < best_dist.value()) {
         best_dist = dist;
         star_pos = {star};
       }
     }
+
+    CHECK(best_dist.has_value());
+    histo.Observe(best_dist.value());
 
     unique.erase(star_pos);
 
@@ -407,8 +429,8 @@ struct Solver {
       int ax = Pedal(ship.dx, star_pos.first - ship.x);
       int ay = Pedal(ship.dy, star_pos.second - ship.y);
 
-      ship.x += ax;
-      ship.y += ay;
+      ship.dx += ax;
+      ship.dy += ay;
 
       ship.x += ship.dx;
       ship.y += ship.dy;
@@ -473,6 +495,9 @@ int main(int argc, char **argv) {
 
   Draw(p, solver.solution,
        StringPrintf("spaceship%d.png", n));
+
+  std::string h = solver.histo.SimpleANSI(32);
+  fprintf(stderr, "Steps between stars:\n%s\n", h.c_str());
 
   printf("solve spaceship%d %s\n",
          n,

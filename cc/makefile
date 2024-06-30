@@ -61,6 +61,9 @@ icfp_test.exe : icfp_test.o icfp.o $(CC_LIB_OBJECTS)
 lambdaman.exe : lambdaman.o $(CC_LIB_OBJECTS) $(CC_LIB_IMAGE_OBJECTS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
 
+take-improvements.exe : take-improvements.o $(CC_LIB_OBJECTS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS)
+
 clean :
 	rm -f *.o *.exe $(CC_LIB_OBJECTS) $(CC_LIB_IMAGE_OBJECTS)
 
