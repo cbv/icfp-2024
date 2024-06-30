@@ -200,6 +200,7 @@ button, .pseudo-button {
 
 table { border-collapse: collapse; }
 td {
+  position: relative;
   padding: 1px;
   cursor: pointer;
   user-select: none;
@@ -213,7 +214,7 @@ td {
   margin: 0px;
   white-space: nowrap;
   overflow: hidden;
-  height: 2em; width: 2em;
+  height: 32px; width: 32px;
   background-color: #ddd;
   text-align: center;
 }
@@ -226,7 +227,7 @@ td {
   margin: 0px;
   white-space: nowrap;
   overflow: hidden;
-  height: 2em; width: 2em;
+  height: 32px; width: 32px;
   background-color: #eee;
   text-align: center;
 }
@@ -239,7 +240,7 @@ td {
   margin: 0px;
   white-space: nowrap;
   overflow: hidden;
-  height: 2em; width: 2em;
+  height: 32px; width: 32px;
   background-color: #ddf;
   text-align: center;
 }
