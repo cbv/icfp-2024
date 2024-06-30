@@ -45,9 +45,9 @@ function produceMs<T extends AppModeState>(state: AppState, ms: T, f: (ms: T) =>
 
 function keyFold(oldVal: string, keycode: string): string {
   if (keycode == ' ') return '.';
-  if (keycode.match(/[a-z]/)) return keycode.toUpperCase();
   if (keycode == '.') return '.';
   if (keycode.match(/[-<>^v+*/%@=#]/)) return keycode;
+  if (keycode.match(/[a-z]/)) return keycode.toUpperCase();
   // at this point keycode match [0-9] I think
   if (oldVal == '0') return keycode;
   if (oldVal == '.') return keycode;
