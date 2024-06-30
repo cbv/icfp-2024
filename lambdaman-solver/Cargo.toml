@@ -42,4 +42,7 @@ name = "lambdaman20"
 name = "lambdaman21"
 
 [[bin]]
+name = "random_walk"
+
+[[bin]]
 name = "print_states"

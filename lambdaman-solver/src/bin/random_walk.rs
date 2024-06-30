@@ -1,10 +1,17 @@
+use anyhow::anyhow;
+
 use icfp::expr::*;
 
 pub fn main() -> anyhow::Result<()> {
-    //oblique square fractal thing
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() != 3 {
+        return Err(anyhow!("usage: {} PROBLEM_NUMBER RANDOM_SEED", args[0]));
+    }
+
+    let problem_num : u64 = args[1].parse().unwrap();
+    let seed : u64 = args[2].parse().unwrap();
 
     // use a linear congruential RNG and do a random walk
-    // (this doesn't actually work on this problem)
     let walk =
         rec("S",
             lam("n",
@@ -31,9 +38,9 @@ pub fn main() -> anyhow::Result<()> {
                                                   litnum(1013904223)),
                                               litnum(0x100000000))]))))));
 
-    let e = concat(litstr("solve lambdaman20 "),
+    let e = concat(litstr(&format!("solve lambdaman{problem_num} ")),
                    app_spine(walk,
-                             vec![litnum(0), litnum(42)]));
+                             vec![litnum(0), litnum(seed)]));
     println!("{e}");
 
     Ok(())
