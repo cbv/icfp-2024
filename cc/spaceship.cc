@@ -9,6 +9,8 @@
 #include <ostream>
 #include <string>
 #include <string_view>
+#include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <cstdlib>
 #include <utility>
@@ -183,6 +185,117 @@ struct Solver {
   AutoHisto histo;
 
   int maxdx = 0, maxdy = 0;
+
+  #if 0
+  // For positive v and d, with v < d. v is the current
+  // velocity and d is the distance we must go. Return
+  // a vector of (v',t), each a pair of a coasting
+  // velocity v' that we could reach by time t ... no!
+  std::vector<std::pair<int, int>> AvailableDivisors(int v, int d) {
+        // Assume we keep accelerating. Do we reach another
+        // divisor before overshooting?
+        for (;;) {
+          if (d % v == 0) return true;
+          if (d <= 0) return false;
+          d -= v;
+          v++;
+        }
+      };
+   #endif
+
+
+  using TableValue = uint8_t;
+  static constexpr TableValue POSSIBLE   = 0b11000000;
+  static constexpr TableValue IMPOSSIBLE = 0b10000000;
+
+  std::optional<std::pair<int, int>> Decode(uint8_t v) {
+    if (v & POSSIBLE) {
+      return {std::make_pair(((v >> 2) & 3) - 1,
+                             (v & 3) - 1)};
+    } else {
+      return std::nullopt;
+    }
+  }
+
+  static constexpr TableValue Encode(int ax, int ay) {
+    // CHECK(ax >= -1 && ax <= 1);
+    // CHECK(ay >= -1 && ay <= 1);
+    // Encoded byte always has high bit set so that we can tell
+    // when we got the default 0.
+    return POSSIBLE | ((ax + 1) << 2) | (ay + 1);
+  }
+
+  // For positive velocities (vx, vy) and
+  // nonnegative distances (dx, dy). Gives the next acceleration
+  // step to reach the distance at the same time. Returns
+  // IMPOSSIBLE if we will definitely overshoot.
+  // PERF: The table is symmetric, so only compute it for like dx<=dy.
+  std::unordered_map<std::tuple<int, int, int, int>,
+                     uint8_t,
+                     Hashing<std::tuple<int, int, int, int>>> table;
+  TableValue Tabled(int vx, int vy, int dx, int dy) {
+    uint8_t &val = table[std::make_tuple(vx, vy, dx, dy)];
+    if (val != 0) return val;
+
+    static constexpr TableValue COAST = Encode(0, 0);
+
+    // Done!
+    if (dx == 0 && dy == 0) return COAST;
+    if (vx == dx && vy == dy) return COAST;
+
+    if (vx < 0 || vy < 0) return IMPOSSIBLE;
+
+    // Make sure we don't loop forever when we don't accelerate and
+    // aren't moving.
+    if (vx == 0 && vy == 0 && dx > 0 && dy > 0) return Encode(1, 1);
+    if (vx == 0 && vy == 0 && dx == 0) return Encode(0, 1);
+    if (vx == 0 && vy == 0 && dy == 0) return Encode(1, 0);
+
+    // Overshooting.
+    if (vx > dx && vy > dy) return IMPOSSIBLE;
+    // PERF: Could have tabled 1D version for these cases.
+    else if (vx > dx) return IMPOSSIBLE;
+    else if (vy > dy) return IMPOSSIBLE;
+
+    // Otherwise, solve recursively.
+
+    std::optional<int> best_vel;
+    uint8_t best_val = IMPOSSIBLE;
+
+    for (int ay : {-1, 0, 1}) {
+      int nvy = vy + ay;
+      for (int ax : {-1, 0, 1}) {
+        // accelerate before moving
+        int nvx = vx + ax;
+
+        int ndx = dx - vx;
+        int ndy = dy - vy;
+
+        // Only if we are moving forward.
+        if (nvx > 0 || nvy > 0) {
+          TableValue nval = Tabled(nvx, nvy, ndx, ndy);
+
+          if (nval != IMPOSSIBLE) {
+            // Always prefer a bigger velocity vector.
+            int vel = nvx * nvx + nvy * nvy;
+            if (!best_vel.has_value() || best_vel.value() < vel) {
+              best_vel = {vel};
+              // We don't actually care what the value is (it tells us
+              // what to do in *that* state). Our best is the encoding
+              // of the acceleration on this step.
+              best_val = Encode(ax, ay);
+            }
+          }
+        }
+      }
+    }
+
+    // Memoize it and return. It might be IMPOSSIBLE; otherwise it
+    // is the step that gives us the highest velocity and still reaches
+    // the position exactly.
+    val = best_val;
+    return best_val;
+  }
 
   // For nonnegative v, d.
   static double TimeToDistNonNeg(double v, double d) {
@@ -414,7 +527,7 @@ struct Solver {
   }
 
   template<class F>
-  static Spaceship PathTo(
+  static Spaceship PathToIndependent(
       Spaceship ship,
       std::pair<int, int> star_pos,
       const F &emit) {
@@ -439,17 +552,162 @@ struct Solver {
     }
   }
 
+  // On one axis, do we want to accelerate, coast, or decelerate?
+  // Assumes dist is nonnegative. Returns only 1, 0, or -1.
+  static std::pair<int, int> PedalPos2D(int vx, int vy, int x, int y) {
+    // Don't mess with it if it's perfect!
+    if (vx == x && vy == y)
+      return {0, 0};
+
+    // Definitely turn around if we're moving in completely the wrong
+    // direction.
+    if (vx < 0 && vy < 0) {
+      return {+1, +1};
+    }
+
+    // We will overshoot, so we should get a head start on
+    // deceleration.
+    if (vx > x && vy > y) {
+      return {-1, -1};
+    }
+
+    // Now if one of them is wrong, we will have to take some time
+    // to turn around. In that time we can accelerate to our destination.
+    // XXX need to make these cases smarter, knowing that turning
+    // around will take some time!
+    if (vx < 0) {
+      return {+1, PedalPos(vy, y)};
+    } else if (vy < 0) {
+      return {PedalPos(vx, x), +1};
+    }
+
+    CHECK(vx >= 0 && vy >= 0);
+
+    // Like above, if we are going to overshoot on one axis, definitely
+    // slow down. On the other axis we can accelerate to our destination.
+    // XXX should make these smarter, also knowing that we will be
+    // overshooting
+    if (vx > x) {
+      return {-1, PedalPos(vy, y)};
+    } else if (vy > y) {
+      return {PedalPos(vx, x), -1};
+    }
+
+    // If we're stopped, since we know we aren't already there,
+    // it must be positive and so we should start moving.
+    if (vx == 0) {
+      return {+1, PedalPos(vy, y)};
+    } else if (vy == 0) {
+      return {PedalPos(vx, x), +1};
+    }
+
+    CHECK(vx > 0 && vy > 0 && vx < x && vy < y);
+
+    // Now we have a nontrivial problem in the case where we are
+    // moving towards the star on both axes. Compute the divisors:
+
+    const int xsteps = x / vx;
+    const int xerr = xsteps * vx - x;
+    const int ysteps = y / vy;
+    const int yerr = ysteps * vy - y;
+
+    // Now figure out how many timesteps it will take us to
+    // go the distance at the current speed.
+
+
+
+    auto StepsToReachNextDivisor = [](int v, int d) {
+        // Assume we keep accelerating. Do we reach another
+        // divisor before overshooting?
+        for (;;) {
+          if (d % v == 0) return true;
+          if (d <= 0) return false;
+          d -= v;
+          v++;
+        }
+      };
+
+    // If err is 0, then we'll at least hit the target without
+    // correction, so we might stay at the current speed.
+    if (err == 0) {
+      // But if we have enough time to get to the next divisor,
+      // we should do that (e.g. 1 divides everything!)
+
+      if (can_reach)
+        return +1;
+
+      return 0;
+    }
+
+    // Otherwise, we can either speed up or slow down to get
+    // in sync. Prefer speeding up if possible, since then
+    // we do things faster.
+    if (can_reach)
+      return +1;
+
+    // We will overshoot at the current speed and can't reach
+    // the next divisor, so slow down. This doesn't guarantee
+    // we slow down enough, but it makes progress on turning
+    // around if we do not!
+    return -1;
+  }
+
+  // As above, but supports any sign of distance.
+  static int Pedal2D(const Spaceship &ship, const std::pair<int, int> &star) {
+    const auto &[star_x, star_y] = star;
+
+    const int distx = star_x - ship.x;
+    const int disty = star_y - ship.y;
+
+    const int signx = distx < 0 ? -1 : 1;
+    const int signy = disty < 0 ? -1 : 1;
+
+    const int dx = ship.dx * signx;
+    const int dy = ship.dy * signy;
+
+    const auto &[ax, ay] = PedalPos2D(dx, dy, signx * distx, signy * disty);
+
+    return std::make_pair(signx * ax, signy * ay);
+  }
+
+  // Like the above, but solve both dimensions at once.
+  template<class F>
+  static Spaceship PathTo2D(
+      Spaceship ship,
+      std::pair<int, int> star_pos,
+      const F &emit) {
+
+    for (;;) {
+      if (ship.x == star_pos.first &&
+          ship.y == star_pos.second) {
+        // We hit the star, so we're done.
+        return ship;
+      }
+
+      const auto &[ax, ay] = Pedal2D(ship, star_pos);
+
+      ship.dx += ax;
+      ship.dy += ay;
+
+      ship.x += ship.dx;
+      ship.y += ship.dy;
+
+      emit(ship, ax, ay);
+    }
+  }
+
+
   // Generate the path to the point, just for the sake of measuring its length.
   int DistTo(Spaceship ship, std::pair<int, int> star_pos) {
     int count = 0;
-    (void)PathTo(ship, star_pos, [&count](auto, auto, auto) { count++; });
+    (void)PathToIndependent(ship, star_pos, [&count](auto, auto, auto) { count++; });
     return count;
   }
 
   // Generate the path to the point, and update the state/solution with it.
   void GoTo(std::pair<int, int> star_pos) {
     ship =
-      PathTo(ship, star_pos, [this](const Spaceship &ship, int ax, int ay) {
+      PathToIndependent(ship, star_pos, [this](const Spaceship &ship, int ax, int ay) {
           if (abs(ship.dx) > maxdx) maxdx = abs(ship.dx);
           if (abs(ship.dy) > maxdy) maxdy = abs(ship.dy);
 
