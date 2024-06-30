@@ -7,10 +7,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
 
-typedef int64_t Integer;
+#include <bignum/big.h>
+#include <bignum/big-overloads.h>
+
+typedef BigInt Integer;
 
 struct Cell {
-	Integer value = 0;
+	Integer value = Integer(0);
 	char op = '\0';
 	Cell() = default;
 	Cell(Integer const &value_) : value(value_) { }
@@ -37,7 +40,7 @@ struct Cell {
 			|| (token.size() == 2 && '0' <= token[0] && token[0] <= '9' && '0' <= token[1] && token[1] <= '9')
 			|| (token.size() == 3 && token[0] == '-' && '0' <= token[1] && token[1] <= '9' && '0' <= token[2] && token[2] <= '9')) {
 			op = '\0';
-			value = std::stoi(token);
+			value = Integer(std::stoi(token));
 		} else {
 			throw std::runtime_error("Invalid grid cell content: '" + token + "'.");
 		}
@@ -49,7 +52,7 @@ struct Cell {
 
 std::string to_string(Cell const &cell) {
 	if (cell.op == '\0') {
-		return std::to_string(cell.value);
+		return to_string(cell.value);
 	} else {
 		assert(cell.value == 0);
 		return std::string(&cell.op, 1);
@@ -139,8 +142,8 @@ int main(int argc, char **argv) {
      return 1;
    }
 
-	Integer A = std::stoi(argv[cur_arg]);
-	Integer B = std::stoi(argv[cur_arg+1]);
+	Integer A = Integer(std::stoi(argv[cur_arg]));
+	Integer B = Integer(std::stoi(argv[cur_arg+1]));
 
 	//----------------------------------
 	//load initial grid:
@@ -323,7 +326,7 @@ int main(int argc, char **argv) {
 				std::optional< Cell > dy = read(at + glm::ivec2(1,0));
 				std::optional< Cell > dt = read(at + glm::ivec2(0,1));
 				if (v && dx && dx->op == '\0' && dy && dy->op == '\0' && dt && dt->op == '\0') {
-					tt_write(dt->value, at + glm::ivec2(-dx->value, -dy->value), *v);
+					tt_write(dt->value.ToInt().value(), at + glm::ivec2(-dx->value.ToInt().value(), -dy->value.ToInt().value()), *v);
 					reduced = true;
 				}
 			} else if (cell.op == 'S') /* pass */;
