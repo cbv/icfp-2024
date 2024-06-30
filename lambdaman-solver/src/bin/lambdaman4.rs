@@ -14,15 +14,9 @@ pub fn main() -> anyhow::Result<()> {
                          litstr(""),
                          // Otherwise do some moves and recurse
                          concat(
-                             let1("x",
-                                  modulus(div(vuse("r"), litnum(0x3fffffff)), litnum(4)),
-                                  cond(equ(litnum(0), vuse("x")),
-                                       litstr("U"),
-                                       cond(equ(litnum(1), vuse("x")),
-                                            litstr("D"),
-                                            cond(equ(litnum(2), vuse("x")),
-                                                 litstr("L"),
-                                                 litstr("R"))))),
+                             take(litnum(1),
+                                  drop(modulus(div(vuse("r"), litnum(0x3fffffff)), litnum(4)),
+                                       litstr("UDLR"))),
                              app_spine(
                                  vuse("S"),
                                  vec![add(vuse("n"), litnum(1)),
