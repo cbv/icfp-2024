@@ -10,20 +10,23 @@ pub fn main() -> anyhow::Result<()> {
             lam("n",
                 lam("r",
                     // have we finished?
-                    cond(equ(vuse("n"), litnum(1000000)),
+                    cond(equ(vuse("n"), litnum(1000)),
                          // done
                          litstr(""),
                          // Otherwise do some moves and recurse
                          concat(
-                             let1("x",
-                                  modulus(div(vuse("r"), litnum(0x0fffffff)), litnum(4)),
+                             let_bind(
+                                 vec![("x",
+                                       modulus(div(vuse("r"), litnum(0x0fffffff)), litnum(4))),
+                                      ("k",
+                                       add(litnum(1), modulus(div(vuse("r"), litnum(0x00ffffff)), litnum(4))))],
                                   cond(equ(litnum(0), vuse("x")),
-                                       litstr("U"),
+                                       app_spine(repeat(), vec![litstr("U"), vuse("k")]),
                                        cond(equ(litnum(1), vuse("x")),
-                                            litstr("D"),
+                                            app_spine(repeat(), vec![litstr("D"), vuse("k")]),
                                             cond(equ(litnum(2), vuse("x")),
-                                                 litstr("L"),
-                                                 litstr("R"))))),
+                                                 app_spine(repeat(), vec![litstr("L"), vuse("k")]),
+                                                 app_spine(repeat(), vec![litstr("R"), vuse("k")]))))),
                              app_spine(
                                  vuse("S"),
                                  vec![add(vuse("n"), litnum(1)),
