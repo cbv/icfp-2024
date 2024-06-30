@@ -99,8 +99,20 @@ static void Crash3() {
                   "UUULUDDDDDDDRDUDUDLRLUR") == 0) << "Got:\n" << s->s;
 }
 
+static void Crash4() {
+  constexpr const char *crash4 = R"(B. S3/,6%},!-"$!-!.VV} B! B! B$ Lf B$ Lx B$ vf B$ vx vx Lx B$ vf B$ vx vx Lc LL Ld ? B= vL S S B! L0 B! Lb B. B! vb F B! B! vc BD I" vL B! vb T ? B= v0 Sk L! ? v! B+ vd I$ S ? B= v0 Si L! ? v! B+ vd I" S ? B= v0 S@ L! ? v! vd B$ Ls B$ B$ Lf B$ Lx B$ vf B$ vx vx Lx B$ vf B$ vx vx Lr Ln ? B= vn I" vs B. vs B! vr B- vn I" I" BT I" BD B% vd I% SL>FO L! ? v! vd S BT I" vL B! B! B! Lf B$ Lf B$ Lx B$ vf B$ vx vx Lx B$ vf B$ vx vx Li Ln Le ? B= vn I! ve B! vf B! B! vi B- vn I" ve B$ Lf B$ Lx B$ vf B$ vx vx Lx B$ vf B$ vx vx LR Ls ? B= vs S S B. B! L0 ? B= v0 S; Si<@k;@;k@<i ? B= v0 S< Sk;@i<@<i@;k v0 BT I" vs B! vR BD I" vs I' S; I!)";
+
+  Value v = Evaluate(crash4);
+  const String *s = std::get_if<String>(&v);
+  CHECK(s != nullptr) << ValueString(v);
+  CHECK(s->s.find("solve lambdaman11 RDLDDRURDRUULURRDRURRDLDRDLLULDDDRURRDL") == 0)
+    << "Got:\n" << s->s;
+}
+
 int main(int argc, char **argv) {
   ANSI::Init();
+
+  Crash4();
 
   Crash3();
 
