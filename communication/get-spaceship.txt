@@ -24,13 +24,13 @@ The following levels are available:
 * [spaceship15] Your score: 75. Best score: 39.
 * [spaceship16] Your score: 2848. Best score: 1373.
 * [spaceship17] Your score: 873. Best score: 408.
-* [spaceship18] Your score: 8822. Best score: 1839.
-* [spaceship19] Your score: 169501. Best score: 11279.
+* [spaceship18] Your score: 5664. Best score: 1839.
+* [spaceship19] Your score: 16783. Best score: 11279.
 * [spaceship20] Your score: 6132. Best score: 2342.
 * [spaceship21] Your score: 37132. Best score: 2376.
 * [spaceship22] Your score: 2453. Best score: 1136.
 * [spaceship23] Your score: 1403498. Best score: 164994.
-* [spaceship24] Best score: 498329.
+* [spaceship24] Your score: 1729270. Best score: 498329.
 * [spaceship25] Your score: 1402238. Best score: 514925.
 
 To submit a solution, send an ICFP expression that evaluates to:
