@@ -44,6 +44,7 @@ function produceMs<T extends AppModeState>(state: AppState, ms: T, f: (ms: T) =>
 }
 
 function keyFold(oldVal: string, keycode: string): string {
+  if (keycode == ' ') return '.';
   if (keycode == 'a') return 'A';
   if (keycode == 'b') return 'B';
   if (keycode == 's') return 'S';
