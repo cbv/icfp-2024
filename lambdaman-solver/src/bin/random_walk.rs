@@ -4,12 +4,15 @@ use icfp::expr::*;
 
 pub fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 3 {
-        return Err(anyhow!("usage: {} PROBLEM_NUMBER RANDOM_SEED", args[0]));
+    if args.len() != 5 {
+        return Err(anyhow!("usage: {} PROBLEM_NUMBER RANDOM_SEED BIAS_STEP ITERS", args[0]));
     }
 
     let problem_num : u64 = args[1].parse().unwrap();
     let seed : u64 = args[2].parse().unwrap();
+    let bias_step : u64 = args[3].parse().unwrap();
+    let iters : u64 = args[4].parse().unwrap();
+
 
     // use a linear congruential RNG and do a random walk
     let walk =
@@ -17,20 +20,24 @@ pub fn main() -> anyhow::Result<()> {
             lam("n",
                 lam("r",
                     // have we finished?
-                    cond(equ(vuse("n"), litnum(1000000)),
+                    cond(equ(vuse("n"), litnum(iters)),
                          // done
                          litstr(""),
                          // Otherwise do some moves and recurse
                          concat(
-                             let1("x",
-                                  modulus(div(vuse("r"), litnum(0x0fffffff)), litnum(4)),
-                                  cond(equ(litnum(0), vuse("x")),
-                                       litstr("U"),
-                                       cond(equ(litnum(1), vuse("x")),
-                                            litstr("D"),
-                                            cond(equ(litnum(2), vuse("x")),
-                                                 litstr("L"),
-                                                 litstr("R"))))),
+                             let_bind(
+                                 vec![
+                                     ("i",
+                                      modulus(div(vuse("r"), litnum(0x0fffffff)), litnum(5))),
+                                     ("j",
+                                      modulus(div(vuse("n"), litnum(bias_step)), litnum(4))),
+                                     ("p",
+                                      take(litnum(5),
+                                           drop(mul(vuse("j"), litnum(5)),
+                                                litstr("UUDLRUDLRRDDLRUUDLLR"))))],
+                                 take(litnum(1),
+                                      drop(vuse("i"),
+                                           vuse("p")))),
                              app_spine(
                                  vuse("S"),
                                  vec![add(vuse("n"), litnum(1)),
