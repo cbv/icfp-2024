@@ -1,7 +1,7 @@
 use icfp::expr::*;
 
 pub fn main() -> anyhow::Result<()> {
-    // tunnels
+    //oblique square fractal thing
 
     // use a linear congruential RNG and do a random walk
     // (this doesn't actually work on this problem)
@@ -31,9 +31,9 @@ pub fn main() -> anyhow::Result<()> {
                                                   litnum(1013904223)),
                                               litnum(0x100000000))]))))));
 
-    let e = concat(litstr("solve lambdaman17 "),
+    let e = concat(litstr("solve lambdaman20 "),
                    app_spine(walk,
-                             vec![litnum(0), litnum(11)]));
+                             vec![litnum(0), litnum(101)]));
     println!("{e}");
 
     Ok(())

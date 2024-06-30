@@ -4,14 +4,14 @@ pub fn main() -> anyhow::Result<()> {
     // big maze
     // man starts in upper left.
 
-    /*
+/*
     // use a linear congruential RNG and do a random walk
     let walk =
         rec("S",
             lam("n",
                 lam("r",
                     // have we finished?
-                    cond(equ(vuse("n"), litnum(100000)),
+                    cond(equ(vuse("n"), litnum(300000)),
                          // done
                          litstr(""),
                          // Otherwise do some moves and recurse
@@ -39,8 +39,7 @@ pub fn main() -> anyhow::Result<()> {
                    sapp_spine(walk,
                              vec![litnum(0), litnum(42)]));
     println!("{e}");
-
-     */
+*/
 
     // Hilbert curve
     // man starts in upper left.
@@ -55,7 +54,7 @@ pub fn main() -> anyhow::Result<()> {
 
         A → +BF−AFA−FB+
         B → −AF+BFB+FA−
-     */
+*/
 
     // a function that does one step of the rewriting.
     let rewrite =
@@ -111,12 +110,6 @@ pub fn main() -> anyhow::Result<()> {
                                     sapp_spine(vuse("c"),
                                                vec![drop(litnum(1), vuse("L")),
                                                     fst(vuse("b"))])))))));
-/*
-    let e = concat(litstr("solve lambdaman16 "),
-                   app_spine(
-                       iter(),
-                       vec![rewrite, litnum(2), litstr("A")]));
-*/
 
 
     let e = concat(litstr("solve lambdaman11 "),
@@ -125,9 +118,9 @@ pub fn main() -> anyhow::Result<()> {
                        vec![
                            sapp_spine(
                                iter(),
-                               vec![rewrite, litnum(5), litstr("A")]),
+                               vec![rewrite, litnum(7), litstr("A")]),
                            litnum(0)]));
-
     println!("{e}");
+
     Ok(())
 }
