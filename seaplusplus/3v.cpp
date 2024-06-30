@@ -33,13 +33,17 @@ struct Cell {
 		else if (token == "S") op = 'S';
 		else if (token == "A") op = 'A';
 		else if (token == "B") op = 'B';
-		else if (
-			(token.size() == 1 && '0' <= token[0] && token[0] <= '9')
-			|| (token.size() == 2 && token[0] == '-' && '0' <= token[1] && token[1] <= '9')
-			|| (token.size() == 2 && '0' <= token[0] && token[0] <= '9' && '0' <= token[1] && token[1] <= '9')
-			|| (token.size() == 3 && token[0] == '-' && '0' <= token[1] && token[1] <= '9' && '0' <= token[2] && token[2] <= '9')) {
+		else if (token.size() >= 1 && (token[0] == '-' || ('0' <= token[0] && token[0] <= '9'))) {
+			for (size_t i = 1; i < token.size(); ++i) {
+				if (!('0' <= token[i] && token[i] <= '9')) {
+					throw std::runtime_error("alphabetic character in numerical constant '" + token + "'.");
+				}
+			}
 			op = '\0';
-			value = Integer(std::stoi(token));
+			value = Integer(token);
+			if (value < -99 || value > 99) {
+				std::cerr << "WARNING: allowing out-of-range numeric literal '" << token << "'." << std::endl;
+			}
 		} else {
 			throw std::runtime_error("Invalid grid cell content: '" + token + "'.");
 		}
@@ -49,9 +53,15 @@ struct Cell {
 	}
 };
 
+bool TRUNCATE_LONG_VALUES = true;
+
 std::string to_string(Cell const &cell) {
 	if (cell.op == '\0') {
-		return cell.value.get_str();
+		std::string str = cell.value.get_str();
+		if (TRUNCATE_LONG_VALUES && str.size() > 10) {
+			str = str.substr(0,3) + ".." + str.substr(str.size()-3);
+		}
+		return str;
 	} else {
 		assert(cell.value == 0);
 		return std::string(&cell.op, 1);
@@ -166,7 +176,11 @@ int main(int argc, char **argv) {
 					//empty cell
 				} else {
 					//make a cell
-					grid.emplace(at, Cell(tok));
+					try {
+						grid.emplace(at, Cell(tok));
+					} catch (std::runtime_error &e) {
+						std::cerr << "Ignoring cell " << at.x << ", " << at.y << ": " << e.what() << std::endl;
+					}
 				}
 				//move to next cell:
 				tok = "";
@@ -376,6 +390,7 @@ int main(int argc, char **argv) {
         }
         else {
           std::cout << "Output Written: " << to_string(*output) << std::endl;
+          std::cerr << "Output Written: " << to_string(*output) << " after " << sim_steps << " steps." << std::endl;
         }
         break;
 		}
@@ -397,6 +412,7 @@ int main(int argc, char **argv) {
         }
         else {
           std::cout << "Output Written (during time travel): " << to_string(*output) << std::endl;
+          std::cerr << "Output Written (during time travel): " << to_string(*output) << std::endl;
         }
         break;
 		}
@@ -406,7 +422,7 @@ int main(int argc, char **argv) {
         std::cout << "," << std::endl;
       }
       else {
-        std::cout << "------ ticks[" << ticks.size() - 1 << "] ------" << std::endl;
+        std::cout << "------ ticks[" << ticks.size() - 1 << "], step " << sim_steps << " ------" << std::endl;
       }
 		dump(ticks.back(), json, ticks.size());
 
