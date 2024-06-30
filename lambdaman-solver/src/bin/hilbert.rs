@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use icfp::expr::*;
 
 pub fn main() -> anyhow::Result<()> {
@@ -6,7 +7,7 @@ pub fn main() -> anyhow::Result<()> {
 
     let args: Vec<String> = std::env::args().collect();
     if args.len() != 3 {
-        eprintln!("usage: {} STEPS_PER_SEGMENT RECURSION_DEPTH", args[0]);
+        return Err(anyhow!("usage: {} STEPS_PER_SEGMENT RECURSION_DEPTH", args[0]));
     }
 
     let steps_per_seg : u64 = args[1].parse().unwrap();
