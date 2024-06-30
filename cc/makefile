@@ -29,7 +29,7 @@ else
   CXXFLAGS += -Wno-missing-field-initializers
 endif
 
-CC_LIB_OBJECTS=$(CC_LIB)/util.o $(CC_LIB)/base/logging.o $(CC_LIB)/base/stringprintf.o $(CC_LIB)/ansi.o $(CC_LIB)/bignum/big.o $(CC_LIB)/bignum/bign.o $(CC_LIB)/bignum/bigz.o $(CC_LIB)/bounds.o
+CC_LIB_OBJECTS=$(CC_LIB)/util.o $(CC_LIB)/base/logging.o $(CC_LIB)/base/stringprintf.o $(CC_LIB)/ansi.o $(CC_LIB)/bignum/big.o $(CC_LIB)/bignum/bign.o $(CC_LIB)/bignum/bigz.o $(CC_LIB)/bounds.o $(CC_LIB)/arcfour.o
 CC_LIB_IMAGE_OBJECTS=$(CC_LIB)/image.o $(CC_LIB)/color-util.o $(CC_LIB)/stb_image.o $(CC_LIB)/stb_image_write.o
 
 %.o : %.cc *.h makefile
