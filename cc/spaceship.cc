@@ -1,6 +1,8 @@
 
 #include "util.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <optional>
@@ -173,6 +175,69 @@ struct Solver {
   int sx = 0, sy = 0;
   int dx = 0, dy = 0;
 
+  int maxdx = 0, maxdy = 0;
+
+  // For nonnegative v, d.
+  static double TimeToDistNonNeg(double v, double d) {
+    CHECK(v >= 0.0);
+    CHECK(d >= 0.0);
+    // t = -v +/- sqrt(v^2 + 2 * a * d)/a
+    // and a=1
+    double s = sqrt(v * v + 2 * d);
+    double t0 = -v + s;
+    double t1 = -v - s;
+
+    CHECK(t0 >= 0.0 || t1 >= 0.0) <<
+      "Maybe d or v is negative? v: " << v << " d: " << d;
+    if (t0 < 0.0) return t1;
+    if (t1 < 0.0) return t0;
+    // Probably impossible?
+    return std::min(t0, t1);
+  }
+
+  static double TimeToDist1D(double v, double d) {
+    // make d nonnegative, by reflecting
+    if (d < 0.0) {
+      d = -d;
+      v = -v;
+    }
+
+    CHECK(d >= 0.0);
+
+    // If we're headed the wrong way, first we need to stop
+    if (v < 0.0) {
+      // How far away (p) do we get when the final velocity (vf) = 0?
+      // p = (vf^2 - v^2) / 2a
+      // p = -v^2 / 2
+      double p = v * v / -2;
+      // p is negative, but we are increasing the dist.
+      double effective_dist = d - p;
+      // PERF: Could specialize this since we know v is 0.
+      return TimeToDistNonNeg(0.0, effective_dist);
+    } else {
+      return TimeToDistNonNeg(v, d);
+    }
+  }
+
+  // Various distances, just used for picking the "closest".
+  static int64_t DistSqEuclidean(int dx, int dy,
+                                 int x0, int y0, int x1, int y1) {
+    int64_t dxx = x1 - x0;
+    int64_t dyy = y1 - y0;
+    return dxx * dxx + dyy * dyy;
+  }
+
+  // Treating each axis separately, find how long it would take us
+  // (milliticks) to reach the point by constantly accelerating
+  // towards it. This is optimistic because we aren't moving
+  // continuously.
+  static int64_t DistConstantAccelSeparate(int dx, int dy,
+                                           int x0, int y0, int x1, int y1) {
+    return std::min(TimeToDist1D(dx, x1 - x0),
+                    TimeToDist1D(dy, y1 - y0)) * 1000.0;
+  }
+
+
   // Pick a target node (removing it from the tree).
   std::pair<int, int> GetTarget() {
     // Just using the closest for now. But really
@@ -183,13 +248,15 @@ struct Solver {
     CHECK(!unique.empty());
 
     std::pair<int, int> star_pos = {0, 0};
-    std::optional<int64_t> best_sqdist;
+    std::optional<int64_t> best_dist;
     for (const auto &star : unique) {
-      int64_t dxx = star.first - sx;
-      int64_t dyy = star.second - sy;
-      int64_t sqdist = dxx * dxx + dyy * dyy;
-      if (!best_sqdist.has_value() || sqdist < best_sqdist.value()) {
-        best_sqdist = sqdist;
+      int64_t dist =
+        // DistSqEuclidean
+        DistConstantAccelSeparate
+        (dx, dy, sx, sy, star.first, star.second);
+
+      if (!best_dist.has_value() || dist < best_dist.value()) {
+        best_dist = dist;
         star_pos = {star};
       }
     }
@@ -334,6 +401,9 @@ struct Solver {
       dx += ax;
       dy += ay;
 
+      if (abs(dx) > maxdx) maxdx = abs(dx);
+      if (abs(dy) > maxdy) maxdy = abs(dy);
+
       sx += dx;
       sy += dy;
 
@@ -372,10 +442,13 @@ int main(int argc, char **argv) {
   Solver solver(p);
   solver.Solve();
   fprintf(stderr,
-          "\nSolved " AYELLOW("%d") " in " AGREEN("%d") " moves.\n",
-          n, (int)solver.solution.size());
+          "\nSolved " AYELLOW("%d") " in " AGREEN("%d") " moves. Max velocity: ["
+          ACYAN("%d") "," ACYAN("%d") "]\n",
+          n, (int)solver.solution.size(),
+          solver.maxdx, solver.maxdy);
 
-  Draw(p, solver.solution, StringPrintf("spaceship%d.png", n));
+  Draw(p, solver.solution,
+       StringPrintf("spaceship%d.png", n));
 
   printf("solve spaceship%d %s\n",
          n,
