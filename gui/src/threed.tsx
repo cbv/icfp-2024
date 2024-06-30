@@ -120,7 +120,7 @@ function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDi
     return true;
   }
 
-  if (mods.match(/C/) && code == 'KeyV') {
+  if (mods.match(/C/) && code == 'KeyV' && modeState.selection != undefined) {
     dispatch({ t: 'paste' });
     return true;
   }
@@ -130,7 +130,7 @@ function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDi
     return true;
   }
 
-  if (key.match(/^[-<>^v+*\/%@=#a-z0-9.]$/)) {
+  if (mods == '' && key.match(/^[-<>^v+*\/%@=#a-z0-9.]$/)) {
     if (modeState.hoverCell != undefined) {
       dispatch({ t: 'editChar', char: key }); return true;
     }
