@@ -1,7 +1,7 @@
 use icfp::expr::*;
 
 pub fn main() -> anyhow::Result<()> {
-    // 21 x 21 maze
+    // small pacman board
     // use a linear congruential RNG and do a random walk
 
      let walk =
