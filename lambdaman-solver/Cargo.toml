@@ -16,6 +16,8 @@ name = "lambdaman5"
 [[bin]]
 name = "lambdaman6"
 
+[[bin]]
+name = "lambdaman7"
 
 [[bin]]
 name = "lambdaman8"
