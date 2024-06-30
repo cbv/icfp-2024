@@ -231,6 +231,23 @@ pub mod expr {
                                          sub(vuse("n"),
                                              litnum(1))])))))
     }
+
+    pub fn iter() -> Expr {
+        lam("f",
+            rec("i",
+                lam("n",
+                    lam("e",
+                        cond(
+                            equ(vuse("n"),
+                                litnum(0)),
+                            vuse("e"),
+                            app(vuse("f"),
+                                app_spine(vuse("i"),
+                                          vec![sub(vuse("n"),
+                                                   litnum(1)),
+                                               vuse("e")])))))))
+    }
+
 }
 
 #[test]

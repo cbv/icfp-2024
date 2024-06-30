@@ -35,8 +35,10 @@ pub fn main() -> anyhow::Result<()> {
                          app(vuse("R"), drop(litnum(1), vuse("s")))))));
 
     let e = concat(litstr("solve lambdaman16 "),
-                   app(rewrite,
-                       litstr("A")));
+                   app_spine(
+                       iter(),
+                       vec![rewrite, litnum(1), litstr("A")]));
+
     println!("{e}");
     Ok(())
 }
