@@ -11,6 +11,9 @@ icfp = { path = "../rust-utils/", version = "*" }
 name = "lambdaman4"
 
 [[bin]]
+name = "lambdaman5"
+
+[[bin]]
 name = "lambdaman6"
 
 
