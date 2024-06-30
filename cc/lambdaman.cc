@@ -12,6 +12,10 @@
 #include "ansi.h"
 #include "image.h"
 #include "color-util.h"
+#include "arcfour.h"
+#include "randutil.h"
+
+#define JITTER 1
 
 static constexpr ColorUtil::Gradient RAINBOW{
   GradRGB(0.0f, 0x440000),
@@ -53,6 +57,15 @@ struct Board {
                  const std::string &sol = "") {
     ImageRGBA img(width * scale, height * scale);
     img.Clear32(0x111122FF);
+
+    #if JITTER
+    ArcFour rc("jitter");
+    auto Jitter = [&rc, scale]() {
+        return RandTo(&rc, scale - 2) - ((scale - 1) / 2);
+      };
+    #else
+    auto Jitter = []() { return 0; }
+    #endif
 
     // Play the solution, which also gives me the (simple) path.
     const int startx = lx, starty = ly;
@@ -100,7 +113,8 @@ struct Board {
     // Now draw path.
     double denom = simple_sol.size();
     int cx = startx, cy = starty;
-    int ox = cx, oy = cy;
+    int ox = cx * scale + (scale / 2);
+    int oy = cy * scale + (scale / 2);
     for (int i = 0; i < (int)simple_sol.size(); i++) {
       const uint8_t c = simple_sol[i];
       int dx = 0, dy = 0;
@@ -120,13 +134,13 @@ struct Board {
       // TODO: jitter?
       cx += dx;
       cy += dy;
-      img.BlendLine32(ox * scale + (scale / 2),
-                      oy * scale + (scale / 2),
-                      cx * scale + (scale / 2),
-                      cy * scale + (scale / 2),
+
+      int nx = cx * scale + (scale / 2) + Jitter();
+      int ny = cy * scale + (scale / 2) + Jitter();
+      img.BlendLine32(ox, oy, nx, ny,
                       color & 0xFFFFFF99);
-      ox = cx;
-      oy = cy;
+      ox = nx;
+      oy = ny;
     }
 
     img.Save(filename);
