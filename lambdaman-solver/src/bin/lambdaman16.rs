@@ -78,7 +78,7 @@ pub fn main() -> anyhow::Result<()> {
                        vec![
                            app_spine(
                                iter(),
-                               vec![rewrite, litnum(2), litstr("A")]),
+                               vec![rewrite, litnum(4), litstr("A")]),
                            litnum(0)]));
 
     println!("{e}");
