@@ -25,16 +25,14 @@ pub fn main() -> anyhow::Result<()> {
                         lam("s",
                             concat(
                                 sapp_spine(
-                                    repeat(),
-                                    vec![take(litnum(1), vuse("s")),
-                                         vuse("n")]),
+                                    repeat_of(take(litnum(1), vuse("s"))),
+                                    vec![vuse("n")]),
                                 concat(
                                     sapp(vuse("f"),
                                          div(vuse("n"), litnum(2))),
                                     sapp_spine(
-                                        repeat(),
-                                        vec![drop(litnum(1), vuse("s")),
-                                             vuse("n")])))),
+                                        repeat_of(drop(litnum(1), vuse("s"))),
+                                        vec![vuse("n")])))),
                         concat(
                             sapp(vuse("g"), litstr("UD")),
                             concat(
