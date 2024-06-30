@@ -63,6 +63,7 @@ pub fn main() -> anyhow::Result<()> {
     if !state.is_done() {
         eprintln!("did not complete the puzzle!");
     }
+    println!("{state}");
 
     Ok(())
 }

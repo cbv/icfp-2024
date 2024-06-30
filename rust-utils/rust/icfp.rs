@@ -218,6 +218,23 @@ pub mod expr {
                 litnum(n as BigInt)))
     }
 
+    pub fn repeatna(n: usize, e: Expr) -> Expr {
+        app(
+            lam("s",
+                app(rec("r",
+                        lam("n",
+                            cond(
+                                equ(vuse("n"),
+                                    litnum(1)),
+                            vuse("s"),
+                                concat(vuse("s"),
+                                       app_spine(vuse("r"),
+                                                 vec![sub(vuse("n"),
+                                                          litnum(1))]))))),
+                    litnum(n as BigInt))),
+            e)
+    }
+
     pub fn repeat_of(s : Expr) -> Expr {
         rec("r",
             lam("n",
@@ -248,6 +265,19 @@ pub mod expr {
                                                vuse("e")])))))))
     }
 
+    pub fn pair(x1: Expr, x2: Expr) -> Expr {
+        // TODO choose a variable name that does not appear
+        // in x1 or x2. As is, this can cause unwanted capture.
+        lam("!", cond(vuse("!"), x1, x2))
+    }
+
+    pub fn fst(x: Expr) -> Expr {
+        app(x, litbool(true))
+    }
+
+    pub fn snd(x: Expr) -> Expr {
+        app(x, litbool(false))
+    }
 }
 
 #[test]
