@@ -233,7 +233,7 @@ struct Solver {
   // continuously.
   static int64_t DistConstantAccelSeparate(int dx, int dy,
                                            int x0, int y0, int x1, int y1) {
-    return std::min(TimeToDist1D(dx, x1 - x0),
+    return std::max(TimeToDist1D(dx, x1 - x0),
                     TimeToDist1D(dy, y1 - y0)) * 1000.0;
   }
 
