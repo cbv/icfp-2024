@@ -1,6 +1,7 @@
 import { Dispatch } from "./action";
 import { decodeString, encodeString } from "./codec";
-import { AppState } from "./state";
+import { AppState, ThreedProgram } from "./state";
+import { unparseThreedProgram } from "./threed-util";
 import { EvalThreedRpc } from "./types";
 
 export type Effect =
@@ -8,7 +9,7 @@ export type Effect =
   | { t: 'sendText', text: string }
   | { t: 'evalText', text: string }
   | { t: 'setHash', hash: string }
-  | { t: 'evalThreed', a: number, b: number, text: string }
+  | { t: 'evalThreed', a: number, b: number, program: ThreedProgram }
   ;
 
 export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): void {
@@ -46,7 +47,8 @@ export function doEffect(state: AppState, dispatch: Dispatch, effect: Effect): v
       })();
     } break;
     case 'evalThreed': {
-      const rpc: EvalThreedRpc = { program: effect.text, a: effect.a, b: effect.b };
+      localStorage['recover'] = JSON.stringify(effect.program);
+      const rpc: EvalThreedRpc = { program: unparseThreedProgram(effect.program), a: effect.a, b: effect.b };
       (async () => {
         const preq = new Request("/api/eval-threed", {
           method: 'POST',

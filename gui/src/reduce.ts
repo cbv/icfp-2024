@@ -304,6 +304,18 @@ function reduceThreed(state: AppState, ms: AppModeState & { t: 'threed' }, actio
         s.selection = undefined;
       });
     }
+    case 'recover': {
+      if (localStorage['recover']) {
+        const program: string[][] = JSON.parse(localStorage['recover']);
+        return produceMs(state, ms, s => {
+          s.curProgram = program;
+          s.selection = undefined;
+        });
+      }
+      else {
+        return state;
+      }
+    }
   }
 }
 

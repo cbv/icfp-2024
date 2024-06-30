@@ -22,6 +22,7 @@ export type ThreedAction =
   | { t: 'paste' }
   | { t: 'clear' }
   | { t: 'crop' }
+  | { t: 'recover' }
   ;
 
 export type Action =

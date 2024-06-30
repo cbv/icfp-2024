@@ -41,6 +41,16 @@ export function renderRow(modeState: LocalModeState, row: string[], rowIndex: nu
       if (isHighlighted(modeState, { x, y })) {
         cname = "threed-cell-hilite";
       }
+      if (typeof elt == 'string' && elt.length > 4) {
+        elt = <abbr title={elt} style={{ fontSize: '0.5em' }}>{elt}</abbr>;
+      }
+      if (typeof elt == 'string' && elt.length > 3) {
+        elt = <span style={{ fontSize: '0.5em' }}>{elt}</span>;
+      }
+      else if (typeof elt == 'string' && elt.length > 2) {
+        elt = <span style={{ fontSize: '0.75em' }}>{elt}</span>;
+      }
+
       return <div className={cname}>{elt}</div>;
     }
 
@@ -214,7 +224,7 @@ export function RenderThreed(props: { state: AppState, modeState: LocalModeState
     if (isNaN(a)) { alert(`bad value for a: ${modeState.a}`); return }
     let b = parseInt(modeState.b);
     if (isNaN(b)) { alert(`bad value for b: ${modeState.b}`); return }
-    dispatch({ t: 'doEffect', effect: { t: 'evalThreed', text: unparseThreedProgram(program!), a, b } })
+    dispatch({ t: 'doEffect', effect: { t: 'evalThreed', program: program!, a, b } })
   };
 
   function runApparatus(): JSX.Element {
@@ -229,16 +239,15 @@ export function RenderThreed(props: { state: AppState, modeState: LocalModeState
       }
     }
     return <>
-      <button onClick={() => {
-        ldis({ t: 'crop' });
-      }}>Crop</button>
+      <button onClick={() => { ldis({ t: 'recover' }); }}>Recover</button>
+      <button onClick={() => { ldis({ t: 'crop' }); }}>Crop</button>
       <button onClick={() => {
         navigator.clipboard.writeText(unparseThreedProgram(modeState.curProgram!));
         alert("copied whole program to clipboard");
       }}>Copy Program</button>
       <button onClick={() => ldis({ t: 'expandProgram' })}>Expand</button>
-      <b style={{ color: 'white' }}>A</b><input onChange={onChange('a')} className="entry" value={modeState.a} size={2}></input>
-      <b style={{ color: 'white' }}>B</b><input onChange={onChange('b')} className="entry" value={modeState.b} size={2}></input>
+      <b style={{ color: 'white' }}>A</b><input onChange={onChange('a')} className="entry" value={modeState.a} size={4}></input>
+      <b style={{ color: 'white' }}>B</b><input onChange={onChange('b')} className="entry" value={modeState.b} size={4}></input>
       <button onClick={runProgram}>Run</button>
     </>;
   }
