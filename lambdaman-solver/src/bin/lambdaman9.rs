@@ -2,30 +2,31 @@ use icfp::expr::*;
 
 pub fn main() -> anyhow::Result<()> {
     // 50 x 50 grid with all empties. Start in upper left.
+    // use a linear congruential RNG and do a random walk
 
-    let zag = let_bind(
-        vec![("R", repeatn(50))],
+     let walk =
         rec("S",
             lam("n",
-                // have we finished?
-                cond(equ(vuse("n"), litnum(25)),
-                     // done
-                     litstr(""),
-                     // Otherwise do some moves and recurse
-                     concat(
+                lam("r",
+                    // have we finished?
+                    cond(equ(vuse("n"), litnum(92000)),
+                         // done
+                         litstr(""),
+                         // Otherwise do some moves and recurse
                          concat(
-                             concat(
-                                 app_spine(vuse("R"), vec![litstr("R")]),
-                                 litstr("D")),
-                             concat(
-                                 app_spine(vuse("R"), vec![litstr("L")]),
-                                 litstr("D"))),
-                         app(vuse("S"), add(vuse("n"), litnum(1))))))));
+                             take(litnum(1),
+                                  drop(modulus(div(vuse("r"), litnum(0x3fffffff)), litnum(4)),
+                                       litstr("UDLR"))),
+                             app_spine(
+                                 vuse("S"),
+                                 vec![add(vuse("n"), litnum(1)),
+                                      modulus(add(mul(vuse("r"), litnum(1664525)),
+                                                  litnum(1013904223)),
+                                              litnum(0x100000000))]))))));
 
-    let e =
-        concat(
-            litstr("solve lambdaman9 "),
-            app(zag, litnum(0)));
+    let e = concat(litstr("solve lambdaman9 "),
+                   app_spine(walk,
+                             vec![litnum(0), litnum(11)]));
     println!("{e}");
     Ok(())
 }
