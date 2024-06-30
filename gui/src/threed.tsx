@@ -63,7 +63,12 @@ export function renderRow(modeState: LocalModeState, row: string[], rowIndex: nu
       case 'S': return divwrap(<div className="S-chip">S</div>);
       case 'A': return divwrap(<div className="A-chip">A</div>);
       case 'B': return divwrap(<div className="B-chip">B</div>);
-      default: return divwrap(tok);
+      default: if (tok.match(/[A-Z]/)) {
+        return divwrap(<div className="other-chip">{tok}</div>);
+      }
+      else {
+        return divwrap(tok);
+      }
     }
   }
   return <tr>{row.map((tok, x) => <td
@@ -125,7 +130,7 @@ function handleKey(state: AppState, modeState: LocalModeState, dispatch: LocalDi
     return true;
   }
 
-  if (key.match(/^[-<>^v+*\/%@=#sab0-9.]$/)) {
+  if (key.match(/^[-<>^v+*\/%@=#a-z0-9.]$/)) {
     if (modeState.hoverCell != undefined) {
       dispatch({ t: 'editChar', char: key }); return true;
     }

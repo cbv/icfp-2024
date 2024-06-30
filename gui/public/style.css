@@ -274,6 +274,16 @@ td {
   border-radius: 0.75em;
 }
 
+.other-chip {
+  font-family: helvetica;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: white;
+  background-color: #00933c;
+  padding: 0.2em 0.35em 0.0em 0.35em;
+  border-radius: 0.75em;
+}
+
 .vert-stack {
   display: flex;
   flex-direction: column;
