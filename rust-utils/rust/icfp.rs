@@ -146,6 +146,11 @@ pub mod expr {
         Expr::Binop('$', Box::new(a), Box::new(b))
     }
 
+    /// strict application
+    pub fn sapp(a: Expr, b: Expr) -> Expr {
+        Expr::Binop('!', Box::new(a), Box::new(b))
+    }
+
     pub fn equ(a: Expr, b: Expr) -> Expr {
         Expr::Binop('=', Box::new(a), Box::new(b))
     }
@@ -178,13 +183,13 @@ pub mod expr {
     }
 
     pub fn let1(x: &str, val: Expr, body: Expr) -> Expr {
-        app(lam(x, body), val)
+        sapp(lam(x, body), val)
     }
 
     pub fn let_bind(mut bindings: Vec<(&str, Expr)>, mut body: Expr) -> Expr {
         bindings.reverse();
         for (v, b) in bindings {
-            body = app(lam(v, body), b)
+            body = sapp(lam(v, body), b)
         }
         body
     }

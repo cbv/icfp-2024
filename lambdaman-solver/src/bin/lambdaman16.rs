@@ -61,7 +61,7 @@ pub fn main() -> anyhow::Result<()> {
                                  cond(equ(vuse("0"), litstr("B")),
                                       litstr("-AF+BFB+FA-"),
                                       vuse("0")))),
-                         app(vuse("R"), drop(litnum(1), vuse("s")))))));
+                         sapp(vuse("R"), drop(litnum(1), vuse("s")))))));
 
     // function that consumes the L-system string and produces
     // a string of "UDLR" actions.
@@ -114,7 +114,7 @@ pub fn main() -> anyhow::Result<()> {
                        vec![
                            app_spine(
                                iter(),
-                               vec![rewrite, litnum(4), litstr("A")]),
+                               vec![rewrite, litnum(5), litstr("A")]),
                            litnum(0)]));
 
     println!("{e}");
