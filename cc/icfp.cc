@@ -965,6 +965,7 @@ std::string PrettyExp(const Exp *exp) {
     return PrettyVar(v->v);
 
   } else if (const Memo *m = std::get_if<Memo>(exp)) {
+    (void)m;
     return "(memo cell)";
 
   }
