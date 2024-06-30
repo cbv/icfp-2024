@@ -89,8 +89,20 @@ static void Crash2() {
   CHECK(s->s == "B") << "Got:\n" << s->s;
 }
 
+static void Crash3() {
+  constexpr const char *crash3 = R"(B. S3/,6%},!-"$!-!.VU} B$ B$ B$ Lf B$ Lx B$ vf B$ vx vx Lx B$ vf B$ vx vx LS Ln Lr ? B= vn I,>o S B. B$ Lx ? B= I! vx SO ? B= I" vx S> ? B= I# vx SF SL B% B/ vr I'sDO` I% B$ B$ vS B+ vn I" B% B+ B* vr I#!Dd I-}c|. IX""|J I! I!)";
+
+  Value v = Evaluate(crash3);
+  const String *s = std::get_if<String>(&v);
+  CHECK(s != nullptr) << ValueString(v);
+  CHECK(s->s.find("solve lambdaman10 UDLUDRDRDLDUUULRRLLRRDRUUDRU"
+                  "UUULUDDDDDDDRDUDUDLRLUR") == 0) << "Got:\n" << s->s;
+}
+
 int main(int argc, char **argv) {
   ANSI::Init();
+
+  Crash3();
 
   Crash2();
 
