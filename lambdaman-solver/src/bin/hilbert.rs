@@ -2,16 +2,18 @@ use anyhow::anyhow;
 use icfp::expr::*;
 
 pub fn main() -> anyhow::Result<()> {
-    // two args: 1. number of steps per segment
-    //           2. depth of recursion
+    // three args: 1. problem number
+    //             2. number of steps per segment
+    //             3. depth of recursion
 
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 3 {
-        return Err(anyhow!("usage: {} STEPS_PER_SEGMENT RECURSION_DEPTH", args[0]));
+    if args.len() != 4 {
+        return Err(anyhow!("usage: {} PROBLEM NUMBER STEPS_PER_SEGMENT RECURSION_DEPTH", args[0]));
     }
 
-    let steps_per_seg : u64 = args[1].parse().unwrap();
-    let depth : u64 = args[2].parse().unwrap();
+    let problem_num : u64 = args[1].parse().unwrap();
+    let steps_per_seg : u64 = args[2].parse().unwrap();
+    let depth : u64 = args[3].parse().unwrap();
 
     // Hilbert curve
     // man starts in upper left.
@@ -90,7 +92,7 @@ pub fn main() -> anyhow::Result<()> {
 */
 
 
-    let e = concat(litstr("solve lambdamanXX "),
+    let e = concat(litstr(&format!("solve lambdaman{problem_num} ")),
                    sapp_spine(
                        consume,
                        vec![
