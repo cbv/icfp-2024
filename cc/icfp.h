@@ -2,7 +2,6 @@
 #ifndef ICFP_H_
 #define ICFP_H_
 
-#include <cassert>
 #include <cstdint>
 #include <string>
 #include <unordered_map>

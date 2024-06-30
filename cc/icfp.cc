@@ -677,6 +677,7 @@ Value Evaluation::Eval(std::shared_ptr<Exp> exp) {
           exp = i->f;
         }
       } else if (const Error *e = std::get_if<Error>(&cond)) {
+        (void)e;
         return cond;
       } else {
         return Value(Error{.msg = "Expected bool"});
