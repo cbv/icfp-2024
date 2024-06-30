@@ -5,6 +5,8 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <numbers>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -12,21 +14,20 @@
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
-#include <cstdlib>
 #include <utility>
 #include <vector>
 
 #include "ansi.h"
+#include "auto-histo.h"
 #include "base/logging.h"
 #include "base/stringprintf.h"
 #include "bounds.h"
+#include "color-util.h"
 #include "geom/tree-2d.h"
 #include "hashing.h"
+#include "image.h"
 #include "periodically.h"
 #include "timer.h"
-#include "image.h"
-#include "color-util.h"
-#include "auto-histo.h"
 
 struct Spaceship {
   int x = 0, y = 0;
@@ -54,6 +55,7 @@ struct Problem {
                        Hashing<std::pair<int, int>>>
       unique;
     IntBounds bounds;
+    bounds.Bound(0, 0);
     for (const auto &star : stars) {
       unique.insert(star);
       bounds.Bound(star);
@@ -71,6 +73,7 @@ static void Draw(const Problem &p,
                  std::string_view steps,
                  const std::string &filename) {
   Bounds bounds;
+  bounds.Bound(0.0, 0.0);
   for (const auto &[x, y] : p.stars) {
     bounds.Bound(x, y);
   }
@@ -132,9 +135,15 @@ static void Draw(const Problem &p,
       LOG(FATAL) << "bad char " << c;
     }
 
-    uint8_t r = "\x22\x77\xCC"[ax + 1];
-    uint8_t g = "\x22\x77\xCC"[ay + 1];
-    uint8_t b = 0x22;
+    float angle = (atan2(ay, ax) + std::numbers::pi) / (2.0 * std::numbers::pi);
+
+    uint32_t color = (ax == 0 && ay == 0) ?
+      0x888888AA :
+      ColorUtil::HSVAToRGBA32(angle, 1.0, 1.0, 0.8);
+
+    // uint8_t r = "\x22\x77\xCC"[ax + 1];
+    // uint8_t g = "\x22\x77\xCC"[ay + 1];
+    // uint8_t b = 0x55;
 
     ship.dx += ax; ship.dy += ay;
     ship.x += ship.dx; ship.y += ship.dy;
@@ -142,8 +151,8 @@ static void Draw(const Problem &p,
     {
       const auto &[sprevx, sprevy] = scaler.Scale(prevx, prevy);
       const auto &[screenx, screeny] = scaler.Scale(ship.x, ship.y);
-      img.BlendLine(sprevx, sprevy, screenx, screeny, r, g, b, 0xAA);
-      img.BlendPixel(screenx, screeny, r, g, b, 0xFF);
+      img.BlendLine32(sprevx, sprevy, screenx, screeny, color);
+      img.BlendPixel32(screenx, screeny, color | 0xFF);
     }
 
     prevx = ship.x;
@@ -225,17 +234,49 @@ struct Solver {
     return POSSIBLE | ((ax + 1) << 2) | (ay + 1);
   }
 
+  int64_t table_calls = 0, table_hits = 0;
+  std::unordered_map<std::tuple<int, int, int, int>,
+                     uint8_t,
+                     Hashing<std::tuple<int, int, int, int>>> table;
+
   // For positive velocities (vx, vy) and
   // nonnegative distances (dx, dy). Gives the next acceleration
   // step to reach the distance at the same time. Returns
   // IMPOSSIBLE if we will definitely overshoot.
-  // PERF: The table is symmetric, so only compute it for like dx<=dy.
-  std::unordered_map<std::tuple<int, int, int, int>,
-                     uint8_t,
-                     Hashing<std::tuple<int, int, int, int>>> table;
   TableValue Tabled(int vx, int vy, int dx, int dy) {
+    // Since the table is symmetric, we only compute it for dx<=dy.
+    if (dx <= dy) {
+      return NormalTabled(vx, vy, dx, dy);
+    } else {
+      TableValue swap_val = NormalTabled(vy, vx, dy, dx);
+      auto ao = Decode(swap_val);
+      if (ao.has_value()) {
+        const auto &[ax, ay] = ao.value();
+        return Encode(ay, ax);
+      } else {
+        return IMPOSSIBLE;
+      }
+    }
+  }
+
+  TableValue NormalTabled(int vx, int vy, int dx, int dy) {
+    CHECK(dx <= dy) << "precondition";
+
+    table_calls++;
+
+    if (!(table_calls & 0xFFFFFF)) {
+      fprintf(stderr, "Calls %lld, size %lld, hits %lld [%d %d %d %d]\n",
+              table_calls,
+              (int64_t)table.size(),
+              table_hits,
+              vx, vy, dx, dy);
+    }
+
     uint8_t &val = table[std::make_tuple(vx, vy, dx, dy)];
-    if (val != 0) return val;
+    if (val != 0) {
+      table_hits++;
+      return val;
+    }
 
     static constexpr TableValue COAST = Encode(0, 0);
 
@@ -554,7 +595,7 @@ struct Solver {
 
   // On one axis, do we want to accelerate, coast, or decelerate?
   // Assumes dist is nonnegative. Returns only 1, 0, or -1.
-  static std::pair<int, int> PedalPos2D(int vx, int vy, int x, int y) {
+  std::pair<int, int> PedalPos2D(int vx, int vy, int x, int y) {
     // Don't mess with it if it's perfect!
     if (vx == x && vy == y)
       return {0, 0};
@@ -601,59 +642,30 @@ struct Solver {
       return {PedalPos(vx, x), +1};
     }
 
-    CHECK(vx > 0 && vy > 0 && vx < x && vy < y);
+    CHECK(vx > 0 && vy > 0 && vx <= x && vy <= y) <<
+      StringPrintf("vx %d vy %d   x %d y %d\n", vx, vy, x, y);
 
     // Now we have a nontrivial problem in the case where we are
-    // moving towards the star on both axes. Compute the divisors:
-
-    const int xsteps = x / vx;
-    const int xerr = xsteps * vx - x;
-    const int ysteps = y / vy;
-    const int yerr = ysteps * vy - y;
-
-    // Now figure out how many timesteps it will take us to
-    // go the distance at the current speed.
-
-
-
-    auto StepsToReachNextDivisor = [](int v, int d) {
-        // Assume we keep accelerating. Do we reach another
-        // divisor before overshooting?
-        for (;;) {
-          if (d % v == 0) return true;
-          if (d <= 0) return false;
-          d -= v;
-          v++;
-        }
-      };
-
-    // If err is 0, then we'll at least hit the target without
-    // correction, so we might stay at the current speed.
-    if (err == 0) {
-      // But if we have enough time to get to the next divisor,
-      // we should do that (e.g. 1 divides everything!)
-
-      if (can_reach)
-        return +1;
-
-      return 0;
+    // moving towards the star on both axes. Use the tabled
+    // solution for this:
+    TableValue val = Tabled(vx, vy, x, y);
+    const auto ao = Decode(val);
+    if (ao.has_value()) {
+      return ao.value();
+    } else {
+      // Slow down. We know there is always a solution by moving (1,0) and (0,1).
+      CHECK(x >= 0 && y >= 0 &&
+            vx >= 0 && vy >= 0) << "Established above";
+      int ax = 0;
+      int ay = 0;
+      if (vx > 1) ax = -1;
+      if (vy > 1) ay = -1;
+      return {ax, ay};
     }
-
-    // Otherwise, we can either speed up or slow down to get
-    // in sync. Prefer speeding up if possible, since then
-    // we do things faster.
-    if (can_reach)
-      return +1;
-
-    // We will overshoot at the current speed and can't reach
-    // the next divisor, so slow down. This doesn't guarantee
-    // we slow down enough, but it makes progress on turning
-    // around if we do not!
-    return -1;
   }
 
   // As above, but supports any sign of distance.
-  static int Pedal2D(const Spaceship &ship, const std::pair<int, int> &star) {
+  std::pair<int, int> Pedal2D(const Spaceship &ship, const std::pair<int, int> &star) {
     const auto &[star_x, star_y] = star;
 
     const int distx = star_x - ship.x;
@@ -672,7 +684,7 @@ struct Solver {
 
   // Like the above, but solve both dimensions at once.
   template<class F>
-  static Spaceship PathTo2D(
+  Spaceship PathTo2D(
       Spaceship ship,
       std::pair<int, int> star_pos,
       const F &emit) {
@@ -700,14 +712,14 @@ struct Solver {
   // Generate the path to the point, just for the sake of measuring its length.
   int DistTo(Spaceship ship, std::pair<int, int> star_pos) {
     int count = 0;
-    (void)PathToIndependent(ship, star_pos, [&count](auto, auto, auto) { count++; });
+    (void)PathTo2D(ship, star_pos, [&count](auto, auto, auto) { count++; });
     return count;
   }
 
   // Generate the path to the point, and update the state/solution with it.
   void GoTo(std::pair<int, int> star_pos) {
     ship =
-      PathToIndependent(ship, star_pos, [this](const Spaceship &ship, int ax, int ay) {
+      PathTo2D(ship, star_pos, [this](const Spaceship &ship, int ax, int ay) {
           if (abs(ship.dx) > maxdx) maxdx = abs(ship.dx);
           if (abs(ship.dy) > maxdy) maxdy = abs(ship.dy);
 
