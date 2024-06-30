@@ -25,6 +25,11 @@
 #include "image.h"
 #include "color-util.h"
 
+struct Spaceship {
+  int x = 0, y = 0;
+  int dx = 0, dy = 0;
+};
+
 struct Problem {
   static Problem FromFile(const std::string &filename) {
     Problem p;
@@ -69,18 +74,19 @@ static void Draw(const Problem &p,
 
   bounds.AddMarginFrac(0.1);
 
-  static constexpr int TARGET_SCALE = 2048;
+  static constexpr int TARGET_SQUARE = 2048;
 
-  int SCALE = 8;
+  // Size of the image square.
+  int SQUARE = 128;
 
-  while (SCALE < TARGET_SCALE &&
-         SCALE < bounds.Width() &&
-         SCALE < bounds.Height()) {
-    SCALE <<= 1;
+  while (SQUARE < TARGET_SQUARE &&
+         SQUARE < bounds.Width() * 2 &&
+         SQUARE < bounds.Height() * 2) {
+    SQUARE <<= 1;
   }
 
-  const int WIDTH = SCALE;
-  const int HEIGHT = SCALE;
+  const int WIDTH = SQUARE;
+  const int HEIGHT = SQUARE;
 
   ImageRGBA img(WIDTH, HEIGHT);
   img.Clear32(0x000000FF);
@@ -88,8 +94,7 @@ static void Draw(const Problem &p,
   Bounds::Scaler scaler = bounds.ScaleToFit(WIDTH, HEIGHT, true);
 
   // Draw the path first.
-  int sx = 0, sy = 0;
-  int dx = 0, dy = 0;
+  Spaceship ship;
   int prevx = 0, prevy = 0;
   for (uint8_t c : steps) {
     int ax = 0, ay = 0;
@@ -128,18 +133,18 @@ static void Draw(const Problem &p,
     uint8_t g = "\x22\x77\xCC"[ay + 1];
     uint8_t b = 0x22;
 
-    dx += ax; dy += ay;
-    sx += dx; sy += dy;
+    ship.dx += ax; ship.dy += ay;
+    ship.x += ship.dx; ship.y += ship.dy;
 
     {
       const auto &[sprevx, sprevy] = scaler.Scale(prevx, prevy);
-      const auto &[screenx, screeny] = scaler.Scale(sx, sy);
+      const auto &[screenx, screeny] = scaler.Scale(ship.x, ship.y);
       img.BlendLine(sprevx, sprevy, screenx, screeny, r, g, b, 0xAA);
       img.BlendPixel(screenx, screeny, r, g, b, 0xFF);
     }
 
-    prevx = sx;
-    prevy = sy;
+    prevx = ship.x;
+    prevy = ship.y;
   }
 
   // Draw stars on top of the path, so you can see 'em.
@@ -149,7 +154,7 @@ static void Draw(const Problem &p,
   }
 
   // Scale if small
-  int scaleup = TARGET_SCALE / SCALE;
+  int scaleup = TARGET_SQUARE / SQUARE;
   if (scaleup > 1) {
     img = img.ScaleBy(scaleup);
   }
@@ -172,8 +177,7 @@ struct Solver {
   std::unordered_set<std::pair<int, int>,
                      Hashing<std::pair<int, int>>> unique;
 
-  int sx = 0, sy = 0;
-  int dx = 0, dy = 0;
+  Spaceship ship;
 
   int maxdx = 0, maxdy = 0;
 
@@ -253,7 +257,7 @@ struct Solver {
       int64_t dist =
         // DistSqEuclidean
         DistConstantAccelSeparate
-        (dx, dy, sx, sy, star.first, star.second);
+        (ship.dx, ship.dy, ship.x, ship.y, star.first, star.second);
 
       if (!best_dist.has_value() || dist < best_dist.value()) {
         best_dist = dist;
@@ -304,7 +308,7 @@ struct Solver {
                 ANSI::ProgressBar(
                     done, total,
                     StringPrintf("@%d,%d ^[%d,%d] sol %d",
-                                 sx, sy, dx, dy,
+                                 ship.x, ship.y, ship.dx, ship.dy,
                                  (int)solution.size()),
                     timer.Seconds()).c_str());
       }
@@ -313,7 +317,7 @@ struct Solver {
 
   // On one axis, do we want to accelerate, coast, or decelerate?
   // Assumes dist is nonnegative. Returns only 1, 0, or -1.
-  int PedalPos(int speed, int dist) {
+  static int PedalPos(int speed, int dist) {
     // Perfect :)
     if (speed == dist)
       return 0;
@@ -379,7 +383,7 @@ struct Solver {
   }
 
   // As above, but supports any sign of distance.
-  int Pedal(int speed, int dist) {
+  static int Pedal(int speed, int dist) {
     if (dist < 0) {
       return -PedalPos(-speed, -dist);
     } else {
@@ -387,31 +391,51 @@ struct Solver {
     }
   }
 
-  void GoTo(std::pair<int, int> star_pos) {
+  template<class F>
+  static Spaceship PathTo(
+      Spaceship ship,
+      std::pair<int, int> star_pos,
+      const F &emit) {
+
     for (;;) {
-      if (sx == star_pos.first &&
-          sy == star_pos.second) {
+      if (ship.x == star_pos.first &&
+          ship.y == star_pos.second) {
         // We hit the star, so we're done.
-        return;
+        return ship;
       }
 
-      int ax = Pedal(dx, star_pos.first - sx);
-      int ay = Pedal(dy, star_pos.second - sy);
+      int ax = Pedal(ship.dx, star_pos.first - ship.x);
+      int ay = Pedal(ship.dy, star_pos.second - ship.y);
 
-      dx += ax;
-      dy += ay;
+      ship.x += ax;
+      ship.y += ay;
 
-      if (abs(dx) > maxdx) maxdx = abs(dx);
-      if (abs(dy) > maxdy) maxdy = abs(dy);
+      ship.x += ship.dx;
+      ship.y += ship.dy;
 
-      sx += dx;
-      sy += dy;
-
-      solution.push_back(Key(ax, ay));
+      emit(ship, ax, ay);
     }
   }
 
-  char Key(int ax, int ay) {
+  // Generate the path to the point, just for the sake of measuring its length.
+  int DistTo(Spaceship ship, std::pair<int, int> star_pos) {
+    int count = 0;
+    (void)PathTo(ship, star_pos, [&count](auto, auto, auto) { count++; });
+    return count;
+  }
+
+  // Generate the path to the point, and update the state/solution with it.
+  void GoTo(std::pair<int, int> star_pos) {
+    ship =
+      PathTo(ship, star_pos, [this](const Spaceship &ship, int ax, int ay) {
+          if (abs(ship.dx) > maxdx) maxdx = abs(ship.dx);
+          if (abs(ship.dy) > maxdy) maxdy = abs(ship.dy);
+
+          solution.push_back(Key(ax, ay));
+        });
+  }
+
+  static char Key(int ax, int ay) {
     CHECK(ax >= -1 && ax <= 1);
     CHECK(ay >= -1 && ay <= 1);
     switch (ay) {
