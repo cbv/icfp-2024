@@ -53,7 +53,11 @@ const corner = fs.readFileSync('../solutions/threed/threed11-corner.txt', 'utf8'
 	let y = 0;
 	for (const line of corner.split(/\s*[\r\n]+\s*/).slice(1)) {
 		let x = 0;
-		for (const col of line.split(/\s+/)) {
+		for (let col of line.split(/\s+/)) {
+			if (col == 'DY') col = `${SIZE - 2}`;
+			if (col == 'DX') col = `${SIZE - 3}`;
+			if (col == 'S1') col = `${Math.floor(SIZE/2)}`;
+			if (col == 'S2') col = `${SIZE - Math.floor(SIZE/2)}`;
 			write(x,y,col);
 			x += 1;
 		}
