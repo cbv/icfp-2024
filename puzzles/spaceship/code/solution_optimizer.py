@@ -117,7 +117,14 @@ for counter in range(1,26):
 
     solution = data.split(' ')[-1]
     ship_log = spaceship_tracker(solution)
-    square_visit_idxs = [0] + sorted([min([j for j in range(len(ship_log)) if ship_log[j][:2] == target_square]) for target_square in target_squares])
+    unseen_target_squares = target_squares.copy()
+    target_idxs = set()
+    for i in range(len(ship_log)):
+        if ship_log[i][:2] in unseen_target_squares:
+            unseen_target_squares.remove(ship_log[i][:2])
+            target_idxs.add(i)
+
+    square_visit_idxs = [0] + sorted(target_idxs)
     square_visit_order = [ship_log[i][:2] for i in square_visit_idxs]
     square_visit_times = [square_visit_idxs[i + 1] - square_visit_idxs[i] for i in range(len(target_squares))]
 
@@ -127,30 +134,41 @@ for counter in range(1,26):
     optimal_times = [None] * len(target_squares)
     thrust_segments = [None] * len(target_squares)
     for i in range(len(target_squares)):
-        if i % 1000 == 0:
-            print('on target number {}'.format(i))
         optimal_times_x[i] = fastest_path(targets_with_velocities[i][0], targets_with_velocities[i][2], targets_with_velocities[i + 1][0], targets_with_velocities[i + 1][2])
         optimal_times_y[i] = fastest_path(targets_with_velocities[i][1], targets_with_velocities[i][3], targets_with_velocities[i + 1][1], targets_with_velocities[i + 1][3])
         optimal_times[i] = max(optimal_times_x[i], optimal_times_y[i])
-        if square_visit_times[i] == optimal_times[i]:
+        xd, yd = decomp_thrust(solution[square_visit_idxs[i]:square_visit_idxs[i + 1]])
+        time_steps = optimal_times[i]
+        state_init = ship_log[square_visit_idxs[i]]
+        state_end = ship_log[square_visit_idxs[i + 1]]
+        x_init, y_init, vx_init, vy_init = state_init
+        x_end, y_end, vx_end, vy_end = state_end
+        adjusted_x_movement = x_end - x_init - (time_steps * vx_init)
+        adjusted_y_movement = y_end - y_init - (time_steps * vy_init)
+        processed = False
+        if square_visit_times[i] != optimal_times[i]:
+            if ((adjusted_x_movement in thruster_dict) and \
+            vx_end - vx_init in thruster_dict[adjusted_x_movement] and \
+            (time_steps in thruster_dict[adjusted_x_movement][vx_end - vx_init])):
+                if ((adjusted_y_movement in thruster_dict) and \
+                vy_end - vy_init in thruster_dict[adjusted_y_movement] and \
+                (time_steps in thruster_dict[adjusted_y_movement][vy_end - vy_init])):
+                    x_thrust_code = thruster_dict[adjusted_x_movement][vx_end - vx_init][time_steps]
+                    y_thrust_code = swap_x_to_y(thruster_dict[adjusted_y_movement][vy_end - vy_init][time_steps])
+                    thrust_segments[i] = combine_thrusts(x_thrust_code, y_thrust_code)
+                    processed = True
+        # default to previous solution if unknown
+        if not processed:
             thrust_segments[i] = solution[square_visit_idxs[i]:square_visit_idxs[i + 1]]
-        else:
-            xd, yd = decomp_thrust(solution[square_visit_idxs[i]:square_visit_idxs[i + 1]])
-            time_steps = optimal_times[i]
-            state_init = ship_log[square_visit_idxs[i]]
-            state_end = ship_log[square_visit_idxs[i + 1]]
-            x_init, y_init, vx_init, vy_init = state_init
-            x_end, y_end, vx_end, vy_end = state_end
-            x_thrust_code = thruster_dict[x_end - x_init - (time_steps * vx_init)][vx_end - vx_init][time_steps]
-            y_thrust_code = swap_x_to_y(thruster_dict[y_end - y_init - (time_steps * vy_init)][vy_end - vy_init][time_steps])
-            thrust_segments[i] = combine_thrusts(x_thrust_code, y_thrust_code)
+   
 
     solution_new = "".join(thrust_segments)
     if len(solution_new) < len(solution):
         log_new = spaceship_tracker(solution_new)
-        squares_new = [info[:2] for info in log_new]
-        if not all([square in squares_new for square in target_squares]):
-            raise ValueError('new solution fails')
+        squares_new = {info[:2] for info in log_new}
+        if set(target_squares).difference(squares_new):
+                raise ValueError('new solution fails')
+
         late_file = open(r'solutions\spaceship\late_solutions\spaceship' + str(counter) + '.txt', 'w')
         _ = late_file.write('solve spaceship{} {}'.format(counter, solution_new))
         late_file.close()

@@ -1,0 +1,105 @@
+Update solution for spaceship4
+old solution length: 109
+new solution_length: 107
+savings: 2
+
+Update solution for spaceship5
+old solution length: 149
+new solution_length: 145
+savings: 4
+
+Update solution for spaceship6
+old solution length: 324
+new solution_length: 301
+savings: 23
+
+Update solution for spaceship7
+old solution length: 211
+new solution_length: 198
+savings: 13
+
+Update solution for spaceship8
+old solution length: 206
+new solution_length: 197
+savings: 9
+
+Update solution for spaceship9
+old solution length: 526
+new solution_length: 481
+savings: 45
+
+Update solution for spaceship10
+old solution length: 860
+new solution_length: 771
+savings: 89
+
+Update solution for spaceship11
+old solution length: 8560
+new solution_length: 8394
+savings: 166
+
+Update solution for spaceship13
+old solution length: 140988
+new solution_length: 100207
+savings: 40781
+
+Update solution for spaceship14
+old solution length: 1176
+new solution_length: 1028
+savings: 148
+
+Update solution for spaceship15
+old solution length: 62
+new solution_length: 61
+savings: 1
+
+Update solution for spaceship16
+old solution length: 2647
+new solution_length: 2490
+savings: 157
+
+Update solution for spaceship17
+old solution length: 822
+new solution_length: 738
+savings: 84
+
+Update solution for spaceship18
+old solution length: 5296
+new solution_length: 3619
+savings: 1677
+
+Update solution for spaceship19
+old solution length: 15241
+new solution_length: 15100
+savings: 141
+
+Update solution for spaceship20
+old solution length: 6133
+new solution_length: 5233
+savings: 900
+
+Update solution for spaceship21
+old solution length: 6443
+new solution_length: 5568
+savings: 875
+
+Update solution for spaceship22
+old solution length: 2266
+new solution_length: 2031
+savings: 235
+
+Update solution for spaceship23
+old solution length: 1403499
+new solution_length: 972328
+savings: 431171
+
+Update solution for spaceship24
+old solution length: 1713642
+new solution_length: 1701045
+savings: 12597
+
+Update solution for spaceship25
+old solution length: 1356679
+new solution_length: 1016134
+savings: 340545
+
