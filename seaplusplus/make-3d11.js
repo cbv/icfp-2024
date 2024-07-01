@@ -26,7 +26,7 @@ function write(gx, gy, c) {
 	grid[gy][gx] = c;
 }
 
-const SIZE = 101;
+const SIZE = 4;
 
 function extract(str) {
 	const got = [];
@@ -41,19 +41,11 @@ function extract(str) {
 }
 
 const TILE = extract(
-`.  .  .  .  .  @  .  .  .  .
- .  .  .  .  .  #  .  >  .  .
- .  .  .  1  ^  .  .  5  @ -1
- .  .  S  @  .  .  .  .  4  .
- .  .  .  .  .  0  .  .  .  .
- .  .  1  *  .  *  .  >  .  .
- .  .  .  .  .  .  .  6  @  3
- .  .  .  v  .  . YA  .  4  .
- . XA  .  .  .  YB *  .  .  .
-XB  *  .  v  .  .  .  .  .  .
- .  .  .  .  .  YC +  .  .  .
-XC  +  .  @  .  <  .  .  .  .
- .  .  .  4  .  .  .  .  .  .`
+`.  @  .  .  @  .  .  *  .
+ 1  *  .  0  *  .  *  #  .
+ .  .  .  .  .  .  .  .  .
+ X  @  Y  4  @  2  6  @  3
+ .  1  .  .  1  .  .  1  .`
 );
 
 //console.log(TILE);
@@ -68,16 +60,13 @@ const TARGET_Y = 6;
 const SOURCE_X = 19;
 const SOURCE_Y = 4;
 
-const ORIGIN_X = TW * 1; //these need to be the same multiple because the '*' in the corner write the same tile :-(
-const ORIGIN_Y = TH * 1;
-
-console.assert(ORIGIN_X % TW == 0, "Origin must be multiple of width.");
-console.assert(ORIGIN_Y % TH == 0, "Origin must be multiple of height.");
+const ORIGIN_X = 17;
+const ORIGIN_Y = 27;
 
 for (let y = 0; y < SIZE; ++y) {
 	for (let x = 0; x < SIZE; ++x) {
-		const gx = x * TW + ORIGIN_X + SOURCE_X - 3;
-		const gy = y * TH + ORIGIN_Y + SOURCE_Y - 3;
+		const gx = x * TW + ORIGIN_X;
+		const gy = y * TH + ORIGIN_Y;
 
 		const dx = gx + 4 - TARGET_X;
 		const dy = gy + 11 - TARGET_Y;
@@ -112,18 +101,45 @@ const fs = require('fs');
 
 const corner = fs.readFileSync('../solutions/threed/threed11-corner.txt', 'utf8').trim();
 {
+	const subst = {};
+
+	subst.DX = SIZE-3;
+	subst.DY = SIZE-2;
+
+	subst.S1 = Math.floor(SIZE/2);
+	subst.S2 = SIZE - subst.S1;
+
+	subst.OX = -ORIGIN_X;
+	subst.OY = -ORIGIN_Y;
+
+	subst.OX1 = 7;
+	subst.OY1 = 63;
+
+	subst.OX2 = 5;
+	subst.OY2 = 76;
+
+	subst.OX3 = 6;
+	subst.OY3 = 92;
+
+	/*subst.OX4 = 5;
+	subst.OY4 = 76;
+
+	subst.OX5 = 5;
+	subst.OY5 = 76;*/
+
+	subst.SX = -TW;
+	subst.SY = -TH;
+
+	subst.TX = -10; //TARGET_X - ORIGIN_X;
+	subst.TY = -6; //TARGET_Y - ORIGIN_Y;
+
+	subst.NN = 666;
+
 	let y = 0;
 	for (const line of corner.split(/\s*[\r\n]+\s*/).slice(1)) {
 		let x = 0;
 		for (let col of line.split(/\s+/)) {
-			if (col == 'DY') col = `${SIZE - 2}`;
-			if (col == 'DX') col = `${SIZE - 3}`;
-			if (col == 'S1') col = `${Math.floor(SIZE/2)}`;
-			if (col == 'S2') col = `${SIZE - Math.floor(SIZE/2)}`;
-			if (col == 'OX') col = `${ORIGIN_X / TW}`;
-			if (col == 'OY') col = `${ORIGIN_Y / TH}`;
-			if (col == 'SX') col = `${-TW}`;
-			if (col == 'SY') col = `${-TH}`;
+			if (col in subst) col = `${subst[col]}`;
 			write(x,y,col);
 			x += 1;
 		}
