@@ -153,7 +153,7 @@ The answer is 307229728303285084163714105632515479003982842772372415754148478240
 efficiency10
 ------------
 
-Similar to previous.
+Similar to next.
 
 efficiency11
 ------------

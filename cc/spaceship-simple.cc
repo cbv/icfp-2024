@@ -1,7 +1,9 @@
 
 #include "util.h"
 
+#include <cstdint>
 #include <cstdio>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <cstdlib>

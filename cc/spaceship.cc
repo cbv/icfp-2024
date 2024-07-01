@@ -23,11 +23,14 @@
 #include "base/stringprintf.h"
 #include "bounds.h"
 #include "color-util.h"
-#include "geom/tree-2d.h"
 #include "hashing.h"
 #include "image.h"
 #include "periodically.h"
 #include "timer.h"
+
+static constexpr bool VERBOSE = false;
+
+#define SIMPLE_GREEDY 1
 
 struct Spaceship {
   int x = 0, y = 0;
@@ -175,16 +178,8 @@ static void Draw(const Problem &p,
   fprintf(stderr, "Wrote %s\n", filename.c_str());
 };
 
-struct Unit { };
-std::ostream& operator<<(std::ostream& os, const Unit& unit) {
-  return os;
-}
-
 struct Solver {
   std::string solution;
-
-  using Tree = Tree2D<int, Unit>;
-  Tree tree;
 
   std::unordered_set<std::pair<int, int>,
                      Hashing<std::pair<int, int>>> unique;
@@ -195,146 +190,238 @@ struct Solver {
 
   int maxdx = 0, maxdy = 0;
 
-  #if 0
-  // For positive v and d, with v < d. v is the current
-  // velocity and d is the distance we must go. Return
-  // a vector of (v',t), each a pair of a coasting
-  // velocity v' that we could reach by time t ... no!
-  std::vector<std::pair<int, int>> AvailableDivisors(int v, int d) {
-        // Assume we keep accelerating. Do we reach another
-        // divisor before overshooting?
-        for (;;) {
-          if (d % v == 0) return true;
-          if (d <= 0) return false;
-          d -= v;
-          v++;
-        }
-      };
-   #endif
+  using TableValue = uint32_t;
+  static constexpr TableValue POSSIBLE   = uint32_t{0b11000000} << 24;
+  static constexpr TableValue IMPOSSIBLE = uint32_t{0b10000000} << 24;
 
-
-  using TableValue = uint8_t;
-  static constexpr TableValue POSSIBLE   = 0b11000000;
-  static constexpr TableValue IMPOSSIBLE = 0b10000000;
-
-  std::optional<std::pair<int, int>> Decode(uint8_t v) {
-    if (v & POSSIBLE) {
-      return {std::make_pair(((v >> 2) & 3) - 1,
-                             (v & 3) - 1)};
+  // ax, ay, time_steps
+  std::optional<std::tuple<int, int, int>> Decode(uint32_t v) {
+    uint8_t b = v >> 24;
+    if (b & POSSIBLE) {
+      return {std::make_tuple(((b >> 2) & 3) - 1,
+                              (b & 3) - 1,
+                              v & 0x00FFFFFF)};
     } else {
       return std::nullopt;
     }
   }
 
-  static constexpr TableValue Encode(int ax, int ay) {
+  static constexpr TableValue Encode(int ax, int ay, int steps) {
     // CHECK(ax >= -1 && ax <= 1);
     // CHECK(ay >= -1 && ay <= 1);
+    CHECK(steps >= 0 && steps < 0x00FFFFFF) << steps;
     // Encoded byte always has high bit set so that we can tell
     // when we got the default 0.
-    return POSSIBLE | ((ax + 1) << 2) | (ay + 1);
+    uint8_t d = POSSIBLE | ((ax + 1) << 2) | (ay + 1);
+    return d | steps;
   }
 
-  int64_t table_calls = 0, table_hits = 0;
+  // Same data, but dense.
+  // 64^4 is 16 MB.
+  // We could save half this with encoding tricks since
+  // we know dx < dy.
+  static constexpr int DENSE_WIDTH = 62;
+  std::vector<uint32_t> dense_table;
+  uint32_t &DenseTableAt(int vx, int vy, int dx, int dy) {
+    int idx = 0;
+    idx *= DENSE_WIDTH; idx += vx;
+    idx *= DENSE_WIDTH; idx += vy;
+    idx *= DENSE_WIDTH; idx += dx;
+    idx *= DENSE_WIDTH; idx += dy;
+    return dense_table[idx];
+  }
+
+
+  // Sparse table, when any arg is >= DENSE_WIDTH.
   std::unordered_map<std::tuple<int, int, int, int>,
-                     uint8_t,
+                     uint32_t,
                      Hashing<std::tuple<int, int, int, int>>> table;
 
-  // For positive velocities (vx, vy) and
-  // nonnegative distances (dx, dy). Gives the next acceleration
-  // step to reach the distance at the same time. Returns
-  // IMPOSSIBLE if we will definitely overshoot.
+  // For nonnegative distances (dx, dy). Gives the next acceleration
+  // step to reach the distance at the same time, trying to maximize
+  // velocity. Returns IMPOSSIBLE if we will definitely overshoot.
   TableValue Tabled(int vx, int vy, int dx, int dy) {
+    table_calls++;
+    if (!(table_calls & 0xFFFFFF)) {
+      fprintf(stderr, "C %lld, d %lld, s %lld, f %lld, h %lld [%d %d %d %d]\n",
+              table_calls, dense_calls, fast_calls,
+              (int64_t)table.size(),
+              table_hits,
+              vx, vy, dx, dy);
+    }
+
     // Since the table is symmetric, we only compute it for dx<=dy.
     if (dx <= dy) {
       return NormalTabled(vx, vy, dx, dy);
     } else {
+      if (VERBOSE) fprintf(stderr, "Swap\n");
       TableValue swap_val = NormalTabled(vy, vx, dy, dx);
       auto ao = Decode(swap_val);
       if (ao.has_value()) {
-        const auto &[ax, ay] = ao.value();
-        return Encode(ay, ax);
+        const auto &[ax, ay, t] = ao.value();
+        return Encode(ay, ax, t);
       } else {
         return IMPOSSIBLE;
       }
     }
   }
 
+  int64_t table_calls = 0, table_hits = 0, dense_calls = 0,
+    fast_calls = 0;
   TableValue NormalTabled(int vx, int vy, int dx, int dy) {
     CHECK(dx <= dy) << "precondition";
 
-    table_calls++;
+    if (dx < 0 || dy < 0) return IMPOSSIBLE;
 
-    if (!(table_calls & 0xFFFFFF)) {
-      fprintf(stderr, "Calls %lld, size %lld, hits %lld [%d %d %d %d]\n",
-              table_calls,
-              (int64_t)table.size(),
-              table_hits,
-              vx, vy, dx, dy);
+    // Avoid doing any lookups for simple edge cases.
+
+    if (dx == 0 && dy == 0) {
+      // Done!
+      fast_calls++;
+      return Encode(0, 0, 0);
     }
 
-    uint8_t &val = table[std::make_tuple(vx, vy, dx, dy)];
-    if (val != 0) {
+    {
+      int ax = dx - vx;
+      int ay = dy - vy;
+
+      if (abs(ax) <= 1 && abs(ay) <= 1) {
+        // We can get the exact velocity on the current time step, so this
+        // is clearly optimal.
+        fast_calls++;
+        return Encode(ax, ay, 1);
+      }
+    }
+
+    uint32_t *val = nullptr;
+
+    if (vx >= 0 && vx < DENSE_WIDTH &&
+        vy >= 0 && vy < DENSE_WIDTH &&
+        dx >= 0 && dx < DENSE_WIDTH &&
+        dy >= 0 && dy < DENSE_WIDTH) {
+      val = &DenseTableAt(vx, vy, dx, dy);
+      dense_calls++;
+    } else{
+      val = &table[std::make_tuple(vx, vy, dx, dy)];
+    }
+
+    if (*val != 0) {
       table_hits++;
-      return val;
+      return *val;
     }
 
-    static constexpr TableValue COAST = Encode(0, 0);
-
-    // Done!
-    if (dx == 0 && dy == 0) return COAST;
-    if (vx == dx && vy == dy) return COAST;
-
-    if (vx < 0 || vy < 0) return IMPOSSIBLE;
-
-    // Make sure we don't loop forever when we don't accelerate and
-    // aren't moving.
-    if (vx == 0 && vy == 0 && dx > 0 && dy > 0) return Encode(1, 1);
-    if (vx == 0 && vy == 0 && dx == 0) return Encode(0, 1);
-    if (vx == 0 && vy == 0 && dy == 0) return Encode(1, 0);
-
-    // Overshooting.
-    if (vx > dx && vy > dy) return IMPOSSIBLE;
-    // PERF: Could have tabled 1D version for these cases.
-    else if (vx > dx) return IMPOSSIBLE;
-    else if (vy > dy) return IMPOSSIBLE;
-
-    // Otherwise, solve recursively.
-
-    std::optional<int> best_vel;
-    uint8_t best_val = IMPOSSIBLE;
-
-    for (int ay : {-1, 0, 1}) {
-      int nvy = vy + ay;
-      for (int ax : {-1, 0, 1}) {
+    // Try a single acceleration value. In the general case we try
+    // them all, but below we cut off the search in cases where we
+    // obviously have to turn around, for example.
+    std::optional<int> best_t;
+    uint32_t best_val = IMPOSSIBLE;
+    auto Try = [this, &best_t, &best_val, vx, vy, dx, dy](int ax, int ay) {
         // accelerate before moving
         int nvx = vx + ax;
+        int nvy = vy + ay;
 
         int ndx = dx - vx;
         int ndy = dy - vy;
 
-        // Only if we are moving forward.
-        if (nvx > 0 || nvy > 0) {
-          TableValue nval = Tabled(nvx, nvy, ndx, ndy);
+        if (VERBOSE)
+        fprintf(stderr, "try(%d,%d) giving %d %d %d %d\n", ax, ay,
+                nvx, nvy, ndx, ndy);
 
-          if (nval != IMPOSSIBLE) {
-            // Always prefer a bigger velocity vector.
-            int vel = nvx * nvx + nvy * nvy;
-            if (!best_vel.has_value() || best_vel.value() < vel) {
-              best_vel = {vel};
-              // We don't actually care what the value is (it tells us
-              // what to do in *that* state). Our best is the encoding
-              // of the acceleration on this step.
-              best_val = Encode(ax, ay);
-            }
+        CHECK(nvx != vx || nvy != vy || ndx != dx || ndy != dy);
+        TableValue nval = Tabled(nvx, nvy, ndx, ndy);
+        auto ao = Decode(nval);
+
+        if (ao.has_value()) {
+          const auto &[ax_next, ay_next, t] = ao.value();
+          // Smaller time is better.
+          if (!best_t.has_value() || t < best_t.value()) {
+            best_t = {t};
+            // We don't actually care what the value is (it tells us
+            // what to do in *that* state). Our best is the encoding
+            // of the acceleration on this step. It takes one more
+            // time step.
+            best_val = Encode(ax, ay, t + 1);
           }
         }
+      };
+
+
+    if (vx < 0 && vy < 0) {
+      // Both velocities have to pass through zero.
+      // So we should always decelerate both.
+      if (VERBOSE) fprintf(stderr, "decel both\n");
+      Try(+1, +1);
+
+    } else if (vy < 0) {
+      if (VERBOSE) fprintf(stderr, "vy < 0\n");
+      // ay will definitely be 1. Search for ax.
+      for (int ax : {0, 1}) {
+        Try(ax, +1);
       }
+
+    } else if (vx < 0) {
+      if (VERBOSE) fprintf(stderr, "vx < 0\n");
+      // Symmetric...
+      for (int ay : {0, 1}) {
+        Try(+1, ay);
+      }
+
+    } else if (vx == 0 && vy == 0) {
+
+      // Make sure we don't loop forever when we don't accelerate and
+      // aren't moving. Also, don't go backwards when the target is
+      // in front of us.
+      if (dx > 0 && dy > 0) {
+        Try(1, 1);
+      } else if (dx == 0) {
+        CHECK(dy != 0);
+        Try(0, 1);
+      } else if (dy == 0) {
+        CHECK(dx != 0);
+        Try(1, 0);
+      }
+
+    } else if (vx > dx && vy > dy) {
+      // If we'll certainly overshoot, only turn around until we reach a zero.
+      Try(-1, -1);
+
+    } else if (vx > dx) {
+      // Overshoot on x. Only turn around on x.
+      for (int ax : {-1, 0}) {
+        Try(ax, -1);
+      }
+
+    } else if (vy > dy) {
+      // Need to slow down on y axis.
+      for (int ax : {-1, 0}) {
+        Try(ax, -1);
+      }
+
+    } else if (vx == 0 && dx == 0) {
+      for (int ay : {-1, 0, 1}) {
+        Try(0, ay);
+      }
+
+    } else if (vy == 0 && dy == 0) {
+      for (int ax : {-1, 0, 1}) {
+        Try(ax, 0);
+      }
+
+    } else {
+      // Otherwise, try all of the possibilities.
+      if (VERBOSE) fprintf(stderr, "general case\n");
+      for (int ay : {-1, 0, 1}) {
+        for (int ax : {-1, 0, 1}) {
+          Try(ax, ay);
+        }
+      }
+
     }
 
     // Memoize it and return. It might be IMPOSSIBLE; otherwise it
     // is the step that gives us the highest velocity and still reaches
     // the position exactly.
-    val = best_val;
+    *val = best_val;
     return best_val;
   }
 
@@ -405,6 +492,19 @@ struct Solver {
 
     CHECK(!unique.empty());
 
+    #if SIMPLE_GREEDY
+
+    std::pair<int, int> star_pos = {0, 0};
+    std::optional<int64_t> best_dist;
+    for (const auto &star : unique) {
+      int64_t dist = DistSqEuclidean(ship, star.first, star.second);
+      if (!best_dist.has_value() || dist < best_dist.value()) {
+        best_dist = dist;
+        star_pos = {star};
+      }
+    }
+
+    #else
     // Sort everything by the quick metric.
     std::vector<std::pair<std::pair<int, int>, int64_t>> scored;
     scored.reserve(unique.size());
@@ -437,6 +537,7 @@ struct Solver {
         star_pos = {star};
       }
     }
+    #endif
 
     CHECK(best_dist.has_value());
     histo.Observe(best_dist.value());
@@ -451,13 +552,9 @@ struct Solver {
       unique.insert(pt);
     }
 
-    /*
-    for (const auto &pt : unique) {
-      tree.Insert(pt, Unit{});
-    }
-
-    tree.DebugPrint();
-    */
+    dense_table.resize(
+        DENSE_WIDTH * DENSE_WIDTH * DENSE_WIDTH * DENSE_WIDTH,
+        0);
   }
 
   // Move to every spot, appending to the solution.
@@ -469,11 +566,6 @@ struct Solver {
     int done = 0;
     while (!unique.empty()) {
       auto star_pos = GetTarget();
-      /*
-      fprintf(stderr, "Next " AYELLOW("*") "[%d,%d] (%d steps)\n",
-              star_pos.first, star_pos.second,
-              (int)solution.size());
-      */
 
       // Go to the point.
       GoTo(star_pos);
@@ -651,7 +743,9 @@ struct Solver {
     TableValue val = Tabled(vx, vy, x, y);
     const auto ao = Decode(val);
     if (ao.has_value()) {
-      return ao.value();
+      // Can we use t for something?
+      const auto &[ax, ay, t_] = ao.value();
+      return {ax, ay};
     } else {
       // Slow down. We know there is always a solution by moving (1,0) and (0,1).
       CHECK(x >= 0 && y >= 0 &&
@@ -759,7 +853,7 @@ int main(int argc, char **argv) {
   solver.Solve();
   fprintf(stderr,
           "\nSolved " AYELLOW("%d") " in " AGREEN("%d") " moves. Max velocity: ["
-          ACYAN("%d") "," ACYAN("%d") "]\n",
+          ACYAN("%d") "," ACYAN("%d") "]\n\n\n",
           n, (int)solver.solution.size(),
           solver.maxdx, solver.maxdy);
 
@@ -767,7 +861,7 @@ int main(int argc, char **argv) {
        StringPrintf("spaceship%d.png", n));
 
   std::string h = solver.histo.SimpleANSI(32);
-  fprintf(stderr, "Steps between stars:\n%s\n", h.c_str());
+  fprintf(stderr, "Steps between stars:\n%s\n\n\n", h.c_str());
 
   printf("solve spaceship%d %s\n",
          n,
