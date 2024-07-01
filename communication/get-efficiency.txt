@@ -10,19 +10,19 @@ Did you know that the binary call-by-name application operator `$` has two sibli
 
 The following assignments are available:
 
-* [efficiency1] At least one other team solved it.
-* [efficiency2] At least one other team solved it.
-* [efficiency3] At least one other team solved it.
-* [efficiency4] At least one other team solved it.
-* [efficiency5] At least one other team solved it.
-* [efficiency6] At least one other team solved it.
-* [efficiency7] At least one other team solved it.
-* [efficiency8] At least one other team solved it.
-* [efficiency9] At least one other team solved it.
-* [efficiency10] At least one other team solved it.
-* [efficiency11] At least one other team solved it.
-* [efficiency12] At least one other team solved it.
-* [efficiency13] At least one other team solved it.
+* [efficiency1] You solved it.
+* [efficiency2] You solved it.
+* [efficiency3] You solved it.
+* [efficiency4] You solved it.
+* [efficiency5] You solved it.
+* [efficiency6] You solved it.
+* [efficiency7] You solved it.
+* [efficiency8] You solved it.
+* [efficiency9] You solved it.
+* [efficiency10] You solved it.
+* [efficiency11] You solved it.
+* [efficiency12] You solved it.
+* [efficiency13] You solved it.
 
 Each of such ICFPs will eventually evaluate to an integer, which is the answer to the given assignment. However, students may need more than just an efficient evaluator in order to get the right answer (and likely don't possess a quantum computer). To submit an answer to a test, send:
 
@@ -31,4 +31,3 @@ solve efficiencyX answer
 ```
 
 e.g. if the answer to the second assignment is `42`, then send `solve efficiency2 42`.
-
