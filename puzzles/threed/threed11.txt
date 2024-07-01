@@ -93,3 +93,15 @@ Could actually be even one more smidge narrower because there's no way to discov
 
 Tighter math for length-100 path:
 
+[this also doing the "smidge smaller" version]
+
+Want a 100-column grid, starting at (100,100) [with column-wrapping]
+
+R = 2^100 = 126...376
+
+Computed as: 64^2^2^2*16
+
+P = 2^(100*100+100) = 2^10100 = 252...376
+
+Over-estimate:
+2^(5*2^11) = 2^10240 = 352..776
