@@ -195,9 +195,9 @@ struct Solver {
   static constexpr TableValue IMPOSSIBLE = uint32_t{0b10000000} << 24;
 
   // ax, ay, time_steps
-  std::optional<std::tuple<int, int, int>> Decode(uint32_t v) {
-    uint8_t b = v >> 24;
-    if (b & POSSIBLE) {
+  static std::optional<std::tuple<int, int, int>> Decode(uint32_t v) {
+    if (v & POSSIBLE) {
+      uint8_t b = v >> 24;
       return {std::make_tuple(((b >> 2) & 3) - 1,
                               (b & 3) - 1,
                               v & 0x00FFFFFF)};
@@ -212,8 +212,16 @@ struct Solver {
     CHECK(steps >= 0 && steps < 0x00FFFFFF) << steps;
     // Encoded byte always has high bit set so that we can tell
     // when we got the default 0.
-    uint8_t d = POSSIBLE | ((ax + 1) << 2) | (ay + 1);
-    return d | steps;
+    uint8_t d = ((ax + 1) << 2) | (ay + 1);
+    uint32_t r = POSSIBLE | (d << 24) | steps;
+
+    if (false) {
+      auto ao = Decode(r);
+      CHECK(ao.has_value());
+      const auto [aax, aay, ss] = ao.value();
+      CHECK(aax == ax && aay == ay && ss == steps);
+    }
+    return r;
   }
 
   // Same data, but dense.
@@ -285,7 +293,14 @@ struct Solver {
       int ax = dx - vx;
       int ay = dy - vy;
 
+      if (VERBOSE && !(table_calls & 0xFFFFFF)) {
+        fprintf(stderr, ".. %d %d\n", ax, ay);
+      }
       if (abs(ax) <= 1 && abs(ay) <= 1) {
+        if (VERBOSE && !(table_calls & 0xFFFFFF)) {
+          fprintf(stderr, "  FAST\n");
+        }
+
         // We can get the exact velocity on the current time step, so this
         // is clearly optimal.
         fast_calls++;
@@ -585,108 +600,6 @@ struct Solver {
 
   // On one axis, do we want to accelerate, coast, or decelerate?
   // Assumes dist is nonnegative. Returns only 1, 0, or -1.
-  static int PedalPos(int speed, int dist) {
-    // Perfect :)
-    if (speed == dist)
-      return 0;
-
-    // If we're headed in the wrong direction, turn around.
-    if (speed < 0)
-      return +1;
-
-    // We will overshoot, so we should get a head start on
-    // deceleration.
-    if (speed > dist)
-      return -1;
-
-    // If we're stopped, since we know we aren't already there,
-    // it must be positive and so we should start moving.
-    if (speed == 0) {
-      CHECK(dist > 0);
-      return +1;
-    }
-
-    // Now figure out how many timesteps it will take us to
-    // go the distance at the current speed.
-
-    int steps = dist / speed;
-    int err = steps * speed - dist;
-
-    const bool can_reach = [speed, dist]() {
-        int s = speed;
-        int d = dist;
-        // Assume we keep accelerating. Do we reach another
-        // divisor before overshooting?
-        for (;;) {
-          if (d % s == 0) return true;
-          if (d <= 0) return false;
-          d -= s;
-          s++;
-        }
-      }();
-
-    // If err is 0, then we'll at least hit the target without
-    // correction, so we might stay at the current speed.
-    if (err == 0) {
-      // But if we have enough time to get to the next divisor,
-      // we should do that (e.g. 1 divides everything!)
-
-      if (can_reach)
-        return +1;
-
-      return 0;
-    }
-
-    // Otherwise, we can either speed up or slow down to get
-    // in sync. Prefer speeding up if possible, since then
-    // we do things faster.
-    if (can_reach)
-      return +1;
-
-    // We will overshoot at the current speed and can't reach
-    // the next divisor, so slow down. This doesn't guarantee
-    // we slow down enough, but it makes progress on turning
-    // around if we do not!
-    return -1;
-  }
-
-  // As above, but supports any sign of distance.
-  static int Pedal(int speed, int dist) {
-    if (dist < 0) {
-      return -PedalPos(-speed, -dist);
-    } else {
-      return PedalPos(speed, dist);
-    }
-  }
-
-  template<class F>
-  static Spaceship PathToIndependent(
-      Spaceship ship,
-      std::pair<int, int> star_pos,
-      const F &emit) {
-
-    for (;;) {
-      if (ship.x == star_pos.first &&
-          ship.y == star_pos.second) {
-        // We hit the star, so we're done.
-        return ship;
-      }
-
-      int ax = Pedal(ship.dx, star_pos.first - ship.x);
-      int ay = Pedal(ship.dy, star_pos.second - ship.y);
-
-      ship.dx += ax;
-      ship.dy += ay;
-
-      ship.x += ship.dx;
-      ship.y += ship.dy;
-
-      emit(ship, ax, ay);
-    }
-  }
-
-  // On one axis, do we want to accelerate, coast, or decelerate?
-  // Assumes dist is nonnegative. Returns only 1, 0, or -1.
   std::pair<int, int> PedalPos2D(int vx, int vy, int x, int y) {
     // Don't mess with it if it's perfect!
     if (vx == x && vy == y)
@@ -704,42 +617,8 @@ struct Solver {
       return {-1, -1};
     }
 
-    // Now if one of them is wrong, we will have to take some time
-    // to turn around. In that time we can accelerate to our destination.
-    // XXX need to make these cases smarter, knowing that turning
-    // around will take some time!
-    if (vx < 0) {
-      return {+1, PedalPos(vy, y)};
-    } else if (vy < 0) {
-      return {PedalPos(vx, x), +1};
-    }
-
-    CHECK(vx >= 0 && vy >= 0);
-
-    // Like above, if we are going to overshoot on one axis, definitely
-    // slow down. On the other axis we can accelerate to our destination.
-    // XXX should make these smarter, also knowing that we will be
-    // overshooting
-    if (vx > x) {
-      return {-1, PedalPos(vy, y)};
-    } else if (vy > y) {
-      return {PedalPos(vx, x), -1};
-    }
-
-    // If we're stopped, since we know we aren't already there,
-    // it must be positive and so we should start moving.
-    if (vx == 0) {
-      return {+1, PedalPos(vy, y)};
-    } else if (vy == 0) {
-      return {PedalPos(vx, x), +1};
-    }
-
-    CHECK(vx > 0 && vy > 0 && vx <= x && vy <= y) <<
-      StringPrintf("vx %d vy %d   x %d y %d\n", vx, vy, x, y);
-
-    // Now we have a nontrivial problem in the case where we are
-    // moving towards the star on both axes. Use the tabled
-    // solution for this:
+    // Now we have a nontrivial problem with nonnegative distance. Use
+    // the tabled solution for this:
     TableValue val = Tabled(vx, vy, x, y);
     const auto ao = Decode(val);
     if (ao.has_value()) {
