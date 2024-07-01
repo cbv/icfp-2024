@@ -105,3 +105,18 @@ P = 2^(100*100+100) = 2^10100 = 252...376
 
 Over-estimate:
 2^(5*2^11) = 2^10240 = 352..776
+
+
+----
+
+Optimizing bit counting.
+
+current routine uses 50515 steps on 2^10100, 51215 steps on 2^10240
+
+After moving to a three-step counting routine have 30729 / 30309 steps
+
+Moving to a [not-quite-pipelined] two-step counting routing took 40405 steps -- not an improvement!
+
+Going to a wider (4-bit per loop) counting method gets to 25623 / 25273
+
+Going to a 16-bit per loop version gets to 21832 / 21526 steps
