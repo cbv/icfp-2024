@@ -50,11 +50,13 @@ to be tricked by capture-avoiding substitution or lazy evaluation or
 arbitrary precision integers, even in C++!
 
 Meanwhile, it turns out that most of the basic communication with the
-server is just using string literals, so you can do this with only
-a simple encoder/decoder. So while Tom was at this ...
-
-(please describe your things!!)
-
+server requires only string literals, and you can do this with only a
+simple encoder/decoder. So while Tom embarked on evaluator hacking,
+Jason implemented the codec in Typescript, giving us a lovely web
+browser client for interacting with the contest server. With that,
+we explored the initial problems available to us in the lambadaman
+and spaceship categories and started checking them into our git repo
+under the puzzles/ directory.
 
 # Evaluator
 
@@ -150,6 +152,8 @@ Finally: Memoization. (TODO)
 
 
 # Lambdaman
+
+
 
 # Spaceship
 
