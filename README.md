@@ -53,7 +53,7 @@ Meanwhile, it turns out that most of the basic communication with the
 server requires only string literals, and you can do this with only a
 simple encoder/decoder. So while Tom embarked on evaluator hacking,
 Jason implemented the codec in Typescript, giving us a lovely web
-browser client for interacting with the contest server. With that,
+browser client for interacting with the server. With that,
 we explored the initial problems available to us in the lambadaman
 and spaceship categories and started checking them into our git repo
 under the puzzles/ directory.
@@ -189,12 +189,13 @@ we could write
 In a stroke of inspired unhingedness, Jason used Javascript's
 `function.toString()` method to implement "higher-order abstract
 syntax", meaning that we could model icfp-language functions directly
-as Typescript/Javascript functions. (See [expr.ts](gui/src/expr.ts).)
-Small issue with that, though: the behavior of `function.toString()`
-differed between the browser's Javascript interpreter and the node
-Javascript interpreter we were using from the commandline. David
-chased down that bug, made the the HOAS implementation even more hacky
-to work around it, and resolved to avoid such sins in the future.
+as Typescript/Javascript functions. (See `getParamNames()` in
+[expr.ts](gui/src/expr.ts).) Small issue with that, though: the
+behavior of `function.toString()` differed between the browser's
+Javascript interpreter and the node Javascript interpreter we were
+using from the commandline. David chased down that bug, made the the
+HOAS implementation even more hacky to work around it, and resolved to
+avoid such sins in the future.
 
 For hand-crafting solutiosn, the straight-line lambdaman6 and the
 empty-square lambdaman9 were obvious places to start. We noticed that
