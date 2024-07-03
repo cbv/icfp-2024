@@ -204,6 +204,22 @@ on the leaderboard indicated that teams were coming up with quite
 small programs indeed. With that in mind, David implemented a random
 walk program, based on a linear congruential random number generator.
 
+David ported over Jason's helper functions (minus HOAS) from
+Typescript to Rust and started doing more code golf there. He imagined
+eventually implementing a search algorithm that would optimize over
+sequences of high-level actions such as "random walk for a while", "do
+L for 100 steps", but in the end did not get past manual code
+writing.
+
+David wrote icfp-language programs for the fractal problems
+[lambdaman16](lambdaman-solver/src/bin/lambdaman16.rs) and
+[lambdaman17](lambdaman-solver/src/bin/lambdaman17.rs).
+
+At some point, Tom wrote a compresser that could take a flat string
+solution and produce a much smaller icfp program that would evaluate
+to that string. We used this approach for problems where we were unable
+to get anything working other than the baseline simple search, such as
+the mazes in problems 11 through 15.
 
 # Spaceship
 
