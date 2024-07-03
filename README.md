@@ -213,7 +213,7 @@ writing.
 
 David wrote icfp-language programs for the fractal problems
 [lambdaman16](lambdaman-solver/src/bin/lambdaman16.rs) and
-[lambdaman17](lambdaman-solver/src/bin/lambdaman17.rs).
+[lambdaman19](lambdaman-solver/src/bin/lambdaman19.rs).
 
 At some point, Tom wrote a compresser that could take a flat string
 solution and produce a much smaller icfp program that would evaluate
