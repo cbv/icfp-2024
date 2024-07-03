@@ -150,9 +150,59 @@ the substitutions all become simple.
 
 Finally: Memoization. (TODO)
 
-
 # Lambdaman
 
+Lambdaman is a Pacman-like two-dimensional puzzle where you need to
+collect all of the dots as efficiently as possible. As Jason and
+David browsed the set of given problems, we imagined applying
+traditional graph optimization techniques, as the setup seemed akin
+to Traveling Salesman. Jason started and David took over a Rust
+implementation of Lambdaman.
+
+David implemented the simplest possible search procedure he could
+imagine. At each step, it uses breadth-first-search to find the
+nearest uncollected dot, and then it goes towards that dot. This
+algorithm gave us baseline solutions for all problems (except
+lambdaman21, which Tom's evaluator was not yet efficient enough to
+compute). We were happy when one of the early solves unlocked the 3D
+"course", because that meant we could start parallelizing our efforts
+more.
+
+Meanwhile, Jason add a bunch of Typescript helper functions for
+constructing terms in the icfp language, so that for example instead
+of
+
+```typescript
+   { t: 'binop', opr: '+', a: exp1, b: exp2}
+```
+we could write
+```typescript
+   add(exp1, exp2)
+```
+
+In a stroke of inspired unhingedness, Jason used Javascript's
+`function.toString()` method to implement "higher-order abstract
+syntax", meaning that we could model icfp-language functions directly
+as Typescript/Javascript functions. Small issue with that, though:
+the behavior of `function.toString()` differed between the browser's
+Javascript interpreter and the node Javascript interpreter we were
+using from the commandline. David chased down that bug, made the
+the HOAS implementation even more hacky to work around it, and
+resolved to avoid such sins in the future.
+
+At some point, as we re-read the Lambdaman specification, it dawned
+on us that Lambdaman is much more of a code golf puzzle than a
+graph optimization puzzle. A solution's score is the length of
+the *icfp program* that computes it, not the number of moves that
+it takes. And moves that step into walls are allowed -- they just
+become no-ops.
+
+We then set out to manually write icfp-language programs to solve the
+problems. The straight-line lambdaman6 and the empty-square lambdaman9
+were obvious places to start. We noticed that the "best score" reported
+on the leaderboard indicated that teams were coming up with quite
+small programs indeed. With that in mind, David implemented a random
+walk program, based on a linear congruential random number generator.
 
 
 # Spaceship
