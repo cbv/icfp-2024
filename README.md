@@ -203,6 +203,9 @@ were obvious places to start. We noticed that the "best score" reported
 on the leaderboard indicated that teams were coming up with quite
 small programs indeed. With that in mind, David implemented a random
 walk program, based on a linear congruential random number generator.
+Random walks provided better solutions for a bunch of problems,
+but did not suffice for the larger ones, because we ran up against
+the 1 million move limit.
 
 David ported over Jason's helper functions (minus HOAS) from
 Typescript to Rust and started doing more code golf there. He imagined
