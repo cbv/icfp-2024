@@ -197,7 +197,7 @@ using from the commandline. David chased down that bug, made the the
 HOAS implementation even more hacky to work around it, and resolved to
 avoid such sins in the future.
 
-For hand-crafting solutiosn, the straight-line lambdaman6 and the
+For hand-crafting solutions, the straight-line lambdaman6 and the
 empty-square lambdaman9 were obvious places to start. We noticed that
 the "best score" reported on the leaderboard indicated that teams were
 coming up with quite small programs indeed. With that in mind, David
