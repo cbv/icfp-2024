@@ -348,7 +348,8 @@ Inequality can be used to change a value's coordinate parity during routing:
  5  >  .  #  .      .  >  5  #  .      .  >  .  #  *
  .  .  .  .  .  ~>  .  .  .  .  .  ~>  .  .  .  5  .
  .  .  .  v  .      .  .  .  v  .      .  .  .  v  .
- .  .  .  .  .      .  .  .  .  .      .  .  .  .  .x```
+ .  .  .  .  .      .  .  .  .  .      .  .  .  .  .
+```
 I actually had the `#` reduction wrong (swapped `a` and `b` in the output) initially in my interpreter. This would have been nice (let values "cross" each-other in the grid), but also prevents this parity-swapping trick from working.
 
 Inequality can also be used to "turn around" at the top or bottom of a "delay line" in a more compact way than an arrow could:
