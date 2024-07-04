@@ -279,7 +279,7 @@ The arrow operators (`>`, `<`, `^`, `v`) have one input and can be used to move 
 
 Arrows move in the direction they point and overwrite their output cell:
 ```
- .  2  .        .  2  .
+ .  2  .        .  7  .
  .  ^  .   ~>   .  ^  .
  .  7  .        .  .  .
 ```
