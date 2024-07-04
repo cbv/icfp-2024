@@ -497,10 +497,10 @@ x1  @ y1  v x2  @ y2
  .  .  . t3  .  .  .
 ```
 
-The second concern is that while this works well for straight-line programs, it might have problems with propogating junk values in programs which are already using time travel for loops. I think this can be addressed by using some extra "clock" or "valid" signals, but it might require moving to a 3-tick setup. I didn't work this out fully.
+The second concern is that while this works well for evaluating expressions, it might have problems with propagating junk values in programs which are already using time travel for loops. I think this can be addressed by using some extra "clock" or "valid" signals, but it might require moving to a 3-tick setup. I didn't work this out fully.
 
 Anyway, this was a nice idea and I hope to have the leisure to revisit it at some point.
-Not sure if it would have been contest-breaking but would definitley have improved the performance of some of our straight-line solutions.
+Not sure if it would have been contest-breaking but would definitely have improved the performance of some of our straight-line solutions.
 
 
 # Efficiency
