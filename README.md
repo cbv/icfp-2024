@@ -413,7 +413,7 @@ After hours of working in the language this was straightforward to write.
 
 The thing that caused me consternation was how to store the set of visited cells.
 
-The first thing I tried was to **accumulate a bit-field** into a large integer value ([solutions/threed/threed11-bits.txt]).
+The first thing I tried was to **accumulate a bit-field** into a large integer value ([solutions/threed/threed11-bits.txt](solutions/threed/threed11-bits.txt)).
 This worked fine but took a lot of real evaluation steps and caused the organizers' interpreter to time out (despite this solution being well under the area and tick limits). I suppose bigints with hundreds of digits cause things to run slowly (I half-suspect that the organizers were trying to pretty-print the outputs and the real problem was formatting those integers as nicely aligned table columns; I know that's where my interpreter was burning cycles).
 
 I am especially proud of this extendible N-bit-per-time-loop bit counter setup though (this is the 4-bit version):
@@ -438,10 +438,10 @@ I am especially proud of this extendible N-bit-per-time-loop bit counter setup t
  .  .  .  .  .  .  .  .  .  .  .  9  .  .  .  .  .  . 
  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
 ```
-It's a compact structure, you can extend it to peel more bits relatively easilly, and it kinda looks like a penis especially if you increase the bits-peeled count (which has a certain low-humor value to it).
+It's a compact structure, you can extend it to peel more bits relatively easily, and it kinda looks like a penis especially if you increase the bits-peeled count (which has a certain low-humor value to it).
 
 
-With that running too slowly, I decided to go wide and implemented the first thing I actually thought of when reading the problem (but dismissed in favor of the bitfield solution), which was to use a 200x200-ish 2D look-up table to store the visit counts of each cell. Basically, this replaced "accumate into a bit vector" with "write `1`'s into this structure":
+With that running too slowly, I decided to go wide and implemented the first thing I actually thought of when reading the problem (but dismissed in favor of the bitfield solution), which was to use a 200x200-grid-cell-ish 2D **visited-cell table** to store the visit counts of each cell. Then, in the rest of the program, I replaced "accumulate into a bit vector" with "write `1`'s into this structure":
 ```
  . 1 . 0 . 0 . 0 . .
  0 + . + . + . + . .
@@ -451,7 +451,7 @@ With that running too slowly, I decided to go wide and implemented the first thi
  0 + . + . + . + . .
  . . . . . . . S . .
 ```
-(This is the 3x3 version; the "real" version of the code used a 101x101 version.)
+(This version only stores a 3x3 grid of "visited" bits; the "real" version of the code used a larger table to store a 101x100 grid. I wrote a javascript program to generate the final grid, of course.)
 It's actually pretty cool that you can make an accumulator like this so compactly (2x2 cells).
 
 Also notice that this looks like it will just sum up the whole grid and then immediately write the result, halting the program. But what actually happens is that the logic that fills in the grid will always time-travel before the grid finishes summing. So only when that logic quiesces will the final summation be reported. Elegant!
