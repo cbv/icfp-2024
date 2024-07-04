@@ -227,4 +227,279 @@ the mazes in problems 11 through 15.
 
 # 3D
 
+Despite the name, 3D was a 2D grid programming language with an interesting
+scoring function -- programs were charged for the total volume of space/time
+they took up while running. A "time-travel" operator (`@`) allowed values
+to be passed backward through time, re-starting computation from a past state
+with a value overwritten.
+
+I think Jason was the first to get into this stack of puzzles, and he had
+several solves done before we even had a way to run them outside of the
+organizers' provided test endpoint.
+
+Once I (Jim, in this part of the section) got done writing several slower,
+less elegant versions of the core language interpreter (over in
+[seaplusplus/evel.cpp](seaplusplus/evel.cpp)) as a check that I could still
+understand the basic lambda calculus and how to run it, I wrote an interpreter
+for grid programs ([seaplusplus/3v.cpp](seaplusplus/3v.cpp)) and got into
+solving a few more grid problems.
+
+These grid programming puzzles reminded me a lot of the excellent
+programming-game-pretending-to-be-a-factory-game Manufactoria, as well as
+other factory games in general, since you both need to think about how to
+perform a computation with an odd set of operators and how to pack that
+computation into a small space(+time) region.
+
+One of the difficulties of working with these grid programs is that text
+editors don't have the best (2D) copy-paste operators. This is something
+that Jason addressed later in the competition by adding a grid program
+visualizer and editor to his typescript contest frontend multitool program
+thing. Honestly, it was pretty darn useful (especially for moving code
+around and targeting the time-travel jump operator, `@`).
+
+The rest of this section introduces the language
+
+## The Language
+
+A brief overview. Programs are on a grid. Grid cells contain integers, labels, operators, or are empty.
+
+Integers start in the range `-99` - `99` but can grow arbitrarily during program execution.
+
+The labels `A`, `B`, and `S` mark special cells. `A` and `B` are replaced by input values before execution starts, and if `S` is overwritten with another value that value is called the output and the program halts.
+
+Operators take inputs from the cells around them and (generally, except for `@`) write outputs to other cells around them. This is called "reduction" (`~>`) and operators don't "reduce" unless all of their inputs are present and of supported types. Operators reduce in parallel, with all inputs being "taken" before any are written. Any write conflicts cause the program to crash. If no operator can reduce the program halts without producing a value.
+
+The arrow operators (`>`, `<`, `^`, `v`) have one input and can be used to move cell contents:
+
+```
+ .  .  .        .  .  .
+ 6  >  .   ~>   .  >  6
+ .  .  .        .  .  .
+```
+
+Arrows move in the direction they point and overwrite their output cell:
+```
+ .  2  .        .  2  .
+ .  ^  .   ~>   .  ^  .
+ .  7  .        .  .  .
+```
+Using only arrow operators, the parity of a value's x+y coordinates cannot be changed. That is, (thinking about a checkerboard), black-square and white-square values can never move to the opposite color.
+
+Arrows can move operators and well as values:
+```
+ 4  >  .  .      .  >  4  .      .  >  .  .
+ v  >  <  .  ~>  .  >  v  .  ~>  .  >  v  .
+ .  .  S  .      4  .  S  .      .  .  4  .
+```
+
+This last point about arrows allows making a sort of "conditional move" where an arrow is overwritten by a value to prevent it from firing. (Though this behavior was actually bugged in the official interpreter, and by the time the organizers fixed it I had come up with a different/better solution to the puzzle I wanted to use it in.)
+
+The binary operators `+`, `-`, `*`, `/`, `%`, `=`, and `#` take input from their top/right and write output to their bottom/left. These operators don't run unless both inputs can be taken.
+
+The `+`, `-`, `*`, `/` (integer division, round toward zero), and `%` (mod) operators all follow this pattern:
+```
+ .  b  .      .  .  .
+ a  +  .  ~>  .  + a+b
+ .  .  .      . a+b .
+```
+
+This lends programs a sort of down-right execution flow, since it's much easier to chain operators downward or rightward than upward or leftward.
+
+Also notice that -- thinking of parity again -- math operators take values of both parities and duplicate their outputs over both parities. This occasionally made routing values between operators somewhat tricky if the wrong input or outputs are chosen (or required, since `-`, `/`, and `%` have asymmetric meaning to their inputs). 
+
+Also, in contrast to the arrow operators, the math operators only work on values, so you can "cork" part of a computation by writing an operator over an input:
+```
+ .  *  . 
+ 5  +  . (does not reduce)
+ .  .  .
+```
+
+The equality and inequality operators reduce like this:
+```
+ .  b  .      .  .  .
+ a  =  .  ~>  .  =  b  (only if a == b)
+ .  .  .      .  a  .
+```
+```
+ .  b  .      .  .  .
+ a  #  .  ~>  .  #  b  (only if a != b)
+ .  .  .      .  a  .
+```
+
+Equality and inequality work on both values and operators and turn out to be very useful for a few different plumbing moves.
+
+Inequality can be used to replace any value with a fixed value:
+```
+ .  *  .  0 .
+ 5  #  .  # .
+ .  .  .  . .
+```
+
+Though for some values doing the same thing with math is more compact:
+```
+ .  0  .
+ 5  *  .
+ .  .  .
+```
+
+Inequality can be used to change a value's coordinate parity during routing:
+```
+ .  .  .  *  .      .  .  .  *  .      .  .  .  .  .
+ 5  >  .  #  .      .  >  5  #  .      .  >  .  #  *
+ .  .  .  .  .  ~>  .  .  .  .  .  ~>  .  .  .  5  .
+ .  .  .  v  .      .  .  .  v  .      .  .  .  v  .
+ .  .  .  .  .      .  .  .  .  .      .  .  .  .  .x```
+I actually had the `#` reduction wrong (swapped `a` and `b` in the output) initially in my interpreter. This would have been nice (let values "cross" each-other in the grid), but also prevents this parity-swapping trick from working.
+
+Inequality can also be used to "turn around" at the top or bottom of a "delay line" in a more compact way than an arrow could:
+```
+ .  *  .  *  .  *
+ .  #  .  #  .  #
+ ^  .  ^  .  ^  .
+ .  v  .  v  .  v
+ ^  .  ^  .  ^  .
+ 3  v  .  v  .  v
+ .  .  ^  .  ^  .
+ *  #  .  v  .  v
+ .  .  .  .  ^  .
+ .  .  *  #  .  .
+```
+(Slightly more awkward at the bottom because the arrow operators steal the `*` if it isn't out of the way enough.)
+
+Equality can shift the outputs of other operators diagonally in the grid:
+```
+ .  1  .  .      .  .  .  .      .  .  .  .
+ 1  +  .  .  ~>  .  +  2  .  ~>  .  +  .  .
+ .  .  =  .      .  2  =  .      .  .  =  2
+ .  .  .  .      .  .  .  .      .  .  2  .
+```
+
+You can do the same sort of trick with inequality to make a sort of "value slide":
+```
+ .  *  .  .      .  .  .  .      .  .  .  .
+ 2  #  .  .  ~>  .  #  *  .  ~>  .  #  .  .
+ .  .  #  .      .  2  #  .      .  .  #  *
+ .  .  .  .      .  .  .  .      .  .  2  .
+```
+
+Finally, the time-travel operator `@`:
+```
+ .  c  .
+ dx @ dy
+ . dt  .
+```
+
+This restores the board state from `dt` ticks ago, but copies the value or operator `c` to the cell that is `dx` steps to the left of and `dy` steps above the `@`. Multiple time travels can write results into the past at the same time, but if those values conflict (or if the `dt`'s don't match) the program "crashes" without returning a value.
+
+The time travel operator is the spice that keeps this language interesting.
+
+
+## The Puzzles
+
+
+### 3d11 -- Lambdaman Path
+
+Statement: given a large integer representing a set of 2D steps (up to 100) in space, report how many unique coordinate pairs are visited by the path.
+
+This one was my (Jim's) nemesis during the competition because I had three good ideas for solutions, all of which were notionally "fast enough" (fit in the established area and tick limit), and none of which the organizers' interpreter could actually run fast enough.
+(Well, I ran out of time on a revision of one of the ideas, it might have eventually been fast enough.)
+
+The core trouble being that this problem invites you to think about time complexity like a ciruit (parallel operations are free, depth is the main cost), but that the organizers' evaluator was not actually fast enough to support the "obvious" / "efficient" circuit-like implementations.
+
+
+Anyway, the basic infrastructure for this problem was just a digit-peeler and a few little networks to accumulate current position.
+After hours of working in the language this was straightforward to write.
+
+The thing that caused me consternation was how to store the set of visited cells.
+
+The first thing I tried was to **accumulate a bit-field** into a large integer value ([solutions/threed/threed11-bits.txt]).
+This worked fine but took a lot of real evaluation steps and caused the organizers' interpreter to time out (despite this solution being well under the area and tick limits). I suppose bigints with hundreds of digits cause things to run slowly (I half-suspect that the organizers were trying to pretty-print the outputs and the real problem was formatting those integers as nicely aligned table columns; I know that's where my interpreter was burning cycles).
+
+I am especially proud of this extendible N-bit-per-time-loop bit counter setup though (this is the 4-bit version):
+```
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
+ .  .  .  .  .  .  .  1  .  2  .  0  .  .  .  .  .  . 
+ .  .  .  .  .  <  A  *  .  %  .  +  .  .  .  .  .  . 
+ .  .  .  0  =  .  .  .  .  .  .  .  =  .  .  .  .  . 
+ .  .  .  .  .  .  .  v  2  .  2  .  .  .  .  .  .  . 
+ .  .  .  .  v  .  .  .  /  .  %  .  +  .  .  .  .  . 
+ .  .  .  <  .  >  .  .  .  .  .  .  .  =  .  .  .  . 
+ . -2  @  4  v -8  @ -6  v  2  .  2  .  .  .  .  .  . 
+ .  .  3  .  .  .  3  .  .  /  .  %  .  +  .  .  .  . 
+ .  .  . -7  @ -7  .  .  .  .  .  .  .  .  =  .  .  . 
+ .  .  .  .  3  .  .  .  .  v  2  .  2  .  .  .  .  . 
+ .  .  .  .  .  .  .  .  .  .  /  .  %  .  +  .  .  . 
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  >  .  . 
+ .  .  .  .  .  .  .  .  .  .  v  2  .  3  @ 12  v  . 
+ .  .  .  .  .  .  .  .  .  .  .  /  .  .  9  .  S  . 
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
+ .  .  .  .  .  .  .  .  .  .  5  @ 14  .  .  .  .  . 
+ .  .  .  .  .  .  .  .  .  .  .  9  .  .  .  .  .  . 
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
+```
+It's a compact structure, you can extend it to peel more bits relatively easilly, and it kinda looks like a penis especially if you increase the bits-peeled count (which has a certain low-humor value to it).
+
+
+With that running too slowly, I decided to go wide and implemented the first thing I actually thought of when reading the problem (but dismissed in favor of the bitfield solution), which was to use a 200x200-ish 2D look-up table to store the visit counts of each cell. Basically, this replaced "accumate into a bit vector" with "write `1`'s into this structure":
+```
+ . 1 . 0 . 0 . 0 . .
+ 0 + . + . + . + . .
+ . 0 . 0 . 0 . . . .
+ 0 + . + . + . + . .
+ . 0 . 0 . 0 . . . .
+ 0 + . + . + . + . .
+ . . . . . . . S . .
+```
+(This is the 3x3 version; the "real" version of the code used a 101x101 version.)
+It's actually pretty cool that you can make an accumulator like this so compactly (2x2 cells).
+
+Also notice that this looks like it will just sum up the whole grid and then immediately write the result, halting the program. But what actually happens is that the logic that fills in the grid will always time-travel before the grid finishes summing. So only when that logic quiesces will the final summation be reported. Elegant!
+
+This finishes in a lot fewer reduction steps than the previous solution, but takes up a lot more grid area, which again seemed to make the organizer's simulator choke.
+
+
+Finally, I built a "trampoline" solution that would jump into each cell of a grid, then have each cell jump back with a `1` or `0` based on whether the cell had been visited. This took even more area but the number of active reductions was much smaller. This was a bit of a futile attempt to optimize for execution speed on whatever black box the contest organizers were actually running these things on. It ended up taking too much grid area.
+
+
+After the contest ended I realized I could have just made a storage for 101 x-y locations and though it would have been more expensive per step it probably was the intended solution. Ah, well.
+
+## Hypothetical: Writing 2-Tick Programs
+
+An observation that I didn't really get too far with during the contest (I really wanted to finish 3d11; but failed) is that you can trade space for total time taken by inserting time travel between each operator (effectively: pipelining the computation).
+This matters because the score of a solution is the volume of the space-time bounding box around it.
+
+**Example:** this computes `((A+B)*5)/2` in 3 ticks and has an X-Y-Time bounding box area of `7*3*3 = 63`:
+```
+ .  .  B  .  5  .  2  .  .  . 
+ .  A  +  .  *  .  /  S  .  . 
+ .  .  .  .  .  .  .  .  .  . 
+```
+
+This computes the same thing using only two distinct time values, for a total X-Y-Time bounding box area of `9*5*2 = 90`:
+```
+ .  .  B  .  .  5  .  .  2  .  .
+ .  A  +  .  .  *  .  .  /  S  .
+ .  .  .  .  .  .  .  .  .  .  . 
+ .  -2 @  2 -2  @  2  .  .  .  . 
+ .  .  1  .  .  1  .  .  .  .  .
+```
+
+Okay, it's not a savings in this case, but with larger expressions that visit many real times it can actually be an advantage.
+
+
+One early concern I had with the strategy is that it seems to not support fan-out, but you can just move fan-out into its own stages:
+```
+ .  .  <  A  >  .  .
+x1  @ y1  v x2  @ y2
+ . t1  .  .  . t2  .
+ .  . x3  @ y3  .  .
+ .  .  . t3  .  .  .
+```
+
+The second concern is that while this works well for straight-line programs, it might have problems with propogating junk values in programs which are already using time travel for loops. I think this can be addressed by using some extra "clock" or "valid" signals, but it might require moving to a 3-tick setup. I didn't work this out fully.
+
+Anyway, this was a nice idea and I hope to have the leisure to revisit it at some point.
+Not sure if it would have been contest-breaking but would definitley have improved the performance of some of our straight-line solutions.
+
+
 # Efficiency
