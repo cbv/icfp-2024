@@ -148,7 +148,19 @@ anyway. When you rename variables to fresh ones, you usually get to a
 situation where all the variables are unique pretty quickly, and then
 the substitutions all become simple.
 
-Finally: Memoization. (TODO)
+Finally: When arguments are substituted into functions like `(λx. f x
+x)`, they are replicated. Naively this can create an exponential
+blow-up during reduction, since it may mean that the same expression
+is evaluated multiple times (each of which may have further
+duplication, etc.). This issue is easily addressed for the icfp
+language, since the evaluation of a value always produces the
+same result (and has no side-effects other than errors). We use a
+mutable `Memo` cell that either stores an unevaluated expression or
+the value that results from that expression; after it is evaluated
+once we save the value and reuse it if evaluated again. We only
+then need to be careful about maintaining the identity of this
+node. For example, substitution should avoid recursively rebuilding
+the expression inside an unevaluated `Memo` node when possible.
 
 # Lambdaman
 
@@ -217,11 +229,37 @@ David wrote icfp-language programs for the fractal problems
 [lambdaman16](lambdaman-solver/src/bin/lambdaman16.rs) and
 [lambdaman19](lambdaman-solver/src/bin/lambdaman19.rs).
 
-At some point, Tom wrote a compresser that could take a flat string
+## Compression
+
+At some point, Tom wrote a compressor that could take a flat string
 solution and produce a much smaller icfp program that would evaluate
 to that string. We used this approach for problems where we were unable
 to get anything working other than the baseline simple search, such as
 the mazes in problems 11 through 15.
+
+There were two approaches to compression. *Way 1*: Break the input
+into a string like `s1 s s2 s s3 ... sn` where the substring `s` is
+repeated multiple times, and then generate the icfp program `(λx.
+concat "s1" x "s2" x "s3" ... "sn") "s"`, which results in a smaller
+program because the substring `s` only appears once. (Tom did almost
+this exact same thing in the wrong-way-on-purpose solution to the
+[2007 Contest](http://tom7.org/icfp2007/)!) There are smart ways to
+find such patterns (e.g. rolling hashes) but it just does the n^3
+thing. We did submit a few solutions using this, but we realized that
+strings we needed to compress all have very small alphabets (for
+lambdaman it is just `[ULDR]*` and for Spaceship it is just `[0-9]*`).
+So we switched to *Way 2*: For an alphabet with `d` symbols, encode
+the string as a base-`d` number. Then just extract the digits with the
+`%` and `/` operators. This was very clean, but Tom was stymied by the
+server telling us that "Time limit exceeded" when he tried to submit
+such programs (for large inputs). It seems that the contest evaluator
+was not keen on doing integer division on these many-thousand-digit
+numbers. Tom tried breaking it into a concatenation of smaller strings
+encoded the same way (didn't help) or artificially forcing a power-of-2
+base (which can of course be divided very fast) but it doesn't seem
+like the contest server had this optimization. Oh well. We did squeak
+in some large spaceship problems by tweaking the parameters and trying
+multiple times.
 
 # Spaceship
 
@@ -305,11 +343,11 @@ The `+`, `-`, `*`, `/` (integer division, round toward zero), and `%` (mod) oper
 
 This lends programs a sort of down-right execution flow, since it's much easier to chain operators downward or rightward than upward or leftward.
 
-Also notice that -- thinking of parity again -- math operators take values of both parities and duplicate their outputs over both parities. This occasionally made routing values between operators somewhat tricky if the wrong input or outputs are chosen (or required, since `-`, `/`, and `%` have asymmetric meaning to their inputs). 
+Also notice that -- thinking of parity again -- math operators take values of both parities and duplicate their outputs over both parities. This occasionally made routing values between operators somewhat tricky if the wrong input or outputs are chosen (or required, since `-`, `/`, and `%` have asymmetric meaning to their inputs).
 
 Also, in contrast to the arrow operators, the math operators only work on values, so you can "cork" part of a computation by writing an operator over an input:
 ```
- .  *  . 
+ .  *  .
  5  +  . (does not reduce)
  .  .  .
 ```
@@ -418,25 +456,25 @@ This worked fine but took a lot of real evaluation steps and caused the organize
 
 I am especially proud of this extendible N-bit-per-time-loop bit counter setup though (this is the 4-bit version):
 ```
- .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
- .  .  .  .  .  .  .  1  .  2  .  0  .  .  .  .  .  . 
- .  .  .  .  .  <  A  *  .  %  .  +  .  .  .  .  .  . 
- .  .  .  0  =  .  .  .  .  .  .  .  =  .  .  .  .  . 
- .  .  .  .  .  .  .  v  2  .  2  .  .  .  .  .  .  . 
- .  .  .  .  v  .  .  .  /  .  %  .  +  .  .  .  .  . 
- .  .  .  <  .  >  .  .  .  .  .  .  .  =  .  .  .  . 
- . -2  @  4  v -8  @ -6  v  2  .  2  .  .  .  .  .  . 
- .  .  3  .  .  .  3  .  .  /  .  %  .  +  .  .  .  . 
- .  .  . -7  @ -7  .  .  .  .  .  .  .  .  =  .  .  . 
- .  .  .  .  3  .  .  .  .  v  2  .  2  .  .  .  .  . 
- .  .  .  .  .  .  .  .  .  .  /  .  %  .  +  .  .  . 
- .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  >  .  . 
- .  .  .  .  .  .  .  .  .  .  v  2  .  3  @ 12  v  . 
- .  .  .  .  .  .  .  .  .  .  .  /  .  .  9  .  S  . 
- .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
- .  .  .  .  .  .  .  .  .  .  5  @ 14  .  .  .  .  . 
- .  .  .  .  .  .  .  .  .  .  .  9  .  .  .  .  .  . 
- .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  . 
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+ .  .  .  .  .  .  .  1  .  2  .  0  .  .  .  .  .  .
+ .  .  .  .  .  <  A  *  .  %  .  +  .  .  .  .  .  .
+ .  .  .  0  =  .  .  .  .  .  .  .  =  .  .  .  .  .
+ .  .  .  .  .  .  .  v  2  .  2  .  .  .  .  .  .  .
+ .  .  .  .  v  .  .  .  /  .  %  .  +  .  .  .  .  .
+ .  .  .  <  .  >  .  .  .  .  .  .  .  =  .  .  .  .
+ . -2  @  4  v -8  @ -6  v  2  .  2  .  .  .  .  .  .
+ .  .  3  .  .  .  3  .  .  /  .  %  .  +  .  .  .  .
+ .  .  . -7  @ -7  .  .  .  .  .  .  .  .  =  .  .  .
+ .  .  .  .  3  .  .  .  .  v  2  .  2  .  .  .  .  .
+ .  .  .  .  .  .  .  .  .  .  /  .  %  .  +  .  .  .
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  >  .  .
+ .  .  .  .  .  .  .  .  .  .  v  2  .  3  @ 12  v  .
+ .  .  .  .  .  .  .  .  .  .  .  /  .  .  9  .  S  .
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+ .  .  .  .  .  .  .  .  .  .  5  @ 14  .  .  .  .  .
+ .  .  .  .  .  .  .  .  .  .  .  9  .  .  .  .  .  .
+ .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 ```
 It's a compact structure, you can extend it to peel more bits relatively easily, and it kinda looks like a penis especially if you increase the bits-peeled count (which has a certain low-humor value to it).
 
@@ -471,17 +509,17 @@ This matters because the score of a solution is the volume of the space-time bou
 
 **Example:** this computes `((A+B)*5)/2` in 3 ticks and has an X-Y-Time bounding box area of `7*3*3 = 63`:
 ```
- .  .  B  .  5  .  2  .  .  . 
- .  A  +  .  *  .  /  S  .  . 
- .  .  .  .  .  .  .  .  .  . 
+ .  .  B  .  5  .  2  .  .  .
+ .  A  +  .  *  .  /  S  .  .
+ .  .  .  .  .  .  .  .  .  .
 ```
 
 This computes the same thing using only two distinct time values, for a total X-Y-Time bounding box area of `9*5*2 = 90`:
 ```
  .  .  B  .  .  5  .  .  2  .  .
  .  A  +  .  .  *  .  .  /  S  .
- .  .  .  .  .  .  .  .  .  .  . 
- .  -2 @  2 -2  @  2  .  .  .  . 
+ .  .  .  .  .  .  .  .  .  .  .
+ .  -2 @  2 -2  @  2  .  .  .  .
  .  .  1  .  .  1  .  .  .  .  .
 ```
 
