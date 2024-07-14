@@ -469,8 +469,7 @@ A similar trick was used here:
 
 We're outputting
 
-$$\left\lfloor 3A \over 3A - 1  \right\rfloor
-- \left\lfloor 3A \over 3A + 1 \right\rfloor$$
+$$\left\lfloor 3A \over 3A - 1  \right\rfloor - \left\lfloor 3A \over 3A + 1 \right\rfloor$$
 
 which happens to be equal to the sign function of $A$.
 
