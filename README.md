@@ -276,36 +276,6 @@ with a value overwritten.
 Jason dug into this stack of puzzles, getting a couple of the easy ones
 at least solved as a warm-up. For these it was fairly reasonable to write code "in the dark" without a local evaluator.
 
-### 3d1
-
-3d1 ("factorial") was pretty similar to
-multiplication-by-repeated-addition, for which an example was given in
-the instructions. So even though this involved time travel, it didn't
-involve very difficult reasoning.
-
-![Solution to 3d1](solutions/threed/threed1.png)
-
-### 3d2
-
-For 3d2, ("absolute value") 3d3, ("sign") and 3d4, ("max") it seemed
-quite plausible that somehow there were time-travel-using
-optimizations waiting to be found, but I (Jason) just splatted out a
-first-draft solution for each that was "straight-line" code, using
-some arithmetic tricks.
-
-For example, 3d2 computed
-
-$$A - 2A\left\lfloor 3A\over 3A+1\right\rfloor$$
-
-![Solution to 3d2](solutions/threed/threed2.png)
-
-### 3d3
-
-A similar trick was used here:
-
-![Solution to 3d3](solutions/threed/threed3.png)
-
-
 ## Scaling up
 
 Once I (Jim, in this part of the section) got done writing several slower,
@@ -468,6 +438,76 @@ The time travel operator is the spice that keeps this language interesting.
 
 ## The Puzzles
 
+### 3d1 - Factorial
+
+This was pretty similar to multiplication-by-repeated-addition, for
+which an example was given in the instructions. So even though this
+involved time travel, it didn't involve very difficult reasoning.
+
+![Solution to 3d1](solutions/threed/threed1.png)
+
+### 3d2 - Absolute Value
+
+Jason just splatted out a first-draft that was just "straight-line"
+code with no time travel, using some arithmetic tricks.
+
+We compute
+
+$$A - 2A\left\lfloor 3A\over 3A+1\right\rfloor$$
+
+which happens to be the same as absolute value. if $A$ is positive,
+then the floor of the quotient is zero, and if it's not, we reflect
+$A$ about 0.
+
+![Solution to 3d2](solutions/threed/threed2.png)
+
+### 3d3 - Sign
+
+A similar trick was used here:
+
+![Solution to 3d3](solutions/threed/threed3.png)
+
+We're outputting
+
+$$\left\lfloor 3A \over 3A - 1  \right\rfloor
+- \left\lfloor 3A \over 3A + 1 \right\rfloor$$
+
+which happens to be equal to the sign function of $A$.
+
+### 3d4
+
+This was Jim's solution. It depends on being keenly aware of the input
+range we're guaranteed to be tested on.
+
+![Solution to 3d4](solutions/threed/threed4.png)
+
+The expression
+
+$$\left\lfloor B + 101 \over A + 101  \right\rfloor$$
+
+is guaranteed to be 0 if $B < A$, so we condition on that.
+
+### 3d5 -- LCM
+
+FIXME: Jim?
+
+### 3d6 -- Palindrome testing
+
+FIXME: Jim?
+
+### 3d7 -- Palindrome testing
+
+FIXME: Jim?
+
+### 3d8 -- Smallest base for which a number is a palindrome
+
+Jason worked on this and tried to simply generalize Jim's 3d7 solution
+by adding an outer loop, something that in conventional,
+non-chronomancy-using programming languages, is considered a
+reasonably easy task. Honestly, my (Jason's) memory of how this
+solution worked is a bit fuzzy.
+
+![Solution to 3d8](solutions/threed/threed8.png)
 
 ### 3d11 -- Lambdaman Path
 
@@ -573,5 +613,34 @@ The second concern is that while this works well for evaluating expressions, it 
 Anyway, this was a nice idea and I hope to have the leisure to revisit it at some point.
 Not sure if it would have been contest-breaking but would definitely have improved the performance of some of our straight-line solutions.
 
+### 3d12 -- Sine
+
+Jason worked on this. After a lot of churn trying to get the straight-line
+arithmetic into some shape that seemed reasonably, compact, I arrived at:
+
+![Solution to 3d12](solutions/threed/threed12-idea4.png)
+
+The main idea is that we're performing fixed-point arithmetic over a slightly
+larger base than the one that the inputs and outputs are represented in.
+Instead of a base of $B = 10^9$, we work in $BF$, where in this diagram, $F$
+was chosen to be $9$. This requires multiplying our initial $A$ by this factor
+of $F$ before doing calculations on it, and dividing by $F$ at the end.
+
+It saved some space to pass around $(BF)^2$ instead of $BF$, since we
+only end up ever needing squares of it, due to the every-other-power
+nature of the Taylor series for sine.
+
+Signal routing without an easy wire cross-over primitive was an
+absolute nightmare, so it seemed easier to recompute things in place a
+lot, e.g. the repetition of $A^2$ computation in many places.
+
+This solution used no time travel at all; I later squeezed a little more
+space by using time travel to send back the value of $(BF)^2$ to the
+beginning of the computation
+
+![Solution to 3d12](solutions/threed/threed12.png)
+
+but I'm sure there were real wins we missed out on by failing to
+compute the taylor series "in time" rather than "in space".
 
 # Efficiency
