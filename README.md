@@ -271,9 +271,42 @@ they took up while running. A "time-travel" operator (`@`) allowed values
 to be passed backward through time, re-starting computation from a past state
 with a value overwritten.
 
-I think Jason was the first to get into this stack of puzzles, and he had
-several solves done before we even had a way to run them outside of the
-organizers' provided test endpoint.
+## Initial Few Problems
+
+Jason dug into this stack of puzzles, getting a couple of the easy ones
+at least solved as a warm-up. For these it was fairly reasonable to write code "in the dark" without a local evaluator.
+
+### 3d1
+
+3d1 ("factorial") was pretty similar to
+multiplication-by-repeated-addition, for which an example was given in
+the instructions. So even though this involved time travel, it didn't
+involve very difficult reasoning.
+
+![Solution to 3d1](solutions/threed/threed1.png)
+
+### 3d2
+
+For 3d2, ("absolute value") 3d3, ("sign") and 3d4, ("max") it seemed
+quite plausible that somehow there were time-travel-using
+optimizations waiting to be found, but I (Jason) just splatted out a
+first-draft solution for each that was "straight-line" code, using
+some arithmetic tricks.
+
+For example, 3d2 computed
+
+$$A - 2A\left\lfloor 3A\over 3A+1\right\rfloor$$
+
+![Solution to 3d2](solutions/threed/threed2.png)
+
+### 3d3
+
+A similar trick was used here:
+
+![Solution to 3d3](solutions/threed/threed3.png)
+
+
+## Scaling up
 
 Once I (Jim, in this part of the section) got done writing several slower,
 less elegant versions of the core language interpreter (over in
